@@ -1,0 +1,45 @@
+{
+  "Ireland": "rgba(80, 160, 80, 0.28)",
+  "Northern Ireland": "rgba(120, 180, 120, 0.28)",
+
+  "England": "rgba(200, 80, 80, 0.28)",
+  "Scotland": "rgba(80, 120, 200, 0.28)",
+  "Wales": "rgba(200, 120, 60, 0.28)",
+
+  "Netherlands": "rgba(255, 140, 40, 0.28)",
+  "Belgium": "rgba(255, 200, 40, 0.28)",
+  "Germany": "rgba(120, 120, 120, 0.28)",
+  "France": "rgba(100, 140, 220, 0.28)",
+  "Italy": "rgba(100, 100, 250, 0.28)",
+  "Spain": "rgba(240, 180, 80, 0.28)",
+  "Portugal": "rgba(200, 160, 80, 0.28)",
+
+  "Poland": "rgba(240, 120, 120, 0.28)",
+  "Czechia": "rgba(160, 160, 240, 0.28)",
+  "Slovakia": "rgba(160, 200, 240, 0.28)",
+
+  "Norway": "rgba(200, 60, 60, 0.28)",
+  "Sweden": "rgba(80, 140, 220, 0.28)",
+  "Denmark": "rgba(200, 60, 60, 0.28)",
+  "Finland": "rgba(120, 160, 200, 0.28)",
+
+  "Switzerland": "rgba(200, 80, 80, 0.28)",
+  "Austria": "rgba(220, 120, 120, 0.28)",
+
+  "Ukraine": "rgba(140, 180, 240, 0.28)",
+  "Russia": "rgba(200, 160, 180, 0.28)",
+
+  "Canada": "rgba(200, 80, 80, 0.28)",
+  "Ontario": "rgba(210, 180, 140, 0.28)",
+  "Quebec": "rgba(100, 140, 220, 0.28)",
+  "Nova Scotia": "rgba(120, 160, 220, 0.28)",
+  "New Brunswick": "rgba(200, 180, 100, 0.28)",
+  "British Columbia": "rgba(120, 180, 120, 0.28)",
+
+  "United States": "rgba(120, 160, 220, 0.28)",
+  "New York": "rgba(120, 160, 220, 0.28)",
+  "Pennsylvania": "rgba(160, 180, 220, 0.28)",
+  "Ohio": "rgba(180, 160, 200, 0.28)",
+  "Illinois": "rgba(200, 160, 180, 0.28)",
+  "Massachusetts": "rgba(255, 255, 200, 0.28)"
+}

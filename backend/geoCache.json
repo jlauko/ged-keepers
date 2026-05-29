@@ -1,0 +1,312 @@
+{
+  "Syracuse, Onondaga, New York, USA": {
+    "lat": 43.0481221,
+    "lon": -76.1474244,
+    "usedQuery": "Syracuse, Onondaga, New York, USA"
+  },
+  "North Tonawanda, Niagara, New York, USA": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, Niagara, New York, USA"
+  },
+  "North Tonawanda, Niagara, New York, United States of America": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, Niagara, New York, United States of America"
+  },
+  "North Tonawanda, Niagara, New York": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, Niagara, New York"
+  },
+  "North Tonawanda, NY": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, NY"
+  },
+  "North Tonawanda, New York, USA": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, New York, USA"
+  },
+  "400 Elmwood Ave, North Tonawanda, Niagara, New York, USA": {
+    "lat": 43.032178,
+    "lon": -78.8545229,
+    "usedQuery": "400 Elmwood Ave, North Tonawanda, Niagara, New York, USA"
+  },
+  "Buffalo, New York, USA": {
+    "lat": 42.8864163,
+    "lon": -78.8781493,
+    "usedQuery": "Buffalo, New York, USA"
+  },
+  "Amherst, NY": {
+    "lat": 42.9783924,
+    "lon": -78.7997616,
+    "usedQuery": "Amherst, NY"
+  },
+  "Manhattan, New York City, New York, USA": {
+    "lat": 40.7579554,
+    "lon": -73.9855319,
+    "usedQuery": "Manhattan, New York City, New York, USA"
+  },
+  "Booneville, New York, USA": {
+    "lat": 43.5268032,
+    "lon": -75.3209561,
+    "usedQuery": "Booneville, New York, USA"
+  },
+  "Rochester, New York, USA": {
+    "lat": 43.157285,
+    "lon": -77.615214,
+    "usedQuery": "Rochester, New York, USA"
+  },
+  "Syracuse, NY": {
+    "lat": 43.0481221,
+    "lon": -76.1474244,
+    "usedQuery": "Syracuse, NY"
+  },
+  "Liverpool, New York, USA": {
+    "lat": 43.106456,
+    "lon": -76.217705,
+    "usedQuery": "Liverpool, New York, USA"
+  },
+  "Buffalo, Erie, New York, USA": {
+    "lat": 42.8864163,
+    "lon": -78.8781493,
+    "usedQuery": "Buffalo, Erie, New York, USA"
+  },
+  "Binghamton, Broome, New York, USA": {
+    "lat": 42.098698,
+    "lon": -75.9125187,
+    "usedQuery": "Binghamton, Broome, New York, USA"
+  },
+  "Binghamton, New York, USA": {
+    "lat": 42.098698,
+    "lon": -75.9125187,
+    "usedQuery": "Binghamton, New York, USA"
+  },
+  "Walworth, NY": {
+    "lat": 43.13923,
+    "lon": -77.272207,
+    "usedQuery": "Walworth, NY"
+  },
+  "San Antonio, Florida, USA": {
+    "lat": 28.3361142,
+    "lon": -82.2745308,
+    "usedQuery": "San Antonio, Florida, USA"
+  },
+  "Syracuse, New York": {
+    "lat": 43.0481221,
+    "lon": -76.1474244,
+    "usedQuery": "Syracuse, New York"
+  },
+  "Kenmore, Erie, New York, USA": {
+    "lat": 42.961748,
+    "lon": -78.870914,
+    "usedQuery": "Kenmore, Erie, New York, USA"
+  },
+  "Grand Island, New York, USA": {
+    "lat": 43.0183219,
+    "lon": -78.9636394,
+    "usedQuery": "Grand Island, New York, USA"
+  },
+  "Pittsburgh, Pennsylvania, USA": {
+    "lat": 40.4406968,
+    "lon": -80.0025666,
+    "usedQuery": "Pittsburgh, Pennsylvania, USA"
+  },
+  "Monroeville, Pennsylvania, USA": {
+    "lat": 40.4335167,
+    "lon": -79.7606192,
+    "usedQuery": "Monroeville, Pennsylvania, USA"
+  },
+  "Freeville, Tompkins, New York, USA": {
+    "lat": 42.512807,
+    "lon": -76.3464675,
+    "usedQuery": "Freeville, Tompkins, New York, USA"
+  },
+  "North Tonawanda, New York": {
+    "lat": 43.0407742,
+    "lon": -78.8660527,
+    "usedQuery": "North Tonawanda, New York"
+  },
+  "Clay, NY": {
+    "lat": 43.186621,
+    "lon": -76.2065431,
+    "usedQuery": "Clay, NY"
+  },
+  "Baldwinsville, New York, USA": {
+    "lat": 43.158679,
+    "lon": -76.33271,
+    "usedQuery": "Baldwinsville, New York, USA"
+  },
+  "Miramar Beach, Florida, USA": {
+    "lat": 30.377985,
+    "lon": -86.3616979,
+    "usedQuery": "Miramar Beach, Florida, USA"
+  },
+  "Lyons, Wayne, New York, USA": {
+    "lat": 43.0642305,
+    "lon": -76.9902456,
+    "usedQuery": "Lyons, Wayne, New York, USA"
+  },
+  "Tonawanda, NY": {
+    "lat": 43.020679,
+    "lon": -78.878383,
+    "usedQuery": "Tonawanda, NY"
+  },
+  "Albany, NY": {
+    "lat": 42.6511674,
+    "lon": -73.754968,
+    "usedQuery": "Albany, NY"
+  },
+  "Albany, New York, USA": {
+    "lat": 42.6511674,
+    "lon": -73.754968,
+    "usedQuery": "Albany, New York, USA"
+  },
+  "Albany, Albany, New York, USA": {
+    "lat": 42.6511674,
+    "lon": -73.754968,
+    "usedQuery": "Albany, Albany, New York, USA"
+  },
+  "Bayside, NY, USA": {
+    "lat": 40.7684351,
+    "lon": -73.7770774,
+    "usedQuery": "Bayside, NY, USA"
+  },
+  "Chicago, Illinois, USA": {
+    "lat": 41.8755616,
+    "lon": -87.6244212,
+    "usedQuery": "Chicago, Illinois, USA"
+  },
+  "New York, USA": {
+    "lat": 40.7127281,
+    "lon": -74.0060152,
+    "usedQuery": "New York, USA"
+  },
+  "Buffalo, Erie, New York": {
+    "lat": 42.8864163,
+    "lon": -78.8781493,
+    "usedQuery": "Buffalo, Erie, New York"
+  },
+  "Watervliet, NY": {
+    "lat": 42.7300784,
+    "lon": -73.7012299,
+    "usedQuery": "Watervliet, NY"
+  },
+  "Manlius, NY": {
+    "lat": 43.0020107,
+    "lon": -75.9768632,
+    "usedQuery": "Manlius, NY"
+  },
+  "Falcon Trace, USA": {
+    "lat": 27.5623404,
+    "lon": -80.4103607,
+    "usedQuery": "Falcon Trace, USA"
+  },
+  "Queens, New York City, New York, USA": {
+    "lat": 40.7135078,
+    "lon": -73.8283132,
+    "usedQuery": "Queens, New York City, New York, USA"
+  },
+  "Colonie, Albany, New York, USA": {
+    "lat": 42.7178558,
+    "lon": -73.8334554,
+    "usedQuery": "Colonie, Albany, New York, USA"
+  },
+  "Flushing, NY": {
+    "lat": 40.7654301,
+    "lon": -73.8174291,
+    "usedQuery": "Flushing, NY"
+  },
+  "Voorheesville, New York, USA": {
+    "lat": 42.649984,
+    "lon": -73.9306253,
+    "usedQuery": "Voorheesville, New York, USA"
+  },
+  "Johnson City, Broome, New York, USA": {
+    "lat": 42.1157038,
+    "lon": -75.9587873,
+    "usedQuery": "Johnson City, Broome, New York, USA"
+  },
+  ", Binghamton, Broome, New York, USA": {
+    "lat": 42.098698,
+    "lon": -75.9125187,
+    "usedQuery": ", Binghamton, Broome, New York, USA"
+  },
+  "Binghamton, Broome, New York": {
+    "lat": 42.098698,
+    "lon": -75.9125187,
+    "usedQuery": "Binghamton, Broome, New York"
+  },
+  "115 New York Avenue, Johnson City": {
+    "lat": 42.1042008,
+    "lon": -75.9616153,
+    "usedQuery": "115 New York Avenue, Johnson City"
+  },
+  "Johnson City, NY": {
+    "lat": 42.1157038,
+    "lon": -75.9587873,
+    "usedQuery": "Johnson City, NY"
+  },
+  "Vestal, New York, USA": {
+    "lat": 42.0850703,
+    "lon": -76.053813,
+    "usedQuery": "Vestal, New York, USA"
+  },
+  "Apalachin, New York, USA": {
+    "lat": 42.065488,
+    "lon": -76.1606547,
+    "usedQuery": "Apalachin, New York, USA"
+  },
+  "Apalachin, NY": {
+    "lat": 42.065488,
+    "lon": -76.1606547,
+    "usedQuery": "Apalachin, NY"
+  },
+  "Vestal, NY": {
+    "lat": 42.0850703,
+    "lon": -76.053813,
+    "usedQuery": "Vestal, NY"
+  },
+  "Lisková, Ružomberok, Slovakia": {
+    "lat": 49.0885263,
+    "lon": 19.3523594,
+    "usedQuery": "Lisková, Ružomberok, Slovakia"
+  },
+  "Thunder Bay, Ft. William, Ontario, Canada": {
+    "lat": 48.3777651,
+    "lon": -89.2467282,
+    "usedQuery": "Thunder Bay, Ft. William, Ontario, Canada"
+  },
+  "Niagara Falls, Niagara, Ontario, Canada": {
+    "lat": 43.1065603,
+    "lon": -79.0639039,
+    "usedQuery": "Niagara Falls, Niagara, Ontario, Canada"
+  },
+  "Hamilton, Ontario, Canada": {
+    "lat": 43.2560802,
+    "lon": -79.8728583,
+    "usedQuery": "Hamilton, Ontario, Canada"
+  },
+  "Binghamton, Broome Co., New York, USA": {
+    "lat": 42.098698,
+    "lon": -75.9125187,
+    "usedQuery": "Binghamton, Broome Co., New York, USA"
+  },
+  "18 Lake Ave, Binghamton, New York, USA": {
+    "lat": 42.1129693,
+    "lon": -75.9409183,
+    "usedQuery": "18 Lake Ave, Binghamton, New York, USA"
+  },
+  "14 Lake Ave., Binghamton, Broome, New York, USA": {
+    "lat": 42.1128983,
+    "lon": -75.9406067,
+    "usedQuery": "14 Lake Ave., Binghamton, Broome, New York, USA"
+  },
+  "18 Lake Avenue, Binghamton, Broome, New York, USA": {
+    "lat": 42.1129693,
+    "lon": -75.9409183,
+    "usedQuery": "18 Lake Avenue, Binghamton, Broome, New York, USA"
+  }
+}

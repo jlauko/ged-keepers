@@ -1,0 +1,85 @@
+[
+  {"year": 1066, "region": "England", "description": "Norman Conquest of England."},
+  {"year": 1170, "region": "Ireland", "description": "Anglo-Norman invasion of Ireland begins."},
+  {"year": 1237, "region": "Scotland", "description": "Treaty of York defines the border between England and Scotland."},
+  {"year": 1297, "region": "Scotland", "description": "William Wallace leads uprising against English rule."},
+
+  {"year": 1347, "region": "Italy", "description": "Black Death arrives in Europe through Italian ports."},
+  {"year": 1348, "region": "France", "description": "Black Death devastates French population."},
+  {"year": 1350, "region": "Wales", "description": "Black Death dramatically reduces Welsh population."},
+  {"year": 1350, "region": "Germany", "description": "Plague waves kill a third of German populations."},
+  {"year": 1360, "region": "Netherlands", "description": "Dutch cities grow as major trading centers."},
+
+  {"year": 1413, "region": "England", "description": "Henry V becomes king."},
+  {"year": 1492, "region": "Italy", "description": "Columbus (Genoese) begins voyages leading to European colonization of the Americas."},
+  {"year": 1494, "region": "France", "description": "French invasions of Italy begin the Italian Wars."},
+
+  {"year": 1521, "region": "Germany", "description": "Martin Luther condemned at the Diet of Worms; Protestant Reformation gains momentum."},
+  {"year": 1534, "region": "England", "description": "Act of Supremacy makes Henry VIII head of the Church of England."},
+  {"year": 1555, "region": "Germany", "description": "Peace of Augsburg legalizes Lutheranism in the Holy Roman Empire."},
+  {"year": 1588, "region": "England", "description": "English navy defeats the Spanish Armada."},
+
+  {"year": 1607, "region": "England", "description": "First permanent English settlement at Jamestown (Virginia)."},
+  {"year": 1620, "region": "Massachusetts", "description": "Pilgrims land at Plymouth and establish Plymouth Colony."},
+  {"year": 1636, "region": "Rhode Island", "description": "Roger Williams founds Rhode Island for religious freedom."},
+  {"year": 1636, "region": "Connecticut", "description": "Connecticut Colony established by Puritan settlers from Massachusetts."},
+  {"year": 1664, "region": "New York", "description": "English seize New Amsterdam from the Dutch, rename it New York."},
+  {"year": 1664, "region": "New Jersey", "description": "New Jersey established as English colony."},
+  {"year": 1670, "region": "Denmark", "description": "Growth of Danish trading empire in Northern Europe."},
+  {"year": 1701, "region": "Germany", "description": "Kingdom of Prussia founded."},
+
+  {"year": 1704, "region": "France", "description": "War of Spanish Succession impacts French finances and population."},
+  {"year": 1707, "region": "Scotland", "description": "Acts of Union unite England and Scotland into Great Britain."},
+  {"year": 1713, "region": "Netherlands", "description": "Treaty of Utrecht ends major European conflict; Dutch influence shifts."},
+  {"year": 1720, "region": "Italy", "description": "Piedmont-Sardinia rises as a major Italian power."},
+
+  {"year": 1754, "region": "New York", "description": "French and Indian War begins; area sees heavy colonial military activity."},
+  {"year": 1763, "region": "Ontario Canada", "description": "Britain takes control of Canada after Treaty of Paris."},
+  {"year": 1765, "region": "Massachusetts", "description": "Stamp Act protests begin; rising revolutionary sentiment."},
+  {"year": 1770, "region": "Massachusetts", "description": "Boston Massacre heightens tensions with Britain."},
+  {"year": 1773, "region": "Massachusetts", "description": "Boston Tea Party protests taxation without representation."},
+  {"year": 1775, "region": "Massachusetts", "description": "Battles of Lexington and Concord start American Revolution."},
+  {"year": 1776, "region": "Pennsylvania", "description": "Declaration of Independence signed in Philadelphia."},
+  {"year": 1783, "region": "New York", "description": "British evacuate New York City at the end of Revolutionary War."},
+
+  {"year": 1798, "region": "Ireland", "description": "Irish Rebellion against British rule."},
+  {"year": 1800, "region": "Italy", "description": "Napoleonic forces reorganize Italian states."},
+  {"year": 1801, "region": "Ireland", "description": "Act of Union merges Ireland with Great Britain."},
+
+  {"year": 1830, "region": "France", "description": "July Revolution establishes constitutional monarchy."},
+  {"year": 1832, "region": "England", "description": "Reform Act expands voting rights."},
+  {"year": 1845, "region": "Ireland", "description": "Irish Potato Famine begins, causing mass emigration."},
+  {"year": 1848, "region": "Germany", "description": "German revolutions push for democracy and unification."},
+  {"year": 1848, "region": "Italy", "description": "Revolutions lead to early stages of Italian unification."},
+  {"year": 1849, "region": "New York", "description": "Mass migration to New York through Ellis Island region."},
+  {"year": 1850, "region": "Ontario Canada", "description": "Significant immigration from Britain and Ireland to Ontario."},
+
+  {"year": 1861, "region": "Italy", "description": "Italy becomes unified kingdom."},
+  {"year": 1863, "region": "Pennsylvania", "description": "Battle of Gettysburg in U.S. Civil War."},
+  {"year": 1867, "region": "Ontario Canada", "description": "Canadian Confederation established; Ontario becomes a province."},
+  {"year": 1870, "region": "France", "description": "Franco-Prussian War; fall of Second Empire."},
+  {"year": 1871, "region": "Germany", "description": "German Empire proclaimed in Berlin."},
+
+  {"year": 1880, "region": "Italy", "description": "Mass emigration begins from southern Italy to the U.S."},
+  {"year": 1880, "region": "Slovakia", "description": "Large Slovak emigration to America begins under Austro-Hungarian rule."},
+  {"year": 1880, "region": "Wales", "description": "Coal mining industry peaks, driving migration shifts."},
+  {"year": 1890, "region": "New Jersey", "description": "Rapid industrialization brings major immigrant workforce."},
+  {"year": 1892, "region": "New York", "description": "Ellis Island immigration station opens."},
+
+  {"year": 1914, "region": "Europe", "description": "World War I begins, affecting all European migration patterns."},
+  {"year": 1918, "region": "Worldwide", "description": "Spanish Flu pandemic causes global disruption."},
+
+  {"year": 1922, "region": "Ireland", "description": "Irish Free State established following independence struggle."},
+  {"year": 1929, "region": "United States", "description": "Great Depression begins, affecting migration and employment."},
+  {"year": 1933, "region": "Germany", "description": "Nazi regime rises to power."},
+  {"year": 1940, "region": "France", "description": "Germany invades France during WWII."},
+  {"year": 1945, "region": "Europe", "description": "End of World War II; major political and migration shifts."},
+
+  {"year": 1948, "region": "United Kingdom", "description": "Post-war immigration increases, including ties to Wales and Scotland."},
+
+  {"year": 1957, "region": "European Union", "description": "Treaty of Rome creates European Economic Community."},
+  {"year": 1965, "region": "United States", "description": "Immigration and Nationality Act alters U.S. immigration patterns."},
+
+  {"year": 1992, "region": "Europe", "description": "Maastricht Treaty establishes the European Union."},
+  {"year": 1993, "region": "Slovakia", "description": "Slovakia becomes an independent nation after split with Czech Republic."}
+]

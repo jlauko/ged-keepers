@@ -1,0 +1,30 @@
+{
+  "Connecticut": {
+    "summary": "Connecticut Test",
+    "history": "Test Test",
+    "facts": []
+  },
+  "England-G": {
+    "summary": "England Test 2",
+    "history": "",
+    "facts": []
+  },
+  "New York-B": {
+    "summary": "",
+    "history": "hfjdksafdsa",
+    "facts": [
+      "cxz"
+    ],
+    "attachments": [
+      {
+        "name": "1950 census sacco.jpg",
+        "filename": "1950 census sacco.jpg",
+        "fileUrl": "http://localhost:4000/users/Lauko/files/1950%20census%20sacco.jpg",
+        "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/1950%20census%20sacco.jpg",
+        "uploadedAt": "2026-01-29T14:50:27.821Z",
+        "type": "file"
+      }
+    ],
+    "id": "New York-B"
+  }
+}
