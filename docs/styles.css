@@ -1,0 +1,527 @@
+/* Tooltip container */
+#tooltip {
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  font-family: Arial, sans-serif;
+  max-width: 320px;
+  font-size: 14px;
+  position: absolute; /* your JS sets left/top */
+  z-index: 1000;
+  display: none; /* hidden by default */
+}
+
+/* Each attachment row */
+.attachment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
+}
+
+/* Filename styling */
+.attachment-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+  color: #333;
+}
+
+/* Button container */
+.attachment-buttons {
+  flex-shrink: 0;
+  display: flex;
+}
+
+/* Buttons */
+.attachment-buttons button {
+  margin-left: 6px;
+  padding: 6px;
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #555;
+  transition: color 0.2s, transform 0.1s;
+}
+
+.attachment-buttons button:hover {
+  color: #007bff; /* blue highlight */
+  transform: translateY(-1px);
+}
+
+.attachment-buttons i {
+  pointer-events: none; /* ensures click goes to button */
+}
+
+/* Upload input (hidden by default, styled via label if you want) */
+input[type="file"] {
+  margin-top: 6px;
+}
+
+
+.role-admin {
+  color: green;   /* admin in green */
+}
+
+.role-user {
+  color: blue;    /* user in blue */
+}
+
+#nodeMenu {
+  position: absolute;
+  display: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 9999;   /* <-- bring it forward */
+}
+
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; }
+#controls { margin-bottom: 10px; }
+
+#mainContainer {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+#mynetwork { 
+    flex: 1;
+    height: 100%; 
+    border: 1px solid lightgray;
+    min-width: 0; /* allows it to shrink properly in flex layout */
+}
+
+#mapPanel {
+    position: absolute;
+    top: 50%;
+    right: 30%; /* width of your rightPanel */
+    width: 30%;
+    height: 50%;
+    background: white;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    padding: 8px;
+    box-sizing: border-box;
+    z-index: 999;  /* sits above the tree */
+    flex-direction: column;
+
+    /* Animation setup */ 
+    opacity: 0; 
+    transform: translateX(20px); /* start slightly off-screen */ 
+    pointer-events: none; /* prevent interaction when hidden */
+    transition: 
+      opacity 0.25s ease-out, 
+      transform 0.25s ease-out;
+}
+#mapPanel.visible {
+    opacity: 1;
+    transform: translateX(0);   /* slide into place */
+    pointer-events: auto; /* allow interaction when visible */
+}
+
+
+#mapContainer {
+    width: 100%;
+    height: 80%;
+    border: 1px solid #aaa;
+}
+
+#mapQueryText {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #444;
+}
+
+  #rightPanel {
+    width: 30%;
+    height: 100%;
+    background: rgba(255,255,255,0.95);
+    border-left: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 15px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .toggleItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .contextDisplay {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    background: rgba(240,240,240,0.5);
+    border-radius: 4px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .contextDisplay img {
+    max-width: 100%;
+    height: auto;
+    margin: 5px 0;
+    border-radius: 3px;
+  }
+  /* Modal styles */
+  #bioModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+  #bioModal.active {
+    display: flex;
+  }
+  .bioModalContent {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .bioModalHeader {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  .bioFormGroup {
+    margin-bottom: 15px;
+  }
+  .bioFormGroup label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+  }
+  .bioFormGroup input,
+  .bioFormGroup textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+  .bioFormGroup textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+  .bioModalButtons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .bioModalButtons button {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .bioModalButtons .btnSave {
+    background: #4CAF50;
+    color: white;
+  }
+  .bioModalButtons .btnSave:hover {
+    background: #45a049;
+  }
+  .bioModalButtons .btnCancel {
+    background: #ddd;
+    color: #333;
+  }
+  .bioModalButtons .btnCancel:hover {
+    background: #bbb;
+  }
+
+#attachmentsSection {
+  flex: 0 0 100px;        /* reserve more vertical space */
+  max-height: 100px;      /* cap the height */
+  overflow-y: auto;       /* enable scrolling if content exceeds height */
+  border-top: 1px solid #ccc;
+  padding: 8px;
+  background-color: #f9f9f9;
+}
+
+#attachmentsSection .panelSectionTitle {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#attachmentsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#attachmentsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+#attachmentsList button {
+  margin-left: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.toggleContainer {
+  display: flex;          /* put children side by side */
+  gap: 20px;              /* space between toggles */
+  align-items: center;    /* vertical alignment */
+}
+
+.toggleItem {
+  display: flex;
+  align-items: center;
+}
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.star-btn.active {
+  color: gold;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between title and search box */
+}
+.panelSection {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+.panelSectionTitle {
+  padding-top: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap; /* prevents wrapping */
+}
+
+.searchContainer {
+  flex: 1; /* search box expands to fill remaining space */
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* space between search boxes and suggestions */
+}
+
+.inputGroup {
+  display: flex;
+  position: relative; /* for suggestions dropdown */
+  flex-direction: column; /* stack inputs vertically */
+  gap: 3px; /* space between the two inputs */
+}
+
+#searchBox,
+#searchBoxLocation {
+  width: 100%;
+  padding: 3px;
+  height: 20px;            /* force identical height */
+  font-size: 12px;         /* force identical font */
+  border: 1px solid #ccc;  /* ensure same border */
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.configureSection {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+.configureContainer {
+  flex: 1; /* search box expands to fill remaining space */
+}
+.configureGroup {
+  display: flex;
+  flex-direction: row; 
+  flex-wrap: nowrap; /* keep inputs on the same line */
+  gap: 10px; /* space between the two inputs */
+  align-items: center;
+  width: 100%;
+}
+
+#rootBox,
+#maxGenBox {
+  padding: 6px 8px;
+  height: 20px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;   /* more rounded corners */
+  box-sizing: border-box;
+  outline: none;
+}
+
+#rootBox {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#maxGenBox {
+  flex: 0 0 120px;
+  width: 120px;
+  text-align: center;
+}
+
+#suggestions {
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  position: absolute;
+  width: 100%;
+  top: 100%;
+  left: 0;
+  z-index: 10000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.clusterHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clusterDescription {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+  flex: 1; /* allows description to take remaining space */
+}
+
+/* Align toggles with the description's left edge */
+.toggleContainer {
+  display: flex;
+  gap: 20px;
+  margin-left: calc(70px + 12px); 
+  /* 18px = approximate width of title text area
+     12px = gap between title and description */
+}
+
+/* Header row: title left, button right */
+.loginHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.loginLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#loginButton {
+  padding: 2px 30px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+#userRoleText {
+  margin-left: 8px;
+  font-weight: bold;
+  font-size: 13px;      /* slightly smaller than title */
+  line-height: 1.0;     /* aligns baseline with title */
+  position: relative;
+  top: 2px;               /* reset the manual nudge */
+}
+
+.loginInputs input {
+  flex: 1;                 /* makes them equal width */
+  padding: 6px;
+  height: 20px;
+  box-sizing: border-box;
+  font-size: 12px;         /* force identical font */
+  border: 1px solid #ccc;  /* ensure same border */
+  border-radius: 8px;   /* more rounded corners */
+  box-sizing: border-box;
+  outline: none;
+}
+
+.migration-label {
+/*    background: white;
+    border: 1px solid #333;
+    border-radius: 4px; */
+    padding: 4px 8px;
+    min-width: 120px;      /* controls width */
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.2;
+    box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    white-space: nowrap;   /* prevents wrapping */
+}
+
+#ErrorBox {
+    position: fixed;
+    top: 0;                /* Keep it at the top */
+    left: 0;
+    width: 100%;
+    background: #cc0000;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    z-index: 9999;
+    transform: translateY(-100%);  /* Start hidden above the viewport */
+    transition: transform 0.4s ease; /* Transition effect for sliding down */
+}
+
+#ErrorBox.show {
+    transform: translateY(0);       /* Slide into view */
+}
+
+.nodeOptionsMenu {
+    position: absolute;
+    display: none;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    z-index: 1000;
+}
+
+.nodeOptionsMenu div {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.nodeOptionsMenu div:hover {
+    background: #f0f0f0;
+}

@@ -1,0 +1,1058 @@
+{
+  "1600-1649": [
+    {
+      "label": "1600",
+      "start": null,
+      "end": null,
+      "sitelinks": 164,
+      "country": null
+    },
+    {
+      "label": "Thirty Years' War",
+      "start": "1618-01-01T00:00:00Z",
+      "end": "1648-01-01T00:00:00Z",
+      "sitelinks": 132,
+      "country": "Holy Roman Empire"
+    },
+    {
+      "label": "English Civil War",
+      "start": "1642-01-01T00:00:00Z",
+      "end": "1651-09-03T00:00:00Z",
+      "sitelinks": 97,
+      "country": null
+    },
+    {
+      "label": "English Civil War",
+      "start": "1642-01-01T00:00:00Z",
+      "end": "1651-09-03T00:00:00Z",
+      "sitelinks": 97,
+      "country": null
+    },
+    {
+      "label": "Peace of Westphalia",
+      "start": null,
+      "end": null,
+      "sitelinks": 81,
+      "country": null
+    },
+    {
+      "label": "Gunpowder Plot",
+      "start": null,
+      "end": null,
+      "sitelinks": 56,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Gunpowder Plot",
+      "start": null,
+      "end": null,
+      "sitelinks": 56,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Swedish Empire",
+      "start": "1611-01-01T00:00:00Z",
+      "end": "1721-01-01T00:00:00Z",
+      "sitelinks": 51,
+      "country": null
+    },
+    {
+      "label": "Battle of White Mountain",
+      "start": null,
+      "end": null,
+      "sitelinks": 49,
+      "country": "Kingdom of Bohemia"
+    },
+    {
+      "label": "Battle of Sekigahara",
+      "start": null,
+      "end": null,
+      "sitelinks": 47,
+      "country": "Japan"
+    },
+    {
+      "label": "American Indian Wars",
+      "start": "1609-01-01T00:00:00Z",
+      "end": "1924-01-01T00:00:00Z",
+      "sitelinks": 47,
+      "country": null
+    },
+    {
+      "label": "Fronde",
+      "start": "1648-01-01T00:00:00Z",
+      "end": "1653-01-01T00:00:00Z",
+      "sitelinks": 44,
+      "country": "Kingdom of France"
+    },
+    {
+      "label": "Khmelnytsky Uprising",
+      "start": "1648-01-01T00:00:00Z",
+      "end": "1657-01-01T00:00:00Z",
+      "sitelinks": 40,
+      "country": null
+    },
+    {
+      "label": "jubilee",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "jubilee",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "Polish–Muscovite War",
+      "start": "1609-01-01T00:00:00Z",
+      "end": "1618-01-01T00:00:00Z",
+      "sitelinks": 37,
+      "country": "Poland"
+    },
+    {
+      "label": "Polish–Muscovite War",
+      "start": "1605-01-01T00:00:00Z",
+      "end": "1618-01-01T00:00:00Z",
+      "sitelinks": 37,
+      "country": "Poland"
+    },
+    {
+      "label": "Polish–Muscovite War",
+      "start": "1609-01-01T00:00:00Z",
+      "end": "1618-01-01T00:00:00Z",
+      "sitelinks": 37,
+      "country": "Poland"
+    },
+    {
+      "label": "Polish–Muscovite War",
+      "start": "1605-01-01T00:00:00Z",
+      "end": "1618-01-01T00:00:00Z",
+      "sitelinks": 37,
+      "country": "Poland"
+    },
+    {
+      "label": "Battle of Lützen",
+      "start": null,
+      "end": null,
+      "sitelinks": 37,
+      "country": "Germany"
+    },
+    {
+      "label": "Shimabara Rebellion",
+      "start": "1637-12-11T00:00:00Z",
+      "end": "1638-04-12T00:00:00Z",
+      "sitelinks": 36,
+      "country": "Japan"
+    },
+    {
+      "label": "Cretan War of 1645-1669",
+      "start": "1645-06-23T00:00:00Z",
+      "end": "1669-01-01T00:00:00Z",
+      "sitelinks": 36,
+      "country": "Republic of Venice"
+    },
+    {
+      "label": "Cretan War of 1645-1669",
+      "start": "1645-06-23T00:00:00Z",
+      "end": "1669-01-01T00:00:00Z",
+      "sitelinks": 36,
+      "country": "Ottoman Empire"
+    },
+    {
+      "label": "Dutch Golden Age painting",
+      "start": "1600-01-01T00:00:00Z",
+      "end": "1699-01-01T00:00:00Z",
+      "sitelinks": 35,
+      "country": "Dutch Republic"
+    },
+    {
+      "label": "Kalmar War",
+      "start": "1611-01-01T00:00:00Z",
+      "end": "1613-01-01T00:00:00Z",
+      "sitelinks": 34,
+      "country": null
+    },
+    {
+      "label": "Treaty of Stolbovo",
+      "start": null,
+      "end": null,
+      "sitelinks": 34,
+      "country": null
+    },
+    {
+      "label": "Battle of Rocroi",
+      "start": null,
+      "end": null,
+      "sitelinks": 33,
+      "country": "France"
+    },
+    {
+      "label": "Portuguese Restoration War",
+      "start": "1640-12-01T00:00:00Z",
+      "end": "1668-02-13T00:00:00Z",
+      "sitelinks": 33,
+      "country": null
+    },
+    {
+      "label": "Portuguese Restoration War",
+      "start": "1640-12-01T00:00:00Z",
+      "end": "1668-02-13T00:00:00Z",
+      "sitelinks": 33,
+      "country": null
+    },
+    {
+      "label": "Siege of Osaka",
+      "start": "1614-11-08T00:00:00Z",
+      "end": "1615-06-01T00:00:00Z",
+      "sitelinks": 32,
+      "country": "Japan"
+    },
+    {
+      "label": "Battle of Breitenfeld",
+      "start": null,
+      "end": null,
+      "sitelinks": 32,
+      "country": "Germany"
+    },
+    {
+      "label": "Wars of the Three Kingdoms",
+      "start": "1638-01-01T00:00:00Z",
+      "end": "1651-01-01T00:00:00Z",
+      "sitelinks": 32,
+      "country": null
+    },
+    {
+      "label": "enclosure",
+      "start": "1604-01-01T00:00:00Z",
+      "end": null,
+      "sitelinks": 31,
+      "country": "United Kingdom"
+    },
+    {
+      "label": "Peace of Prague",
+      "start": null,
+      "end": null,
+      "sitelinks": 31,
+      "country": null
+    },
+    {
+      "label": "San Ignacio Miní",
+      "start": "1610-01-01T00:00:00Z",
+      "end": null,
+      "sitelinks": 30,
+      "country": "Argentina"
+    },
+    {
+      "label": "Franco-Spanish War",
+      "start": "1635-05-19T00:00:00Z",
+      "end": "1659-11-07T00:00:00Z",
+      "sitelinks": 30,
+      "country": null
+    },
+    {
+      "label": "Baroque painting",
+      "start": "1600-01-01T00:00:00Z",
+      "end": "1800-01-01T00:00:00Z",
+      "sitelinks": 29,
+      "country": null
+    },
+    {
+      "label": "Maunder Minimum",
+      "start": "1645-01-01T00:00:00Z",
+      "end": "1715-01-01T00:00:00Z",
+      "sitelinks": 29,
+      "country": null
+    },
+    {
+      "label": "Ingrian War",
+      "start": "1610-01-01T00:00:00Z",
+      "end": "1617-01-01T00:00:00Z",
+      "sitelinks": 29,
+      "country": null
+    },
+    {
+      "label": "Battle of Naseby",
+      "start": null,
+      "end": null,
+      "sitelinks": 28,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Peace of Zsitvatorok",
+      "start": null,
+      "end": null,
+      "sitelinks": 28,
+      "country": null
+    },
+    {
+      "label": "Truce of Altmark",
+      "start": null,
+      "end": null,
+      "sitelinks": 28,
+      "country": null
+    },
+    {
+      "label": "Treaty of Zuhab",
+      "start": null,
+      "end": null,
+      "sitelinks": 28,
+      "country": null
+    },
+    {
+      "label": "Beaver Wars",
+      "start": "1609-07-01T00:00:00Z",
+      "end": "1701-08-04T00:00:00Z",
+      "sitelinks": 27,
+      "country": "Canada"
+    },
+    {
+      "label": "Indian massacre of 1622",
+      "start": null,
+      "end": null,
+      "sitelinks": 27,
+      "country": "United States"
+    },
+    {
+      "label": "Beaver Wars",
+      "start": "1609-07-01T00:00:00Z",
+      "end": "1701-08-04T00:00:00Z",
+      "sitelinks": 27,
+      "country": "United States"
+    },
+    {
+      "label": "Dutch–Portuguese War",
+      "start": "1601-01-01T00:00:00Z",
+      "end": "1661-01-01T00:00:00Z",
+      "sitelinks": 27,
+      "country": null
+    },
+    {
+      "label": "Dutch–Portuguese War",
+      "start": "1601-01-01T00:00:00Z",
+      "end": "1661-01-01T00:00:00Z",
+      "sitelinks": 27,
+      "country": null
+    },
+    {
+      "label": "Torstenson War",
+      "start": "1643-01-01T00:00:00Z",
+      "end": "1645-01-01T00:00:00Z",
+      "sitelinks": 27,
+      "country": null
+    },
+    {
+      "label": "Battle of Nördlingen",
+      "start": "1634-09-05T00:00:00Z",
+      "end": "1634-09-06T00:00:00Z",
+      "sitelinks": 26,
+      "country": "Germany"
+    }
+  ],
+  "1650-1699": [
+    {
+      "label": "Classicism",
+      "start": "1660-01-01T00:00:00Z",
+      "end": "1725-01-01T00:00:00Z",
+      "sitelinks": 84,
+      "country": null
+    },
+    {
+      "label": "Great Fire of London",
+      "start": "1666-09-02T00:00:00Z",
+      "end": "1666-09-06T00:00:00Z",
+      "sitelinks": 70,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Battle of Vienna",
+      "start": null,
+      "end": null,
+      "sitelinks": 65,
+      "country": "Habsburg monarchy"
+    },
+    {
+      "label": "Glorious Revolution",
+      "start": "1688-01-01T00:00:00Z",
+      "end": "1689-01-01T00:00:00Z",
+      "sitelinks": 65,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Glorious Revolution",
+      "start": "1688-01-01T00:00:00Z",
+      "end": "1689-01-01T00:00:00Z",
+      "sitelinks": 65,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Nine Years' War",
+      "start": "1688-09-01T00:00:00Z",
+      "end": "1697-09-01T00:00:00Z",
+      "sitelinks": 54,
+      "country": null
+    },
+    {
+      "label": "Jacobitism",
+      "start": "1688-01-01T00:00:00Z",
+      "end": "1807-01-01T00:00:00Z",
+      "sitelinks": 53,
+      "country": "Kingdom of Great Britain"
+    },
+    {
+      "label": "Jacobitism",
+      "start": "1688-01-01T00:00:00Z",
+      "end": "1807-01-01T00:00:00Z",
+      "sitelinks": 53,
+      "country": "Kingdom of Ireland"
+    },
+    {
+      "label": "Salem Witch Trials",
+      "start": "1692-02-01T00:00:00Z",
+      "end": "1693-05-01T00:00:00Z",
+      "sitelinks": 52,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Great Turkish War",
+      "start": "1683-01-01T00:00:00Z",
+      "end": "1699-01-01T00:00:00Z",
+      "sitelinks": 52,
+      "country": null
+    },
+    {
+      "label": "treaty of Karlowitz",
+      "start": null,
+      "end": null,
+      "sitelinks": 52,
+      "country": null
+    },
+    {
+      "label": "Bill of Rights 1689",
+      "start": null,
+      "end": null,
+      "sitelinks": 50,
+      "country": "United Kingdom"
+    },
+    {
+      "label": "Anglo-Dutch Wars",
+      "start": "1652-01-01T00:00:00Z",
+      "end": "1784-01-01T00:00:00Z",
+      "sitelinks": 49,
+      "country": null
+    },
+    {
+      "label": "Franco-Dutch War",
+      "start": "1672-01-01T00:00:00Z",
+      "end": "1678-01-01T00:00:00Z",
+      "sitelinks": 45,
+      "country": null
+    },
+    {
+      "label": "Treaty of the Pyrenees",
+      "start": null,
+      "end": null,
+      "sitelinks": 41,
+      "country": "Spain"
+    },
+    {
+      "label": "Treaty of the Pyrenees",
+      "start": null,
+      "end": null,
+      "sitelinks": 41,
+      "country": "Spain"
+    },
+    {
+      "label": "Treaty of the Pyrenees",
+      "start": null,
+      "end": null,
+      "sitelinks": 41,
+      "country": "France"
+    },
+    {
+      "label": "Treaty of the Pyrenees",
+      "start": null,
+      "end": null,
+      "sitelinks": 41,
+      "country": "France"
+    },
+    {
+      "label": "Treaty of Pereyaslav",
+      "start": null,
+      "end": null,
+      "sitelinks": 41,
+      "country": "Ukraine"
+    },
+    {
+      "label": "Second Northern War",
+      "start": "1655-01-01T00:00:00Z",
+      "end": "1660-01-01T00:00:00Z",
+      "sitelinks": 41,
+      "country": null
+    },
+    {
+      "label": "Great Plague of London",
+      "start": "1665-01-01T00:00:00Z",
+      "end": "1666-01-01T00:00:00Z",
+      "sitelinks": 40,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Great Plague of London",
+      "start": "1665-01-01T00:00:00Z",
+      "end": "1666-01-01T00:00:00Z",
+      "sitelinks": 40,
+      "country": "Kingdom of England"
+    },
+    {
+      "label": "Treaty of Roskilde",
+      "start": null,
+      "end": null,
+      "sitelinks": 40,
+      "country": null
+    },
+    {
+      "label": "Battle of the Boyne",
+      "start": null,
+      "end": null,
+      "sitelinks": 39,
+      "country": "Kingdom of Ireland"
+    },
+    {
+      "label": "Russo-Polish War",
+      "start": "1654-01-01T00:00:00Z",
+      "end": "1667-01-01T00:00:00Z",
+      "sitelinks": 39,
+      "country": null
+    },
+    {
+      "label": "Treaty of Nerchinsk",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": "Qing dynasty"
+    },
+    {
+      "label": "Treaty of Nerchinsk",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": "Tsardom of Russia"
+    },
+    {
+      "label": "Third Russo-Turkish War",
+      "start": "1686-01-01T00:00:00Z",
+      "end": "1700-01-01T00:00:00Z",
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "jubilee",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "jubilee",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "Second Anglo-Dutch War",
+      "start": "1665-03-04T00:00:00Z",
+      "end": "1667-07-31T00:00:00Z",
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "War of Devolution",
+      "start": "1667-05-24T00:00:00Z",
+      "end": "1668-05-02T00:00:00Z",
+      "sitelinks": 37,
+      "country": "Spain"
+    },
+    {
+      "label": "Second Russo-Turkish War",
+      "start": "1676-01-01T00:00:00Z",
+      "end": "1681-01-01T00:00:00Z",
+      "sitelinks": 37,
+      "country": null
+    },
+    {
+      "label": "Treaty of Oliva",
+      "start": null,
+      "end": null,
+      "sitelinks": 37,
+      "country": null
+    },
+    {
+      "label": "Deluge",
+      "start": "1655-01-01T00:00:00Z",
+      "end": "1660-01-01T00:00:00Z",
+      "sitelinks": 36,
+      "country": null
+    },
+    {
+      "label": "First Anglo-Dutch War",
+      "start": "1652-01-01T00:00:00Z",
+      "end": "1654-01-01T00:00:00Z",
+      "sitelinks": 36,
+      "country": null
+    },
+    {
+      "label": "Magdeburg hemispheres",
+      "start": null,
+      "end": null,
+      "sitelinks": 36,
+      "country": null
+    },
+    {
+      "label": "Battle of Zenta",
+      "start": null,
+      "end": null,
+      "sitelinks": 35,
+      "country": "Kingdom of Hungary"
+    },
+    {
+      "label": "Battle of Mohács",
+      "start": null,
+      "end": null,
+      "sitelinks": 34,
+      "country": "Hungary"
+    },
+    {
+      "label": "Treaty of Ryswick",
+      "start": null,
+      "end": null,
+      "sitelinks": 34,
+      "country": null
+    },
+    {
+      "label": "treaty of Aix-la-Chapelle",
+      "start": null,
+      "end": null,
+      "sitelinks": 33,
+      "country": null
+    },
+    {
+      "label": "Three Hundred and Thirty Five Years' War",
+      "start": "1651-03-30T00:00:00Z",
+      "end": "1986-04-17T00:00:00Z",
+      "sitelinks": 33,
+      "country": null
+    },
+    {
+      "label": "Three Hundred and Thirty Five Years' War",
+      "start": "1651-03-30T00:00:00Z",
+      "end": "1651-06-01T00:00:00Z",
+      "sitelinks": 33,
+      "country": null
+    },
+    {
+      "label": "Battle of Saint Gotthard",
+      "start": null,
+      "end": null,
+      "sitelinks": 30,
+      "country": "Hungary"
+    },
+    {
+      "label": "King Philip's War",
+      "start": "1675-06-20T00:00:00Z",
+      "end": "1678-04-12T00:00:00Z",
+      "sitelinks": 30,
+      "country": null
+    },
+    {
+      "label": "Third Anglo-Dutch War",
+      "start": "1672-01-01T00:00:00Z",
+      "end": "1674-01-01T00:00:00Z",
+      "sitelinks": 30,
+      "country": null
+    },
+    {
+      "label": "Azov campaigns",
+      "start": "1695-01-01T00:00:00Z",
+      "end": "1696-01-01T00:00:00Z",
+      "sitelinks": 29,
+      "country": null
+    },
+    {
+      "label": "Treaty of Copenhagen",
+      "start": null,
+      "end": null,
+      "sitelinks": 28,
+      "country": "Denmark"
+    },
+    {
+      "label": "Polish–Ottoman War of 1672–1676",
+      "start": "1672-01-01T00:00:00Z",
+      "end": "1676-01-01T00:00:00Z",
+      "sitelinks": 27,
+      "country": null
+    },
+    {
+      "label": "Peace of Vasvár",
+      "start": null,
+      "end": null,
+      "sitelinks": 27,
+      "country": null
+    }
+  ],
+  "1950-1950": [
+    {
+      "label": "Korean War",
+      "start": "1950-06-25T00:00:00Z",
+      "end": "1953-07-27T00:00:00Z",
+      "sitelinks": 140,
+      "country": "North Korea"
+    },
+    {
+      "label": "Korean War",
+      "start": "1950-06-25T00:00:00Z",
+      "end": "1953-07-27T00:00:00Z",
+      "sitelinks": 140,
+      "country": "South Korea"
+    },
+    {
+      "label": "1950 FIFA World Cup",
+      "start": "1950-06-24T00:00:00Z",
+      "end": "1950-07-16T00:00:00Z",
+      "sitelinks": 85,
+      "country": "Brazil"
+    },
+    {
+      "label": "European Convention on Human Rights",
+      "start": null,
+      "end": null,
+      "sitelinks": 73,
+      "country": null
+    },
+    {
+      "label": "European Convention on Human Rights",
+      "start": null,
+      "end": null,
+      "sitelinks": 73,
+      "country": null
+    },
+    {
+      "label": "Constitution of India",
+      "start": null,
+      "end": null,
+      "sitelinks": 64,
+      "country": "India"
+    },
+    {
+      "label": "McCarthyism",
+      "start": "1950-01-01T00:00:00Z",
+      "end": "1954-01-01T00:00:00Z",
+      "sitelinks": 56,
+      "country": "United States"
+    },
+    {
+      "label": "McCarthyism",
+      "start": "1950-01-01T00:00:00Z",
+      "end": "1954-01-01T00:00:00Z",
+      "sitelinks": 56,
+      "country": "United States"
+    },
+    {
+      "label": "Republic Day",
+      "start": "1950-01-01T00:00:00Z",
+      "end": null,
+      "sitelinks": 51,
+      "country": "India"
+    },
+    {
+      "label": "Republic Day",
+      "start": "1950-01-01T00:00:00Z",
+      "end": null,
+      "sitelinks": 51,
+      "country": "India"
+    },
+    {
+      "label": "Schuman Declaration",
+      "start": null,
+      "end": null,
+      "sitelinks": 50,
+      "country": null
+    },
+    {
+      "label": "1950 Formula One season",
+      "start": "1950-05-13T00:00:00Z",
+      "end": "1950-09-03T00:00:00Z",
+      "sitelinks": 47,
+      "country": null
+    },
+    {
+      "label": "1950 Formula One season",
+      "start": "1950-05-13T00:00:00Z",
+      "end": "1950-09-03T00:00:00Z",
+      "sitelinks": 47,
+      "country": null
+    },
+    {
+      "label": "Uruguay v Brazil 1950",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": "Brazil"
+    },
+    {
+      "label": "jubilee",
+      "start": null,
+      "end": null,
+      "sitelinks": 38,
+      "country": null
+    },
+    {
+      "label": "Battle of Inchon",
+      "start": "1950-09-15T00:00:00Z",
+      "end": "1950-09-19T00:00:00Z",
+      "sitelinks": 34,
+      "country": "First Republic of South Korea"
+    },
+    {
+      "label": "22nd Academy Awards",
+      "start": null,
+      "end": null,
+      "sitelinks": 31,
+      "country": "United States"
+    },
+    {
+      "label": "Peace Prize of the German Publishers' and Booksellers' Association",
+      "start": "1950-01-01T00:00:00Z",
+      "end": null,
+      "sitelinks": 29,
+      "country": "Germany"
+    },
+    {
+      "label": "1950 FIBA World Championship",
+      "start": "1950-10-22T00:00:00Z",
+      "end": "1950-11-03T00:00:00Z",
+      "sitelinks": 29,
+      "country": "Argentina"
+    },
+    {
+      "label": "1950 FIFA World Cup qualification",
+      "start": "1949-01-01T00:00:00Z",
+      "end": "1950-01-01T00:00:00Z",
+      "sitelinks": 28,
+      "country": "Brazil"
+    },
+    {
+      "label": "1950 FIFA World Cup qualification",
+      "start": "1949-01-01T00:00:00Z",
+      "end": "1950-01-01T00:00:00Z",
+      "sitelinks": 28,
+      "country": "Brazil"
+    },
+    {
+      "label": "1950–51 La Liga",
+      "start": "1950-09-10T00:00:00Z",
+      "end": "1951-04-22T00:00:00Z",
+      "sitelinks": 27,
+      "country": "Spain"
+    },
+    {
+      "label": "1950 British Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 27,
+      "country": "United Kingdom"
+    },
+    {
+      "label": "1950 Monaco Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 27,
+      "country": "Monaco"
+    },
+    {
+      "label": "1950 Monaco Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 27,
+      "country": "Monaco"
+    },
+    {
+      "label": "Annexation of Tibet by the People's Republic of China",
+      "start": null,
+      "end": null,
+      "sitelinks": 26,
+      "country": null
+    },
+    {
+      "label": "1950 Italian Grand Prix",
+      "start": "1950-09-03T00:00:00Z",
+      "end": "1950-09-03T00:00:00Z",
+      "sitelinks": 25,
+      "country": "Italy"
+    },
+    {
+      "label": "Battle of Chamdo",
+      "start": "1950-10-06T00:00:00Z",
+      "end": "1951-05-01T00:00:00Z",
+      "sitelinks": 25,
+      "country": null
+    },
+    {
+      "label": "1950–51 Serie A",
+      "start": "1950-09-10T00:00:00Z",
+      "end": "1951-06-17T00:00:00Z",
+      "sitelinks": 24,
+      "country": "Italy"
+    },
+    {
+      "label": "1950–51 NBA season",
+      "start": "1950-10-31T00:00:00Z",
+      "end": "1951-04-21T00:00:00Z",
+      "sitelinks": 23,
+      "country": "United States"
+    },
+    {
+      "label": "1950 European Athletics Championships",
+      "start": "1950-08-23T00:00:00Z",
+      "end": "1950-08-27T00:00:00Z",
+      "sitelinks": 23,
+      "country": "Belgium"
+    },
+    {
+      "label": "1950 Swiss Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 23,
+      "country": "Switzerland"
+    },
+    {
+      "label": "1950 French Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 23,
+      "country": "France"
+    },
+    {
+      "label": "1950 Belgian Grand Prix",
+      "start": null,
+      "end": null,
+      "sitelinks": 23,
+      "country": "Belgium"
+    },
+    {
+      "label": "1950 Indianapolis 500",
+      "start": "1950-05-30T00:00:00Z",
+      "end": "1950-05-30T00:00:00Z",
+      "sitelinks": 22,
+      "country": "United States"
+    },
+    {
+      "label": "9th Chess Olympiad",
+      "start": "1950-08-20T00:00:00Z",
+      "end": "1950-09-11T00:00:00Z",
+      "sitelinks": 22,
+      "country": "Croatia"
+    },
+    {
+      "label": "EuroBasket 1950 Women",
+      "start": "1950-05-14T00:00:00Z",
+      "end": "1950-05-20T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Hungary"
+    },
+    {
+      "label": "EuroBasket 1950 Women",
+      "start": "1950-05-14T00:00:00Z",
+      "end": "1950-05-20T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Hungary"
+    },
+    {
+      "label": "1950 Tour de France",
+      "start": "1950-07-13T00:00:00Z",
+      "end": "1950-08-07T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Belgium"
+    },
+    {
+      "label": "1950 Tour de France",
+      "start": "1950-07-13T00:00:00Z",
+      "end": "1950-08-07T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Luxembourg"
+    },
+    {
+      "label": "1950 European Aquatics Championships",
+      "start": "1950-08-20T00:00:00Z",
+      "end": "1950-08-27T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Austria"
+    },
+    {
+      "label": "1950 Tour de France",
+      "start": "1950-07-13T00:00:00Z",
+      "end": "1950-08-07T00:00:00Z",
+      "sitelinks": 20,
+      "country": "France"
+    },
+    {
+      "label": "1950 United Kingdom general election",
+      "start": null,
+      "end": null,
+      "sitelinks": 20,
+      "country": "United Kingdom"
+    },
+    {
+      "label": "1950 Tour de France",
+      "start": "1950-07-13T00:00:00Z",
+      "end": "1950-08-07T00:00:00Z",
+      "sitelinks": 20,
+      "country": "Monaco"
+    },
+    {
+      "label": "Battle of Changjin Reservoir",
+      "start": "1950-11-27T00:00:00Z",
+      "end": "1950-12-13T00:00:00Z",
+      "sitelinks": 20,
+      "country": "North Korea"
+    },
+    {
+      "label": "No Gun Ri Massacre",
+      "start": "1950-07-26T00:00:00Z",
+      "end": "1950-07-29T00:00:00Z",
+      "sitelinks": 20,
+      "country": "South Korea"
+    },
+    {
+      "label": "1950 Men's European Volleyball Championship",
+      "start": "1950-10-14T00:00:00Z",
+      "end": "1950-10-22T00:00:00Z",
+      "sitelinks": 19,
+      "country": "Bulgaria"
+    },
+    {
+      "label": "FIS Alpine World Ski Championships 1950",
+      "start": "1950-02-13T00:00:00Z",
+      "end": "1950-02-18T00:00:00Z",
+      "sitelinks": 18,
+      "country": "United States"
+    },
+    {
+      "label": "1950 Assam–Tibet earthquake",
+      "start": null,
+      "end": null,
+      "sitelinks": 18,
+      "country": "People's Republic of China"
+    },
+    {
+      "label": "1950 British Empire Games",
+      "start": "1950-02-04T00:00:00Z",
+      "end": "1950-02-11T00:00:00Z",
+      "sitelinks": 18,
+      "country": "New Zealand"
+    }
+  ]
+}

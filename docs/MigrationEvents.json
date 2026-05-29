@@ -1,0 +1,762 @@
+[
+  {
+    "label": "Early English Puritan migration to Massachusetts Bay Colony",
+    "start_year": 1620,
+    "end_year": 1640,
+    "origin": ["England", "United Kingdom"],
+    "destination": ["Massachusetts", "Massachusetts Bay Colony"],
+    "type": "emigration",
+    "trigger": "Religious persecution and desire to establish Puritan communities",
+    "link": "https://en.wikipedia.org/wiki/Great_Migration_(Puritan)",
+    "sub_events": [
+      {
+        "label": "Religious tension under King James I and Charles I",
+        "start_year": 1603,
+        "end_year": 1640,
+        "origin": ["England", "United Kingdom"],
+        "destination": [],
+        "type": "religious",
+        "trigger": "Puritans faced restrictions and persecution in England",
+        "link": "https://en.wikipedia.org/wiki/Puritan"
+      }
+    ]
+  },
+  {
+    "label": "Dutch emigration to New Amsterdam / Hudson Valley, New York",
+    "start_year": 1624,
+    "end_year": 1664,
+    "origin": ["Netherlands"],
+    "destination": ["New Amsterdam", "New York", "New York Colony", "Hudson Valley"],
+    "type": "emigration",
+    "trigger": "Colonial expansion and trade opportunities under Dutch West India Company",
+    "link": "https://en.wikipedia.org/wiki/New_Amsterdam",
+    "sub_events": [
+      {
+        "label": "Establishment of New Amsterdam colony",
+        "start_year": 1624,
+        "end_year": 1625,
+        "origin": ["Netherlands"],
+        "destination": ["New Amsterdam", "New York", "New York Colony", "Hudson Valley"],
+        "type": "colonization",
+        "trigger": "Dutch commercial interests encouraged settlement",
+        "link": "https://en.wikipedia.org/wiki/Dutch_West_India_Company"
+      }
+    ]
+  },
+  {
+    "label": "Palatine Germans emigrate to New York / Pennsylvania (Poor Palatines)",
+    "start_year": 1709,
+    "end_year": 1710,
+    "origin": ["Germany"],
+    "destination": ["New York", "New York Colony", "Pennsylvania"],
+    "type": "emigration",
+    "trigger": "Devastation from repeated wars and a catastrophic winter that destroyed crops and livelihoods",
+    "link": "https://en.wikipedia.org/wiki/Palatines",
+    "sub_events": [
+      {
+        "label": "French invasions and devastation of the Palatinate",
+        "start_year": 1688,
+        "end_year": 1697,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "conflict",
+        "trigger": "Repeated invasions destroyed farmland",
+        "link": "https://en.wikipedia.org/wiki/Nine_Years%27_War"
+      },
+      {
+        "label": "War of the Spanish Succession affects Palatinate",
+        "start_year": 1701,
+        "end_year": 1714,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "conflict",
+        "trigger": "Battles and military action worsened civilian hardship",
+        "link": "https://en.wikipedia.org/wiki/War_of_the_Spanish_Succession"
+      },
+      {
+        "label": "Great Winter of 1708–1709",
+        "start_year": 1708,
+        "end_year": 1709,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "famine",
+        "trigger": "Severe cold destroyed crops and vineyards",
+        "link": "https://en.wikipedia.org/wiki/Great_Freeze_of_1709"
+      }
+    ]
+  },
+  {
+    "label": "Irish emigration during the Great Famine",
+    "start_year": 1845,
+    "end_year": 1855,
+    "origin": ["Ireland"],
+    "destination": ["New York", "Massachusetts", "Pennsylvania", "Other U.S. states"],
+    "type": "emigration",
+    "trigger": "Potato blight → crop failure → famine, starvation, economic collapse",
+    "link": "https://en.wikipedia.org/wiki/Great_Famine_(Ireland)",
+    "sub_events": [
+      {
+        "label": "Potato blight destroys staple crop",
+        "start_year": 1845,
+        "end_year": 1849,
+        "origin": ["Ireland"],
+        "destination": [],
+        "type": "famine",
+        "trigger": "Fungus-caused blight wiped out potato harvests",
+        "link": "https://en.wikipedia.org/wiki/Phytophthora_infestans"
+      },
+      {
+        "label": "Post-famine evictions and economic collapse",
+        "start_year": 1849,
+        "end_year": 1855,
+        "origin": ["Ireland"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Landlords evicted tenants; lack of economic opportunity forced emigration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "German emigration to United States (mid-19th century)",
+    "start_year": 1845,
+    "end_year": 1865,
+    "origin": ["Germany"],
+    "destination": ["Midwestern U.S.", "Northeast U.S."],
+    "type": "emigration",
+    "trigger": "Economic hardship, political unrest, land scarcity, failed 1848 revolutions",
+    "link": "https://en.wikipedia.org/wiki/German_American",
+    "sub_events": [
+      {
+        "label": "Failed 1848 Revolutions",
+        "start_year": 1848,
+        "end_year": 1849,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "political",
+        "trigger": "Political uprisings failed, prompting liberals and artisans to emigrate",
+        "link": "https://en.wikipedia.org/wiki/Revolutions_of_1848_in_the_German_states"
+      },
+      {
+        "label": "Agricultural distress and land scarcity",
+        "start_year": 1830,
+        "end_year": 1865,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Subdivision of farms and poor rural economy pushed migration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Scandinavian immigration (Norway, Sweden, Denmark) to Midwest and Northern U.S.",
+    "start_year": 1825,
+    "end_year": 1920,
+    "origin": ["Norway", "Sweden", "Denmark"],
+    "destination": ["Midwestern U.S.", "Northern U.S."],
+    "type": "emigration",
+    "trigger": "Economic hardship, population pressure, limited farmland, opportunity in U.S.",
+    "link": "https://en.wikipedia.org/wiki/Nordic_immigration_to_North_America",
+    "sub_events": [
+      {
+        "label": "Crop failures, rural poverty, and land scarcity",
+        "start_year": 1820,
+        "end_year": 1860,
+        "origin": ["Norway", "Sweden", "Denmark"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Poor farmland yields and limited rural opportunity encouraged emigration",
+        "link": ""
+      },
+      {
+        "label": "Religious and social pressures under state churches",
+        "start_year": 1840,
+        "end_year": 1900,
+        "origin": ["Norway", "Sweden", "Denmark"],
+        "destination": [],
+        "type": "social",
+        "trigger": "State church dominance and social conservatism drove dissenters to seek autonomy abroad",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Italian mass emigration to United States (Great Italian Diaspora)",
+    "start_year": 1880,
+    "end_year": 1914,
+    "origin": ["Italy"],
+    "destination": ["Northeastern U.S.", "Other U.S. states"],
+    "type": "emigration",
+    "trigger": "Poverty in southern and rural Italy, lack of economic opportunity, population pressure",
+    "link": "https://en.wikipedia.org/wiki/History_of_Italian_Americans",
+    "sub_events": [
+      {
+        "label": "Economic hardship and agricultural decline in Southern Italy and Sicily",
+        "start_year": 1861,
+        "end_year": 1914,
+        "origin": ["Italy"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Rural poverty, land shortage, competition from cheap imported agricultural goods",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Eastern European / Austro-Hungarian emigration to U.S. (late 19th – early 20th century)",
+    "start_year": 1880,
+    "end_year": 1920,
+    "origin": ["Austro-Hungary", "Hungary", "Slovakia", "Czech Republic", "Austria", "Russia", "Poland", "Ukraine"],
+    "destination": ["Major U.S. urban centers (East Coast, industrial cities)"],
+    "type": "emigration",
+    "trigger": "Religious and political persecution, economic distress, pogroms, lack of opportunity",
+    "link": "https://en.wikipedia.org/wiki/Austrian_Americans",
+    "sub_events": [
+      {
+        "label": "Pogroms and anti-Jewish violence in Russian Empire",
+        "start_year": 1881,
+        "end_year": 1905,
+        "origin": ["Russia", "Ukraine", "Belarus", "Poland"],
+        "destination": [],
+        "type": "persecution",
+        "trigger": "Violent persecution of Jews and other minorities forced many to flee",
+        "link": "https://en.wikipedia.org/wiki/Pale_of_Settlement#Emigration_to_America"
+      },
+      {
+        "label": "Economic hardship and land shortages in Austro-Hungarian Empire",
+        "start_year": 1880,
+        "end_year": 1920,
+        "origin": ["Austro-Hungary", "Hungary", "Slovakia", "Czech Republic", "Austria"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Farmers and workers sought better livelihoods abroad due to poor local prospects",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Internal migration: NYC / East Coast settlers moving to Western New York",
+    "start_year": 1790,
+    "end_year": 1820,
+    "origin": ["New York", "New York Colony"],
+    "destination": ["Western New York", "Erie Canal region", "Buffalo"],
+    "type": "internal migration",
+    "trigger": "Land availability, Erie Canal construction, expansion westward",
+    "link": "https://en.wikipedia.org/wiki/Erie_Canal",
+    "sub_events": [
+      {
+        "label": "Construction of Erie Canal opens western lands",
+        "start_year": 1817,
+        "end_year": 1825,
+        "origin": ["New York", "New York Colony"],
+        "destination": ["Western New York", "Erie Canal region", "Buffalo"],
+        "type": "infrastructure",
+        "trigger": "Canal construction provided transport route and economic incentive for settlers",
+        "link": "https://en.wikipedia.org/wiki/Erie_Canal"
+      }
+    ]
+  },
+  {
+    "label": "Puritan migration from Massachusetts to Connecticut",
+    "start_year": 1635,
+    "end_year": 1640,
+    "origin": ["Massachusetts", "Massachusetts Bay Colony"],
+    "destination": ["Connecticut", "Connecticut Colony"],
+    "type": "internal migration",
+    "trigger": "Religious and political disagreements within Puritan communities",
+    "link": "https://en.wikipedia.org/wiki/Connecticut_Colony",
+    "sub_events": [
+      {
+        "label": "Founding of Hartford and other Connecticut settlements",
+        "start_year": 1636,
+        "end_year": 1637,
+        "origin": ["Massachusetts", "Massachusetts Bay Colony"],
+        "destination": ["Connecticut", "Connecticut Colony"],
+        "type": "colonization",
+        "trigger": "Puritans moved to establish more autonomous communities",
+        "link": "https://en.wikipedia.org/wiki/Hartford,_Connecticut#History"
+      }
+    ]
+  },
+  {
+    "label": "Puritan migration from Massachusetts to Rhode Island",
+    "start_year": 1636,
+    "end_year": 1644,
+    "origin": ["Massachusetts", "Massachusetts Bay Colony"],
+    "destination": ["Rhode Island", "Rhode Island Colony", "Providence"],
+    "type": "internal migration",
+    "trigger": "Religious dissent and banishment of individuals like Roger Williams",
+    "link": "https://en.wikipedia.org/wiki/Rhode_Island",
+    "sub_events": [
+      {
+        "label": "Founding of Providence by Roger Williams",
+        "start_year": 1636,
+        "end_year": 1636,
+        "origin": ["Massachusetts", "Massachusetts Bay Colony"],
+        "destination": ["Providence", "Rhode Island", "Rhode Island Colony"],
+        "type": "colonization",
+        "trigger": "Religious freedom and separation from Massachusetts authorities",
+        "link": "https://en.wikipedia.org/wiki/Providence,_Rhode_Island#History"
+      }
+    ]
+  },
+  {
+    "label": "Loyalist migration to Canada after American Revolution",
+    "start_year": 1775,
+    "end_year": 1785,
+    "origin": ["United States", "Thirteen Colonies"],
+    "destination": ["Canada", "Ontario", "Nova Scotia", "Quebec"],
+    "type": "emigration",
+    "trigger": "American Revolution; Loyalists left due to political allegiance and confiscation of property",
+    "link": "https://en.wikipedia.org/wiki/Loyalists_in_the_American_Revolution",
+    "sub_events": [
+      {
+        "label": "American Revolution causes Loyalist displacement",
+        "start_year": 1775,
+        "end_year": 1783,
+        "origin": ["United States", "Thirteen Colonies"],
+        "destination": ["Canada", "Ontario", "Nova Scotia", "Quebec"],
+        "type": "conflict",
+        "trigger": "Loyalists faced persecution, property loss, and threats",
+        "link": "https://en.wikipedia.org/wiki/Loyalists_in_the_American_Revolution"
+      }
+    ]
+  },
+  {
+    "label": "Scots-Irish migration to Pennsylvania and Appalachia",
+    "start_year": 1717,
+    "end_year": 1775,
+    "origin": ["Scotland", "Ireland", "United Kingdom"],
+    "destination": ["Pennsylvania", "Appalachian regions", "Virginia", "North Carolina"],
+    "type": "emigration",
+    "trigger": "Religious persecution, economic hardship, land opportunities in America",
+    "link": "https://en.wikipedia.org/wiki/Scots-Irish_Americans",
+    "sub_events": [
+      {
+        "label": "Religious persecution and economic hardship in Ulster",
+        "start_year": 1689,
+        "end_year": 1717,
+        "origin": ["Ireland", "United Kingdom"],
+        "destination": [],
+        "type": "religious",
+        "trigger": "Protestant settlers faced economic difficulties and periodic violence",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Dutch emigration to Hudson Valley / New Jersey (post-New Amsterdam)",
+    "start_year": 1664,
+    "end_year": 1700,
+    "origin": ["Netherlands"],
+    "destination": ["Hudson Valley", "New York", "New Jersey", "New York Colony"],
+    "type": "emigration",
+    "trigger": "Dutch settlers remained after English takeover, seeking farmland and trade",
+    "link": "https://en.wikipedia.org/wiki/New_Netherland",
+    "sub_events": [
+      {
+        "label": "English takeover of New Amsterdam and renaming to New York",
+        "start_year": 1664,
+        "end_year": 1664,
+        "origin": ["Netherlands", "England", "United Kingdom"],
+        "destination": ["New York", "New York Colony", "Hudson Valley"],
+        "type": "political",
+        "trigger": "English seized control; Dutch settlers adapted to maintain livelihoods",
+        "link": "https://en.wikipedia.org/wiki/New_Amsterdam#English_takeover"
+      }
+    ]
+  },
+  {
+    "label": "German Palatine migration to New York and Pennsylvania",
+    "start_year": 1709,
+    "end_year": 1710,
+    "origin": ["Germany"],
+    "destination": ["New York", "New York Colony", "Pennsylvania"],
+    "type": "emigration",
+    "trigger": "War devastation and harsh winter in Palatinate region",
+    "link": "https://en.wikipedia.org/wiki/Palatines",
+    "sub_events": [
+      {
+        "label": "French invasions of Palatinate",
+        "start_year": 1688,
+        "end_year": 1697,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "conflict",
+        "trigger": "Repeated invasions destroyed farmland",
+        "link": "https://en.wikipedia.org/wiki/Nine_Years%27_War"
+      },
+      {
+        "label": "War of the Spanish Succession affects Palatinate",
+        "start_year": 1701,
+        "end_year": 1714,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "conflict",
+        "trigger": "Battles and military action worsened civilian hardship",
+        "link": "https://en.wikipedia.org/wiki/War_of_the_Spanish_Succession"
+      },
+      {
+        "label": "Great Winter of 1708–1709",
+        "start_year": 1708,
+        "end_year": 1709,
+        "origin": ["Germany"],
+        "destination": [],
+        "type": "famine",
+        "trigger": "Severe cold destroyed crops and vineyards",
+        "link": "https://en.wikipedia.org/wiki/Great_Freeze_of_1709"
+      }
+    ]
+  },
+  {
+    "label": "Irish emigration due to the Great Famine",
+    "start_year": 1845,
+    "end_year": 1855,
+    "origin": ["Ireland"],
+    "destination": ["New York", "Massachusetts", "Pennsylvania", "Other U.S. states"],
+    "type": "emigration",
+    "trigger": "Potato blight and subsequent famine forced mass emigration",
+    "link": "https://en.wikipedia.org/wiki/Great_Famine_(Ireland)",
+    "sub_events": [
+      {
+        "label": "Potato blight destroys staple crop",
+        "start_year": 1845,
+        "end_year": 1849,
+        "origin": ["Ireland"],
+        "destination": [],
+        "type": "famine",
+        "trigger": "Fungus-caused blight wiped out potato harvests",
+        "link": "https://en.wikipedia.org/wiki/Phytophthora_infestans"
+      },
+      {
+        "label": "Post-famine evictions and economic collapse",
+        "start_year": 1849,
+        "end_year": 1855,
+        "origin": ["Ireland"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Landlords evicted tenants; lack of economic opportunity forced emigration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Italian emigration to United States (Great Italian Diaspora)",
+    "start_year": 1880,
+    "end_year": 1914,
+    "origin": ["Italy"],
+    "destination": ["Northeastern U.S.", "Other U.S. states"],
+    "type": "emigration",
+    "trigger": "Poverty, overpopulation, and lack of economic opportunity in Southern Italy and Sicily",
+    "link": "https://en.wikipedia.org/wiki/History_of_Italian_Americans",
+    "sub_events": [
+      {
+        "label": "Economic hardship and agricultural decline in Southern Italy and Sicily",
+        "start_year": 1861,
+        "end_year": 1914,
+        "origin": ["Italy"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Rural poverty, land shortage, competition from cheap imported agricultural goods",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Scandinavian emigration to U.S. Midwest",
+    "start_year": 1825,
+    "end_year": 1920,
+    "origin": ["Norway", "Sweden", "Denmark"],
+    "destination": ["Midwestern U.S.", "Northern U.S."],
+    "type": "emigration",
+    "trigger": "Economic hardship, population pressure, limited farmland, and opportunity in America",
+    "link": "https://en.wikipedia.org/wiki/Nordic_immigration_to_North_America",
+    "sub_events": [
+      {
+        "label": "Crop failures, rural poverty, and land scarcity",
+        "start_year": 1820,
+        "end_year": 1860,
+        "origin": ["Norway", "Sweden", "Denmark"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Poor farmland yields and limited rural opportunity encouraged emigration",
+        "link": ""
+      },
+      {
+        "label": "Religious and social pressures under state churches",
+        "start_year": 1840,
+        "end_year": 1900,
+        "origin": ["Norway", "Sweden", "Denmark"],
+        "destination": [],
+        "type": "social",
+        "trigger": "State church dominance and social conservatism drove dissenters to seek autonomy abroad",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Eastern European emigration (Austro-Hungarian, Russian, Polish territories) to U.S.",
+    "start_year": 1880,
+    "end_year": 1920,
+    "origin": ["Austro-Hungary", "Hungary", "Slovakia", "Czech Republic", "Austria", "Russia", "Poland", "Ukraine"],
+    "destination": ["Major U.S. urban centers (East Coast, industrial cities)"],
+    "type": "emigration",
+    "trigger": "Religious persecution, pogroms, political instability, economic hardship",
+    "link": "https://en.wikipedia.org/wiki/Austrian_Americans",
+    "sub_events": [
+      {
+        "label": "Pogroms in Russian Empire",
+        "start_year": 1881,
+        "end_year": 1905,
+        "origin": ["Russia", "Ukraine", "Belarus", "Poland"],
+        "destination": [],
+        "type": "persecution",
+        "trigger": "Violent persecution of Jews and other minorities forced many to flee",
+        "link": "https://en.wikipedia.org/wiki/Pale_of_Settlement#Emigration_to_America"
+      },
+      {
+        "label": "Economic hardship in Austro-Hungarian Empire",
+        "start_year": 1880,
+        "end_year": 1920,
+        "origin": ["Austro-Hungary", "Hungary", "Slovakia", "Czech Republic", "Austria"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Farmers and workers sought better livelihoods abroad due to poor local prospects",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Internal migration: New York City settlers move to Western New York",
+    "start_year": 1790,
+    "end_year": 1820,
+    "origin": ["New York", "New York Colony"],
+    "destination": ["Western New York", "Erie Canal region", "Buffalo"],
+    "type": "internal migration",
+    "trigger": "Land availability and Erie Canal construction provided economic opportunities",
+    "link": "https://en.wikipedia.org/wiki/Erie_Canal",
+    "sub_events": [
+      {
+        "label": "Construction of Erie Canal",
+        "start_year": 1817,
+        "end_year": 1825,
+        "origin": ["New York", "New York Colony"],
+        "destination": ["Western New York", "Erie Canal region", "Buffalo"],
+        "type": "infrastructure",
+        "trigger": "Canal construction opened western lands to settlement and trade",
+        "link": "https://en.wikipedia.org/wiki/Erie_Canal"
+      }
+    ]
+  },
+  {
+    "label": "Appalachian migration to Midwest (Ohio, Indiana, Illinois)",
+    "start_year": 1800,
+    "end_year": 1850,
+    "origin": ["Virginia", "North Carolina", "Pennsylvania", "Kentucky"],
+    "destination": ["Ohio", "Indiana", "Illinois", "Midwestern U.S."],
+    "type": "internal migration",
+    "trigger": "Overpopulation, limited farmland, and opportunity in the expanding frontier",
+    "link": "https://en.wikipedia.org/wiki/History_of_the_Upper_South",
+    "sub_events": [
+      {
+        "label": "Expansion into Northwest Territory",
+        "start_year": 1787,
+        "end_year": 1803,
+        "origin": ["Virginia", "North Carolina", "Pennsylvania", "Kentucky"],
+        "destination": ["Ohio", "Indiana", "Illinois", "Midwestern U.S."],
+        "type": "land settlement",
+        "trigger": "Northwest Ordinance and land availability encouraged westward migration",
+        "link": "https://en.wikipedia.org/wiki/Northwest_Ordinance"
+      }
+    ]
+  },
+  {
+    "label": "Southern Italian migration to Northeastern U.S.",
+    "start_year": 1880,
+    "end_year": 1920,
+    "origin": ["Italy", "Sicily", "Campania", "Calabria", "Puglia"],
+    "destination": ["New York", "New Jersey", "Massachusetts", "Pennsylvania"],
+    "type": "emigration",
+    "trigger": "Poverty, overpopulation, and lack of economic opportunity in Southern Italy",
+    "link": "https://en.wikipedia.org/wiki/History_of_Italian_Americans",
+    "sub_events": [
+      {
+        "label": "Economic hardship and land scarcity in Southern Italy",
+        "start_year": 1861,
+        "end_year": 1920,
+        "origin": ["Italy", "Sicily", "Campania", "Calabria", "Puglia"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Rural poverty and competition from imported crops forced migration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Swiss and Belgian emigration to Midwest",
+    "start_year": 1830,
+    "end_year": 1900,
+    "origin": ["Switzerland", "Belgium"],
+    "destination": ["Ohio", "Wisconsin", "Minnesota", "Iowa"],
+    "type": "emigration",
+    "trigger": "Land scarcity, religious dissent, and economic opportunity in Midwest",
+    "link": "https://en.wikipedia.org/wiki/Swiss_American",
+    "sub_events": [
+      {
+        "label": "Religious dissent and rural poverty in Switzerland",
+        "start_year": 1830,
+        "end_year": 1870,
+        "origin": ["Switzerland"],
+        "destination": [],
+        "type": "social",
+        "trigger": "Protestant minorities and small farmers sought better opportunities abroad",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Eastern European Jewish migration (late 19th–early 20th century)",
+    "start_year": 1881,
+    "end_year": 1924,
+    "origin": ["Russia", "Poland", "Ukraine", "Lithuania", "Belarus"],
+    "destination": ["New York", "Boston", "Philadelphia", "Chicago"],
+    "type": "emigration",
+    "trigger": "Pogroms, anti-Semitic laws, and economic hardship",
+    "link": "https://en.wikipedia.org/wiki/Jewish_emigration_from_Russia_to_the_United_States",
+    "sub_events": [
+      {
+        "label": "Anti-Jewish pogroms in Russian Empire",
+        "start_year": 1881,
+        "end_year": 1905,
+        "origin": ["Russia", "Ukraine", "Belarus", "Poland", "Lithuania"],
+        "destination": [],
+        "type": "persecution",
+        "trigger": "Violence against Jewish communities prompted emigration",
+        "link": "https://en.wikipedia.org/wiki/Pale_of_Settlement#Emigration_to_America"
+      },
+      {
+        "label": "Economic hardship in Russian Empire",
+        "start_year": 1880,
+        "end_year": 1920,
+        "origin": ["Russia", "Ukraine", "Belarus", "Poland", "Lithuania"],
+        "destination": [],
+        "type": "economic_crisis",
+        "trigger": "Limited employment opportunities and high taxes forced migration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Southern U.S. migration to Northern industrial cities (Great Migration, first wave)",
+    "start_year": 1910,
+    "end_year": 1940,
+    "origin": ["Alabama", "Mississippi", "Louisiana", "Georgia", "South Carolina"],
+    "destination": ["Chicago", "Detroit", "New York", "Philadelphia"],
+    "type": "internal migration",
+    "trigger": "Racial violence, Jim Crow laws, and industrial job opportunities in North",
+    "link": "https://en.wikipedia.org/wiki/Great_Migration_(African_American)",
+    "sub_events": [
+      {
+        "label": "Jim Crow laws and racial oppression in South",
+        "start_year": 1890,
+        "end_year": 1940,
+        "origin": ["Alabama", "Mississippi", "Louisiana", "Georgia", "South Carolina"],
+        "destination": [],
+        "type": "social",
+        "trigger": "Segregation and disenfranchisement motivated Northern migration",
+        "link": "https://en.wikipedia.org/wiki/Jim_Crow_laws"
+      },
+      {
+        "label": "Northern industrial jobs attract Southern migrants",
+        "start_year": 1910,
+        "end_year": 1940,
+        "origin": ["Alabama", "Mississippi", "Louisiana", "Georgia", "South Carolina"],
+        "destination": ["Chicago", "Detroit", "New York", "Philadelphia"],
+        "type": "economic",
+        "trigger": "Automobile, steel, and manufacturing industries offered higher wages",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Midwestern migration to Great Plains and West",
+    "start_year": 1850,
+    "end_year": 1920,
+    "origin": ["Ohio", "Illinois", "Indiana", "Iowa", "Missouri"],
+    "destination": ["Kansas", "Nebraska", "Dakotas", "Montana", "California"],
+    "type": "internal migration",
+    "trigger": "Homestead Act, land availability, railroad expansion",
+    "link": "https://en.wikipedia.org/wiki/Homestead_Act",
+    "sub_events": [
+      {
+        "label": "Homestead Act provides free land for settlers",
+        "start_year": 1862,
+        "end_year": 1920,
+        "origin": ["Ohio", "Illinois", "Indiana", "Iowa", "Missouri"],
+        "destination": ["Kansas", "Nebraska", "Dakotas", "Montana", "California"],
+        "type": "policy",
+        "trigger": "Settlers motivated by free land opportunities",
+        "link": "https://en.wikipedia.org/wiki/Homestead_Act"
+      },
+      {
+        "label": "Railroad expansion facilitates westward migration",
+        "start_year": 1850,
+        "end_year": 1920,
+        "origin": ["Ohio", "Illinois", "Indiana", "Iowa", "Missouri"],
+        "destination": ["Kansas", "Nebraska", "Dakotas", "Montana", "California"],
+        "type": "infrastructure",
+        "trigger": "Railroads provided transport for settlers and goods",
+        "link": "https://en.wikipedia.org/wiki/History_of_the_rail_transport_in_the_United_States"
+      }
+    ]
+  },
+  {
+    "label": "Late 19th-century Portuguese emigration to U.S. (Azores and Madeira)",
+    "start_year": 1870,
+    "end_year": 1920,
+    "origin": ["Portugal", "Azores", "Madeira"],
+    "destination": ["Massachusetts", "Rhode Island", "California"],
+    "type": "emigration",
+    "trigger": "Economic hardship, volcanic activity, and opportunity abroad",
+    "link": "https://en.wikipedia.org/wiki/Portuguese_Americans",
+    "sub_events": [
+      {
+        "label": "Volcanic eruption and crop failure in Azores",
+        "start_year": 1808,
+        "end_year": 1880,
+        "origin": ["Azores", "Portugal"],
+        "destination": [],
+        "type": "famine",
+        "trigger": "Natural disasters destroyed agriculture, prompting emigration",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "label": "Minor Dutch migration to Midwest U.S. (Michigan, Iowa)",
+    "start_year": 1847,
+    "end_year": 1870,
+    "origin": ["Netherlands"],
+    "destination": ["Michigan", "Iowa", "Midwestern U.S."],
+    "type": "emigration",
+    "trigger": "Religious freedom and farmland opportunity",
+    "link": "https://en.wikipedia.org/wiki/Dutch_Americans",
+    "sub_events": [
+      {
+        "label": "Formation of Dutch Reformed communities",
+        "start_year": 1847,
+        "end_year": 1870,
+        "origin": ["Netherlands"],
+        "destination": ["Michigan", "Iowa", "Midwestern U.S."],
+        "type": "religious",
+        "trigger": "Protestants sought communities free from state church constraints",
+        "link": ""
+      }
+    ]
+  }
+]
+
+
+
+

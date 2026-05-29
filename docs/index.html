@@ -1,0 +1,4546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Family Tree</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <link href="https://unpkg.com/vis-network@9.1.2/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+    <!-- Include exif-js -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="evidence.css">
+
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<body>
+
+<div id="splashScreen" style="display:flex; align-items:center; justify-content:center; height:100vh;">
+    <div>
+        <img src="logo.png" alt="Logo" style="width:450px; margin-bottom:20px;">
+        <div>
+        <input id="email" type="text" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+        <button id="ss_loginButton">Login</button>
+        </div>
+    </div>
+</div>
+
+<div id="nodeOptionsMenu" class="nodeOptionsMenu" 
+    style="display:none;">
+    <div data-action="root">Make Root</div>
+    <div data-action="attachment">Add Attachment</div>
+    <div data-action="bio">Edit Biography</div>
+</div>
+
+<div id="ErrorBox" ></div>
+
+<div id="clusterToggleContainer" 
+     style="position:absolute; top:86%; left:300px; display:flex; align-items:center; gap:10px; display:none;">
+</div>
+
+<div id="loadingOverlay"
+     style="
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.35);
+        display: none; 
+        align-items: center;
+        justify-content: center;
+        z-index: 999999999;
+     ">
+    <div style="
+        padding: 20px 30px;
+        background: white;
+        border-radius: 10px;
+        font-size: 18px;
+        font-family: sans-serif;
+        box-shadow: 0px 0px 15px rgba(0,0,0,0.3);
+     ">
+        Processing…
+    </div>
+</div>
+
+<div id="nodeMenu"
+     style="position:absolute; display:none; background:#fff; border:1px solid #ccc;
+            padding:8px; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+</div>
+
+
+<div id="relationshipEvidencePanel" class="sidePanel">
+    <button id="closeEvidencePanel" class="close-btn">✖</button>
+
+    <!-- Header -->
+    <div class="evidence-header">
+        <h2 id="relationshipTitle">Relationship: Parent → Child</h2>
+        <div class="total-score">
+            Total Confidence Score: <span id="relationshipTotalScore">0</span>
+        </div>
+    </div>
+
+    <!-- Evidence List -->
+    <div class="evidence-section">
+        <h3>Evidence List</h3>
+        <div class="evidence-table-container">
+            <table class="evidence-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="col-num">#</th>
+                        <th rowspan="2" class="col-name">Name</th>
+                        <th rowspan="2" class="col-desc">Description</th>
+                        <th rowspan="2" class="col-date">Date</th>
+                        <th colspan="4" class="col-group">Evidence Scores</th>
+                        <th rowspan="2" class="col-edit"></th>  
+                    </tr>
+                    <tr>
+                        <th class="col-score rotate-header">Src</th>
+                        <th class="col-score rotate-header">Qty</th>
+                        <th class="col-score rotate-header">Typ</th>
+                        <th class="col-score ">Total</th>
+                    </tr>
+                </thead>
+
+                <tbody id="evidenceTableBody">
+                    <!-- Evidence rows inserted dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <button id="addEvidenceBtn" class="add-btn">+ Add Evidence</button>
+    </div>
+
+    <!-- Add/Edit Evidence Form -->
+    <div id="evidenceFormContainer" class="evidence-form hidden">
+        <h3 id="evidenceFormTitle">Add Evidence</h3>
+
+        <label>Name</label>
+        <input type="text" id="evidenceName">
+
+        <label>Short Description</label>
+        <textarea id="evidenceDescription"></textarea>
+
+        <label>Date</label>
+        <input type="text" id="evidenceDate">
+
+        <label>Source Type (1–3)</label>
+        <select id="evidenceScoreSource">
+            <option value="3">3 - Original</option>
+            <option value="2">2 - Image of Original</option>
+            <option value="1">1 - Derivative</option>
+        </select>
+
+        <label>Information Quality (1–3)</label>
+        <select id="evidenceScoreInfo">
+            <option value="3">3 - Primary</option>
+            <option value="2">2 - Secondary</option>
+            <option value="1">1 - Unknown</option>
+        </select>
+
+        <label>Evidence Type (1–3)</label>
+        <select id="evidenceScoreEvidence">
+            <option value="3">3 - Direct</option>
+            <option value="2">2 - Indirect</option>
+            <option value="1">1 - Negative</option>
+        </select>
+
+        <div class="form-buttons">
+            <button id="saveEvidenceBtn" class="save-btn">Save</button>
+            <button id="cancelEvidenceBtn" class="cancel-btn">Cancel</button>
+        </div>
+    </div>
+
+</div>
+
+<div id="tooltip"></div>
+
+<!-- Biography Modal for Admins -->
+<div id="bioModal">
+  <div class="bioModalContent">
+    <div class="bioModalHeader">Edit Biography</div>
+    <form id="bioForm">
+      <div class="bioFormGroup">
+        <label for="bioName">Name</label>
+        <input type="text" id="bioName" placeholder="Person's name" readonly style="background:#f0f0f0;">
+      </div>
+      <div class="bioFormGroup">
+        <label for="bioSummary">Summary (one line)</label>
+        <input type="text" id="bioSummary" placeholder="e.g., Educator and family historian">
+      </div>
+      <div class="bioFormGroup">
+        <label for="bioBiography">Biography</label>
+        <textarea id="bioBiography" placeholder="Write a detailed biography..."></textarea>
+      </div>
+      <div class="bioFormGroup">
+        <label for="bioFacts">Facts (one per line)</label>
+        <textarea id="bioFacts" placeholder="First female principal&#10;Published 3 genealogy books&#10;Fluent in 4 languages"></textarea>
+      </div>
+      <div class="bioModalButtons">
+        <button type="button" class="btnSave" id="bioSaveBtn">Save</button>
+        <button type="button" class="btnCancel" id="bioCancelBtn">Cancel</button>
+        <button type="button" class="btnAttachment" id="bioAttachmentBtn">Add Attachment</button>
+        <button type="button" class="btnMakeRoot" id="bioMakeRootBtn">Make Root</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Map panel that sits in between the tree display and rightPanel-->
+<div id="mapPanel">
+    <div id="mapContainer"></div>
+    <div id="mapQueryText"></div>
+</div>
+
+<!-- Main display -->
+<div id="mainContainer">
+    <div id="mynetwork"></div>
+
+    <!-- Right-side panel for login, search, and info display -->
+    <div id="rightPanel">
+        <!-- Login Section -->
+        <div class="panelSection">
+            <!-- Header row: Title on left, Login button on right -->
+            <div class="loginHeader">
+                <div class="loginLeft">
+                    <div class="panelSectionTitle">Login</div>
+                    <span id="userRoleText" class="userRole">viewer</span>
+                </div>
+                <button id="loginButton">Login</button>
+            </div>
+            <!-- Two-column row: Email + Password -->
+            <div class="loginInputs">
+                <input id="emailpanel" type="text" placeholder="Email">
+                <input id="passwordpanel" type="password" placeholder="Password">
+            </div>
+        </div>
+
+
+        <!-- Search Section -->
+        <div class="panelSection">
+            <div class="panelHeader">
+                <div class="panelSectionTitle">Search the Tree</div>
+                <div id="search-container" class="searchContainer">
+                    <div class="inputGroup">
+                        <input id="searchBox" type="text" placeholder="Search person...">
+                        <input id="searchBoxLocation" type="text" placeholder="Search location...">
+                        <div id="suggestions"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="configureSection">
+            <div class="configureHeader">        
+                <div class="panelSectionTitle">Configure the Tree</div>
+                <div id="configure-container" class="configureContainer">
+                    <div class="configureGroup">
+                        <input id="rootBox" type="text" placeholder="Root person...">
+                        <input id="maxGenBox" type="text" placeholder="Max generations...">
+                        <div id="configsuggestions"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clusters Section -->
+        <div class="panelSection">
+
+            <div class="clusterHeader">
+                <div class="panelSectionTitle">Clusters</div>
+
+                <p class="clusterDescription">
+                    Clusters group people that share a common attribute:
+                    such as Birth location, Death location, or Immigration pattern
+                </p>
+            </div>
+
+            <div class="toggleContainer">
+                <div class="toggleItem">
+                <label class="switch">
+                    <input type="checkbox" id="birthToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>Birth</span>
+                </div>
+
+                <div class="toggleItem">
+                <label class="switch">
+                    <input type="checkbox" id="deathToggle">
+                    <span class="slider"></span>
+                </label>
+                <span>Death</span>
+                </div>
+
+                <div class="toggleItem">
+                <label class="switch">
+                    <input type="checkbox" id="migrationToggle">
+                    <span class="slider"></span>
+                </label>
+                <span>Migration</span>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- Context Display Section -->
+        <div class="panelSection" style="flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: none;">
+        <div class="panelSectionTitle" id="infoCenterTitle">Information Center</div>
+        <div id="contextDisplay" class="contextDisplay">
+            <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
+        </div>
+        </div>
+        <!-- Attachments Section -->
+        <div class="panelSection" id="attachmentsSection" style="border-top:1px solid #ccc; padding-top:8px;">
+            <div class="panelSectionTitle">Attachments</div>
+            <ul id="attachmentsList" style="list-style:none; padding:0; margin:0;"></ul>
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module">
+//    <script type="text/javascript">
+
+//--------------------------------------------------------------------------
+// Attachment Handling -----------------------------------------------------------------
+
+import Attachment from './Attachments.js';  // attachment class handles individual attachment details
+
+import Clusters from './Clusters.js';  // cluster class handles the creation and display of clusters
+let BirthclustersEnabled = true;
+let DeathclustersEnabled = false;
+let MigrationclustersEnabled = false;
+
+let Hover_NodeActive = null; // Global reference to current active node for right-click detection
+// Node information for biographies
+let nodeInformation = {};
+let currentEditingNodeId = null;
+let Pinned_NodeId = null;  // For pinning node info on click
+let currentEdgeId = null; // For tracking which edge's evidence panel is open
+let currentEvidenceEditId = null; // For tracking which evidence item is being edited
+
+// list of all people and locations for search suggestions
+// this is used in the search location box logic
+// -------------------------------------------------------
+let locationList = []; // List of all unique locations for search suggestions
+let peopleList = [];
+
+const nodeAttachments = {}; // { nodeId: [ { filename, type, url } ] }
+
+//--------------------------------------------------------------------------
+
+// temporary userId variable until full userId logic is put into place
+let userId = "defaultUser";
+
+let historicalEvents = [];
+let dataJSON;
+let network;
+let previousPositions = {};
+let positions = {};
+const nodes = new vis.DataSet();
+window.nodes = nodes; // Expose nodes globally for debugging
+const edges = new vis.DataSet();
+window.edges = edges; // Expose edges globally for debugging
+
+// Global variables for arranging the tree in an orderly fashion    
+let Nexty = 0;
+let Gapy = 40;
+const boxWidth = 450;
+const boxHeight = 100;
+const xSpacing = 2* boxWidth;
+const yUnit = (5/6) * boxHeight;
+
+let maxGenerations = 2; 
+
+let currentNodeId = null;
+let selectedColor = "#ffcccc";
+let clickTimer = null;
+
+let canvasPos = {x:0,y:0};  
+let plotupdates = [];
+const plotPositionMap = new Map();
+
+let BirthGroups = {};  // each node is assigned a state/country based on their birth location, BirthGroup: groupName
+let DeathGroups = {};  // each node is assigned a state/country based on their death location
+
+let rootName = "Jolene Ann Lewis";
+//let rootNodeId = "@I310053455724@";
+let rootNodeId = null;
+
+// Global variables for timeline
+
+let rootPos = 0;
+let startYear = 2100;
+let yearsPerXSpacing = 50; // 50 years per xSpacing
+let xSpacingBetweenLines = xSpacing * 1.5;
+
+let personalHistoryEvents = {};
+let activePersonEvents = [];
+let activePersonIds = [];
+
+
+
+// load images for timeline
+const eventIcons = {
+    "Birth": new Image(),
+    "ChildBirth": new Image(),
+    "Marriage": new Image(),
+    "Residence": new Image(),
+    "Arrival": new Image(),
+    "Death": new Image(),
+    "War" : new Image(),
+    "Invention/Exploration": new Image(),  
+};
+
+eventIcons["Birth"].src = "images/baby.svg";  
+eventIcons["ChildBirth"].src = "images/baby.svg";
+eventIcons["Marriage"].src = "images/wedding.svg";
+eventIcons["Death"].src = "images/tombstone.svg";
+eventIcons["Residence"].src = "images/house.svg";
+eventIcons["Arrival"].src = "images/Arrival.svg";
+eventIcons["War"].src = "images/War.svg";
+eventIcons["Invention/Exploration"].src = "images/invention.svg";
+
+
+const paperclipImg = new Image();
+paperclipImg.src = "images/paperclip.svg"; // crisp scaling
+const PinImg = new Image();
+PinImg.src = "images/pin-26.svg"; // crisp scaling
+
+let groupColors = {};
+
+//pop up map variables
+let map = null;
+let migrationLine = null;
+let deathMarker = null;
+let birthMarker = null;
+let fatherDeathMarker = null;
+let fatherBirthMarker = null;
+let fatherMigrationLine = null;
+let motherDeathMarker = null;
+let motherBirthMarker = null;
+let motherMigrationLine = null;
+let currentHoverToken = 0;
+
+// create a list of migration stops, each with lat/lon, 
+// label (birth, residence, death), and date (if available)
+// this allows for erasing old lines and markers easily
+let migrationLayers = [];
+
+let hoverTimeout = null;
+
+// search setup
+const searchBox = document.getElementById("searchBox");
+const searchBoxLocation = document.getElementById("searchBoxLocation");
+const rootBox = document.getElementById("rootBox");
+const maxGenBox = document.getElementById("maxGenBox");
+maxGenBox.value = maxGenerations;
+rootBox.value = rootName;
+const suggestionsDiv = document.getElementById("suggestions");
+
+//-----------------------------------------------------------------------------
+// User Authentication
+//-----------------------------------------------------------------------------
+let authToken = null;
+let userRole = "viewer";
+let userName = "Guest";
+
+const network_container = document.getElementById("mynetwork");
+const network_options = {
+    layout: { hierarchical: { enabled: false, direction: "LR", sortMethod: "directed",
+        levelSeparation: boxWidth + 25} },
+    physics: {enabled : false },
+    interaction: { dragNodes: false, dragView: true, hover: true }
+};
+
+
+async function loginUser() {
+    const email = document.getElementById("emailpanel").value;
+    const password = document.getElementById("passwordpanel").value;
+    Login(email, password);
+}
+async function Login(email, password) {
+    let data = null;
+    
+    console.log("Attempting login with email:", email, "and password:", password ? "******" : "(empty)" );
+
+    if (!email || !password) {
+        showError("Please enter both email and password");
+        return null;
+    }
+
+    try {
+        const res = await fetch("http://localhost:4000/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (!res.ok) {
+            showError("Login failed. Please check your credentials.");
+            authToken = null;
+            userRole = "viewer";
+            userName = "Guest";
+        } else {
+            console.log("Login response status:", res.status);
+            data = await res.json();
+            authToken = data.token;
+            userRole = data.role;
+            userName = data.username;
+            console.log("Logged in as:", userName, "with role:", userRole);
+        }
+        
+        // Update the userRole display
+        const roleText = document.getElementById("userRoleText");
+        roleText.textContent = userRole;
+
+        // Update network interaction based on role
+//        if (network) {
+//            network.setOptions(network_options); // reapply options to update dragNodes based on new role
+//        }
+        
+        console.log("Login - User role:", userRole);
+        if (data && data.token) {
+            console.log("Login successful:", data);
+            return data;
+        } else {
+            console.log("Login failed - return null");
+            return null;
+        }
+    } catch (err) {
+        console.error("Login error:", err);
+        showError("Login error: " + err.message);
+        return null;
+    }
+}
+function isAdmin() { return userRole === "admin"; }
+function authHeaders() {
+    return authToken ? { Authorization: "Bearer " + authToken } : {};
+}
+//-----------------------------------------------------------------------------
+// Node Information / Biography Management
+//-----------------------------------------------------------------------------
+async function loadEvidencefromBackend(userData) {
+    let edgeInformation = {};
+
+    try {
+        postMessageToInfoCenter("Loading Evidence from Backend...");
+        const response = await fetch(`http://localhost:4000/edgeInfo/${userName}`, {
+            headers: { "Authorization": "Bearer " + authToken }
+        });
+ 
+        if (response.ok) {
+            edgeInformation = await response.json();
+            console.log("Edge Information loaded: (edgeInformation)", edgeInformation);
+            postMessageToInfoCenter("Evidence loaded from Backend...");
+            edges.clear();
+            edges.add(edgeInformation);
+            updateAllEdgeColors();
+        }
+        else {
+            console.log(`No edge information file, filename: ${userName} `);
+            edgeInformation = {};
+        }
+    } catch (err) {
+        console.log(`No edge information file, filename: ${userName} `);
+        edgeInformation = {};
+    }
+}
+
+async function saveEvidenceToBackend() {
+    
+    let response = null;
+    const evidenceList = edges.get();   // this includes evidence arrays
+
+    try {
+        const response = await fetch(`http://localhost:4000/edgeInfo/${userName}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders()
+            },
+            body: JSON.stringify({ data: evidenceList })
+        });
+        if (response.ok) {
+            console.log("Success saving Edge Information");
+            return response;
+        } else {
+            const errorData = await response.json(); 
+            showError(`Failed to save Edge Information: ${errorData.message}`); 
+            return null;
+        }
+    } catch (err) {
+        showError('Error saving Edge Information:', err);
+        return null;
+    }
+
+    return response;
+}
+
+//-----------------------------------------------------------------------------
+// Node Information / Biography Management
+//-----------------------------------------------------------------------------
+async function loadNodeInformation(userData) {
+
+    try {
+        const response = await fetch(`http://localhost:4000/nodeInfo/${userName}`, {
+            headers: { "Authorization": "Bearer " + authToken }
+        });
+ 
+        if (response.ok) {
+            nodeInformation = await response.json();
+            console.log("Node Bio Information loaded: (nodeInformation)", nodeInformation);
+        }
+        else {
+            console.log(`No node information file, filename: ${userName} `);
+            nodeInformation = {};
+        }
+    } catch (err) {
+        console.log(`No node information file, filename: ${userName} `);
+        nodeInformation = {};
+    }
+    // cycle through the information
+    // any node or cluster with attachments, cache the primary attachment preview
+    let needsupdate = false;
+    let orientation = 1;
+    Object.entries(nodeInformation).forEach(([id, info]) => {
+        if (info && Array.isArray(info.attachments) && info.attachments.length > 0) {
+            info.attachments.forEach(att => {
+                // ensure selected is always defined
+                if (typeof att.selected === "undefined") {
+                    att.selected = false;
+                    needsupdate = true;
+                }
+
+                if (att.selected) {
+                    // async/await style
+                    (async () => {
+                        cacheImage(att).then(() => {
+                            // now att.image is safe to use in beforeDrawing
+                            console.log("Cached:", att.name, orientation);
+                        });
+                    })();
+                }
+            });
+        }
+    });
+    // ---------------------------------------------------------------------
+    // -------- If there were undefined parameters in nodeinformation ------
+    // ----------  Then upload updated nodeinformation to backend ----------
+    // ---------------------------------------------------------------------
+    if (needsupdate){
+        try {
+            const response = await fetch(`http://localhost:4000/nodeInfo/${userName}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders()
+                },
+                body: JSON.stringify({
+                    data: nodeInformation
+                })
+            });
+            if (response.ok) {
+                console.log("Success saving Node Information");
+                return response;
+            } else {
+                const errorData = await response.json(); 
+                showError(`Failed to save Node Information: ${errorData.message}`); 
+                return null;
+            }
+        } catch (err) {
+            showError('Error saving Node Information:', err);
+            return null;
+        }
+    }
+}
+function cacheImage(att) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    // first event handler ensures the image is fully loaded before we try to read its properties
+    img.onload = () => {
+        att.image = img;              // ✅ now it's valid
+        GetImageOrientation(img).then(o => att.orientation = o);
+        resolve(att);
+        console.log("cacheImage function: loaded:", att.thumbUrl);
+    };
+
+    // second event handler catches any loading errors
+    img.onerror = () => reject(new Error("Failed to load: " + att.thumbUrl));
+
+    // start loading the image after setting up handlers
+    img.src = att.thumbUrl;         // start loading after handlers
+
+  });
+}
+
+
+function openBioEditor(nodeId, name) {
+    if (!isAdmin()) return;
+    
+    currentEditingNodeId = nodeId;
+    const modal = document.getElementById('bioModal');
+    
+    const bioData = nodeInformation[nodeId] || { summary: '', biography: '', facts: [] };
+    
+    document.getElementById('bioName').value = name || '';
+    document.getElementById('bioSummary').value = bioData.summary || '';
+    document.getElementById('bioBiography').value = bioData.biography || '';
+    document.getElementById('bioFacts').value = Array.isArray(bioData.facts) ? bioData.facts.join('\n') : '';
+    
+    modal.classList.add('active');
+}
+
+function closeBioEditor() {
+    const modal = document.getElementById('bioModal');
+    modal.classList.remove('active');
+    currentEditingNodeId = null;
+}
+
+async function saveBioData() {
+    
+    if (currentEditingNodeId == null) {
+        showError("function saveBioData: currentEditingNodeId == null");
+        return;
+    } 
+    let res = null;
+
+    // Make sure the node exists
+    if (!nodeInformation[currentEditingNodeId]) {
+        nodeInformation[currentEditingNodeId] = {}; 
+    }
+
+    // Initialize attachments if missing
+    if (!nodeInformation[currentEditingNodeId].attachments) {
+        nodeInformation[currentEditingNodeId].attachments = [];
+    }
+
+    // Gather bio data, including attachments, from form inputs
+    const bioData = {
+        summary: document.getElementById('bioSummary').value.trim(),
+        biography: document.getElementById('bioBiography').value.trim(),
+        facts: document.getElementById('bioFacts').value.trim()
+            .split('\n')
+            .map(f => f.trim())
+            .filter(f => f.length > 0),
+        image: nodeInformation[currentEditingNodeId].image,
+        orientation: nodeInformation[currentEditingNodeId].orientation,
+        attachments: nodeInformation[currentEditingNodeId].attachments || []
+    };
+
+    // store data in backend for the specific node
+    res = UpdateIndividualNode(currentEditingNodeId, bioData);
+
+    if (res != null) {
+        // Update local cache with new bio data after successful backend update
+        nodeInformation[currentEditingNodeId] = bioData;
+        console.log("Biography saved for node:", currentEditingNodeId);
+        closeBioEditor();
+        if (network) network.redraw();
+    } else {
+        showError('Failed to save biography');
+    }
+}
+// ---------------------------------------
+// -- Update individual node with Biographical Data and Attachments
+// -- Only updating specific node ----------------------
+// ---------------------------------------
+async function UpdateIndividualNode(nodeId, bioData) {
+    let response = null;
+
+    try {
+        const response = await fetch(`http://localhost:4000/nodeInfo/${userName}/nodes/${nodeId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders()
+            },
+            body: JSON.stringify({
+                nodeId: nodeId,
+                data: bioData
+            })
+        });
+        if (response.ok) {
+            console.log("Success saving Node Information");
+            return response;
+        } else {
+            const errorData = await response.json(); 
+            showError(`Failed to save Node Information: ${errorData.message}`); 
+            return null;
+        }
+    } catch (err) {
+        showError('Error saving Node Information:', err);
+        return null;
+    }
+
+    return response;
+}
+
+async function BioAddAttachment() {
+
+    // Implementation for adding attachment to a node or cluster
+    if (currentEditingNodeId != null) {
+        console.log("Adding attachment to node:", currentEditingNodeId);
+        SelectAttachment();
+    }
+
+}  
+
+function displayNodeInfo(nodeId) {
+    const contextDisplay = document.getElementById('contextDisplay');
+    const node = nodes.get(nodeId);
+    const bioData = nodeInformation[nodeId];
+    
+    let html = `<strong>${node.Name}</strong><br><br>`;
+    
+    if (bioData && bioData.summary) {
+        html += `<em>${bioData.summary}</em><br><br>`;
+    }
+    
+    html += `<strong>Birthdate:</strong> ${node.birthdatestring || '-'}<br>`;
+    html += `<strong>Birthplace:</strong> ${node.birthPlace || '-'}<br><br>`;
+    html += `<strong>Deathdate:</strong> ${node.deathdatestring || '-'}<br>`;
+    html += `<strong>Deathplace:</strong> ${node.deathPlace || '-'}<br>`;
+    
+    if (bioData && bioData.biography) {
+        html += `<br><strong>Biography:</strong><br><p style="font-size:15px; line-height:1.5;">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
+    }
+    
+    if (bioData && bioData.facts && bioData.facts.length > 0) {
+        html += `<br><strong>Key Facts:</strong><ul style="font-size:15px; margin:5px 0; padding-left:20px;">`;
+        bioData.facts.forEach(fact => {
+            html += `<li>${fact}</li>`;
+        });
+        html += `</ul>`;
+    }
+    
+    contextDisplay.innerHTML = html;
+    RenderNodeAttachments(nodeId);
+}
+
+function displayPinIndicator(showPin) {
+    const panelTitle = document.getElementById('infoCenterTitle');
+    if (!panelTitle) return;
+
+    // Find any existing pin indicator
+    const existingPin = panelTitle.querySelector('.pin-indicator');
+
+    if (showPin) {
+        // If we want to show the pin and it doesn't exist, create it
+        if (!existingPin) {
+            PinImg.className = 'pin-indicator';
+            PinImg.style.marginLeft = '10px';
+            PinImg.style.verticalAlign = 'middle';
+            PinImg.style.height = '20px';
+            PinImg.style.width = '20px';
+            panelTitle.appendChild(PinImg);
+        }
+    } else {
+        // If we want to hide/remove the pin
+        if (existingPin) {
+            existingPin.remove();
+        }
+    }
+}
+
+function displayClusterInfo(cluster, clusterID) {
+
+    const contextDisplay = document.getElementById('contextDisplay');
+    const clusterData = nodeInformation[clusterID];
+    const clusterName = cluster.GetClusterName(clusterID); // Placeholder, replace with actual cluster name retrieval logic    
+    const mindate = cluster.GetClusterMinDate(clusterID);
+    const maxdate = cluster.GetClusterMaxDate(clusterID);
+
+    let html = `<strong>${clusterName} from ${mindate} to ${maxdate}</strong><br><br>`;
+    
+    if (clusterData && clusterData.summary) {
+        html += `<em>${clusterData.summary}</em><br><br>`;
+    }
+    
+    if (clusterData && clusterData.biography) {
+        html += `<br><strong>History:</strong><br><p style="font-size:15px; line-height:1.5;">${clusterData.biography.replace(/\n/g, '<br>')}</p>`;
+    }
+    
+    if (clusterData && clusterData.facts && clusterData.facts.length > 0) {
+        html += `<br><strong>Key Facts:</strong><ul style="font-size:15px; margin:5px 0; padding-left:20px;">`;
+        clusterData.facts.forEach(fact => {
+            html += `<li>${fact}</li>`;
+        });
+        html += `</ul>`;
+    }
+    
+    contextDisplay.innerHTML = html;
+    RenderNodeAttachments(clusterID);
+}
+
+// -----------------------------------------Load Family Tree ----------------
+
+async function InitializeTree(userData) {
+
+    dataJSON = await loadBackendData("FamilyInfo");
+    if (dataJSON != null) {
+        console.log("Family data loaded:", dataJSON);
+        console.log("Post first Message -----------------");
+        postMessageToInfoCenter("Successful Login...");
+        postMessageToInfoCenter("Backend Family Data Loaded ")
+        createTree(userData);
+    } else {
+        console.log("Failed to load family data for user:", userName);
+    }   
+
+}
+async function loadBackendData (info) {
+    let data = null;
+    try {
+        const response = await fetch(`http://localhost:4000/${info}/${userName}`, {
+            headers: { "Authorization": "Bearer " + authToken }
+        });
+        if (response.ok) {
+            data = await response.json();
+            console.log("Loaded data for :", info);
+            return data;
+        }
+        else {
+            console.log("Failed to load :", info);
+            return null;
+        }   
+    } catch (err) {
+        console.log("No file at specified location: ", info );
+        return null;    
+    }
+}
+
+ // Utility: truncate text
+function truncate(text, maxLength) {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "…" : text;
+}
+
+// Utility: point-in-polygon collision detection for clusters
+function isPointInPolygon(point, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x, yi = polygon[i].y;
+        const xj = polygon[j].x, yj = polygon[j].y;
+        const intersect = ((yi > point.y) !== (yj > point.y))
+            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+ // Utility: color by sex
+function colorBySex(sex) {
+    sex = (sex || "").toUpperCase();
+    if (sex === "M") return "#ADD8E6"; // light blue
+    if (sex === "F") return "#FFB6C1"; // light pink
+    return "#DDDDDD"; // gray unknown
+}
+
+// Add a node
+function addNode(ind,pid,gen = 0,nodeupdate) {
+    if (nodes.get(pid)) return;  // if node exists return, only add if not already present
+//    console.log(`Adding node ID: ${pid} Name: ${ind.name} Generation: ${gen}`);
+    //    nodes.add({
+    nodeupdate.push({
+            id: pid,
+            label: "",
+        //    label: `<b>${ind.name}</b>
+        //        <b>Birth:</b> ${ind.birthplace ? truncate(ind.birthplace,25) : "-"}
+        //        ${ind.birthdate || " - "}
+        //        <b>Death:</b> ${ind.deathplace ? truncate(ind.deathplace,25) : "-"}
+        //        ${ind.deathdate || " - "}`,
+            shape: "box",
+            font: { multi: "html" },
+            margin:{top:5, bottom:1,left:1,right:1},
+            widthConstraint: { minimum: boxWidth, maximum: boxWidth },
+            heightConstraint: { minimum: boxHeight, maximum: boxHeight },
+            color : {background : colorBySex(ind.sex),border: "#000000",highlight: { background: colorBySex(ind.sex), border: "#333333" },
+                hover: { background: colorBySex(ind.sex), border: "#555555" }},
+            level: Number(gen),
+            interaction: { hover: true},
+            birthdatestring: ind.birthdate,
+            deathdatestring: ind.deathdate,
+            Name: ind.name,
+            birthPlace: ind.birthplace || "",   
+            deathPlace: ind.deathplace || "",   
+            residences: ind.residences || [],
+        });
+        if (ind.birthplace) {
+            const cleaned = ind.birthplace.trim().toLowerCase();
+//            console.log(`Processing birthplace for ${ind.name}: raw='${ind.birthplace}' cleaned='${cleaned}'`);
+            if (cleaned !== "") {
+                locationList.push({ place: cleaned, personId: pid, date: ind.birthdate || null, raw: ind.birthplace });
+            }
+        }
+        if (ind.deathplace) {
+            const cleaned = ind.deathplace.trim().toLowerCase();
+//            console.log(`Processing deathplace for ${ind.name}: raw='${ind.deathplace}' cleaned='${cleaned}'`);
+            if (cleaned !== "") {
+                locationList.push({ place: cleaned, personId: pid, date: ind.deathdate || null, raw: ind.deathplace });
+            }
+        }
+
+        if (ind.residences && Array.isArray(ind.residences)) {
+            ind.residences.forEach(res => {
+                if (res && typeof res.place === "string") {
+                    const cleaned = res.place.trim().toLowerCase();
+//                    console.log(`Processing residence for ${ind.name}: raw='${res.place}' cleaned='${cleaned}'`);
+                    if (cleaned !== "") {
+                        // Check if this person/place combo already exists
+                        const exists = locationList.some(
+                            loc => loc.place === cleaned && loc.personId === pid);
+                        if (!exists) {
+//                            console.log(`Adding residence to locationList: ${cleaned} for person ID: ${pid}`);
+                            locationList.push({ 
+                                place: cleaned, 
+                                personId: pid, 
+                                date: res.date || null, 
+                                raw: res });
+                        }
+                    }
+                }
+                else
+                {
+                    console.warn(`Residence entry for ${ind.name} is missing a valid 'place' string:`, res);
+                }
+            });
+        }
+}
+
+
+// -------------- Geocoding function using Nominatim OpenStreetMap API ----------------
+
+async function geocodeWithFallback(birthPlace) {
+    if (!birthPlace) return null;
+
+    // throttle requests to avoid hitting rate limits
+    await sleep(300);
+
+    //
+    // split the birthplace into parts and create multiple query attempts by removing components
+    // for instance it may look like this parts = ["Lyons", "Wayne", "New York", "USA"]
+    //
+    const parts = birthPlace.split(",").map(p => p.trim());
+    // attempts is an array of query strings we will try in order, starting with the most specific (full string) to least specific (just country or city)
+    const attempts = [];
+
+    if (parts.length <=1) {     
+        return null;
+    }   
+
+    // 1. Full string
+    // first attempt is the full birthplace string, 
+    // which may include city, county, state, and country. 
+    // This is the most specific query and may yield the best results 
+    // if it matches a known location in the geocoding database
+    attempts.push(parts.join(", "));
+
+    // 2. Remove county (middle parts)
+    // this attempt removes any middle components that may represent counties or states,
+    // which can sometimes confuse geocoding if they are not well-known or if the city and country are sufficient to identify the location.
+    // for example, from "Lyons, Wayne, New York, USA" we would take "Lyons" and "New York, USA" to form
+    // "Lyons, New York, USA"
+    if (parts.length > 2) {
+        attempts.push(parts[0] + ", " + parts.slice(-2).join(", "));
+    }
+
+    // 3. City + country
+    // this is the first and last element of the parts array, 
+    // which often corresponds to city and country, 
+    // which is a common format for geocoding queries
+    // for example, from "Lyons, Wayne, New York, USA" we would take "Lyons" and "USA" to form 
+    // "Lyons, USA"
+    if (parts.length >= 2) {
+        attempts.push(parts[0] + ", " + parts.slice(-1)[0]);
+    }
+
+    // 4. Country only
+//    attempts.push(parts.slice(-1)[0]);
+
+    // 5. City only
+//    attempts.push(parts[0]);
+
+// ------------ send data to backend for geocoding, which will handle the attempts and return the first successful geocode result, or null if all attempts fail -------------
+    try {
+
+        const response = await fetch("http://localhost:4000/api/geocode", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ attempts })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server geocode failed");
+        }
+
+        return await response.json();
+
+    } catch (err) {
+
+        console.error(err);
+        showError("Unable to retrieve map location: " + birthPlace + ":: " + err.message);
+        return null;
+    }
+
+//    for (const query of attempts) {
+//        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+//        const results = await fetch(url).then(r => r.json());
+//
+//        if (results && results.length > 0) {
+//            return {
+//                lat: parseFloat(results[0].lat),
+//                lon: parseFloat(results[0].lon),
+//                usedQuery: query
+//            };
+//        }
+//    }
+
+    return null;
+
+
+}
+//--------------
+// box to show errors at top of screen
+// -------------
+let bannerTimer = null;
+function showError(message) 
+{
+    const banner = document.getElementById("ErrorBox");
+    if (!banner) return;
+
+    // create a message element, 
+    // this allows for multiple messages to be shown at once 
+    // if multiple errors occur within a short time frame
+    // and also allows each message to be removed individually after 10 seconds
+//    banner.textContent = "⚠ " + message;
+//    banner.classList.add("show");
+
+     // clear any existing timer to hide the banner, so it stays visible for 10 seconds after the most recent error
+    const msg = document.createElement("div");
+    msg.className = "errorMessage";
+    msg.textContent = "⚠ " + message;
+    banner.appendChild(msg);
+
+    // Show the banner if it is not already visible
+    if (!banner.classList.contains("show")) {
+        banner.classList.add("show");
+    }
+
+    // remove message after 10 seconds
+    const timeout = setTimeout(() => {
+        msg.remove();
+        // hide the box if no messages remain
+        if (banner.children.length === 0) {
+            banner.classList.remove("show");
+        }
+    }, 10000);
+
+    // Store the timeout ID in the message element
+    msg.dataset.timeoutId = timeout;
+}
+// ----------------------------------------------------------------
+// ------------------------ Build the tree ------------------------
+// ----------------------------------------------------------------
+function InitializeCluster(cluster,locationGroups,groupName) {
+    let birthinitialized = false;
+//    let Birth_Cluster = new Clusters();  // create a new cluster class object for birth location groups
+    network.once("afterDrawing", ctx => {
+        postMessageToInfoCenter("Initializing " + groupName + " Clusters...");
+        if(!birthinitialized) {
+            cluster.init(locationGroups, nodes, groupName,userId, network,boxWidth);
+            birthinitialized = true;
+        }
+    });   
+}
+function ClearTree() {
+    const updates = []; 
+    Nexty = 0;
+    plotupdates.length = 0;
+    plotPositionMap.clear();
+    nodes.forEach(node => {
+        updates.push({ id: node.id, x: null, y: null });
+      //  nodes.update({ id: node.id, x: null, y: null });
+    });
+    nodes.update(updates);
+}
+function updateTree() {
+
+    nodes.clear();
+    edges.clear();
+
+    const visited = new Set();
+    
+    rootNodeId = Object.keys(dataJSON.individuals).find( 
+        id => dataJSON.individuals[id].name === rootName 
+    );
+
+    const edgesupdates = []; 
+
+    console.log('**********************************');
+    console.log(`Update Tree: Building tree from root ID:`, rootNodeId);
+    console.log(`Update Tree: Name: `,rootName);
+    console.log(`Update Tree: Max Generations: `,maxGenerations);
+
+    function addAncestors(pid, depth, nodeupdates) {
+//        console.log(`addAncestors called for ID: ${pid} at depth: ${depth}`);
+        if (!pid || visited.has(pid) ) return;
+        visited.add(pid);
+
+//        const ind = dataJSON.individuals[pid];
+
+        addNode(dataJSON.individuals[pid],pid,depth, nodeupdates);
+
+        const parents = dataJSON.parents_of[pid] || [];
+        parents.forEach(parentId => {
+            if (depth >= maxGenerations) return; // limit depth to prevent infinite recursion
+            addAncestors(parentId, depth + 1, nodeupdates);
+            if (!edges.get(`${parentId}-${pid}`)){
+                // only add edge if it doesn't already exist, this prevents duplicates when multiple children share the same parent
+                edgesupdates.push ({id: `${parentId}-${pid}`, 
+                        from: parentId, 
+                        to: pid,
+                        smooth: false,
+                        inherit: false, 
+                        evidence: [], 
+                        confidence: 0 });
+            }
+        });
+    }
+    function addDescendants(pid, depth, nodeupdates) {
+//        console.log(`addDescendants called for ID: ${pid} at depth: ${depth}`);
+//        if (!pid || visited.has(pid) ) return;
+
+        //console.log(`addDescendant Name: ${node ? node.Name : "Unknown"} at depth: ${depth}`);
+        //const ind = dataJSON.individuals[pid];
+        if (!visited.has(pid)) {
+            console.log(`Adding node for descendant ${dataJSON.individuals[pid].name}  at depth: ${depth}`);
+            addNode(dataJSON.individuals[pid],pid,depth, nodeupdates);
+            visited.add(pid);
+        }
+
+        const children = dataJSON.children_of[pid] || [];
+        children.forEach(childId => {
+            if (depth >= maxGenerations) return; // limit depth to prevent infinite recursion
+            addDescendants(childId, depth + 1, nodeupdates);
+            if (!edges.get(`${pid}-${childId}`)){
+                // only add edge if it doesn't already exist, this prevents duplicates when multiple children share the same parent
+                edgesupdates.push ({id: `${pid}-${childId}`, 
+                        from: pid, 
+                        to: childId,
+                        smooth: false,
+                        inherit: false, 
+                        evidence: [], 
+                        confidence: 0 });
+            }
+        });
+
+        const spouses = spouses_of[pid] || [];
+        spouses.forEach(spouseId => {
+            addNode(dataJSON.individuals[spouseId],spouseId,depth, nodeupdates);
+            if (!edges.get(`${pid}-${spouseId}`) && !edges.get(`${spouseId}-${pid}`)){
+                // only add edge if it doesn't already exist in either direction, this prevents duplicates when multiple spouses share the same partner
+                edgesupdates.push ({id: `${pid}-${spouseId}`, 
+                        from: pid, 
+                        to: spouseId,
+                        smooth: {type: 'curvedCW', roundness: 0.2},
+                        inherit: false, 
+                        evidence: [], 
+                        confidence: 0 });
+            }
+        });
+    }
+    //
+    // Initialize the tree with the root ID 
+    // This adds the nodes to the network
+    const nodeupdates = [];
+    addAncestors(rootNodeId, 0, nodeupdates);
+    addDescendants(rootNodeId, 0, nodeupdates);
+    edges.update(edgesupdates);
+    nodes.update(nodeupdates);
+    postMessageToInfoCenter("Tree Loaded...");
+    //
+    // build spouse lookup table
+    //
+    BuildSpouseTable();
+    addFamily(rootNodeId);
+
+
+    if (network) {
+    //    window.network = network;
+        network.setData({ nodes, edges });
+    //    network.setOptions(network_options);
+        console.log(`Network already exists, updated data and options.`);
+         // reapply positions
+    } else {
+        console.log(`Creating new network.`);
+        // Create a network
+        network = new vis.Network(network_container, { nodes, edges }, network_options);
+        window.network = network;
+        console.log(`Network created with default options.`);
+        //
+        // Apply positions to each node 
+    }
+    // Clear the current tree layout, this resets all node positions to null, which allows us to then apply our own layout algorithm to position the nodes in a more meaningful way based on their relationships and attributes, rather than relying on the default layout which may not be optimal for genealogical data
+//    console.log('current nodes in network 1:', nodes.get());
+    ClearTree();
+    // position ancestors in y dimension using a packing algorithm
+    arrangeAncestors(rootNodeId, 0);
+    nodes.update(plotupdates);
+//    console.log('current nodes in network 2:', nodes.get());
+    // add birthdates to all the nodes that don't have them, this allows us to use birthdates for filtering and grouping even if they were missing from the original data, as long as they can be estimated from relatives
+    estimateAllBirthYears();
+    // position spouse and children in y dimension
+    plotupdates.length = 0;
+    const rootNodePos = network.getPositions([rootNodeId])[rootNodeId] || null;
+    Nexty = rootNodePos.y;  // starting point in the y dimension for children
+//    console.log(`Calling Arrange Descendants for Root node position:`, rootNodePos);
+    arrangeDescendants(rootNodeId, 0);
+    const newRootPos = plotPositionMap.get(rootNodeId);
+//    console.log(`Finished arranging descendants, newY:`, newRootPos.y, `Root Node Y:`, rootNodePos.y);
+    if (!isNaN(newRootPos.y)) {
+        const update = {
+            id: rootNodeId,
+            // x: plotx,
+            y: rootNodePos.y, // keep root node at same y position, we will move the descendants relative to it
+            fixed: true
+        };
+//        console.log('current nodes in network 3:', nodes.get());
+        plotupdates.push(update);
+        plotPositionMap.set(rootNodeId, update);
+        offsetDescendants(rootNodeId, newRootPos.y - rootNodePos.y); // adjust position of descendants to be below the root node
+//        console.log('current nodes in network 4:', nodes.get());
+    }
+    console.log('plot updates to apply:', plotupdates);
+    nodes.update(plotupdates);
+//    console.log('current nodes in network 5:', nodes.get());
+    // assign x positions to nodes based on birth year, this creates a more chronological layout and can help reveal patterns in the data
+    positionNodesByBirthYear();
+//    console.log('current nodes in network 6:', nodes.get());
+//    console.log(`Finished arranging ancestors # nodes = `, nodes.length);
+    RecordPositions();
+    network.redraw();
+//    console.log('current nodes in network 7:', nodes.get());
+} // end of updateTree function
+
+async function createTree(userData) {
+    
+    updateTree();
+    centerTree(network, nodes, network_container);
+
+// ---------- Initialize Pop-up Map --------------------------
+    
+    if (!map) {
+        map = L.map('mapContainer', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([20, 0], 2);
+    }
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+    }).addTo(map);
+
+
+// ----------------------------- Load groups -----------------------------------
+
+    // ------------------------- Load Group Colors ---------------------------
+
+    groupColors = await loadBackendData("ColorInfo");
+    if (groupColors != null) {
+        console.log("Group colors loaded:", groupColors);
+    } else {
+        console.log("Failed to load group colors");
+    }
+              
+
+    // -----------------------------------Load Historical Events -----------------------
+
+    historicalEvents = await loadBackendData("HistoricalEvents");
+    if (historicalEvents != null) {
+        console.log("Historical events loaded:", historicalEvents);
+    } else {
+        console.log("Failed to load historical events");
+    }
+    postMessageToInfoCenter("Historical Events Loaded from Server...");
+    //-------------------------------------Load Personal Events--------------------------
+
+    personalHistoryEvents = await loadBackendData("PersonalHistoryEvents");
+    if (personalHistoryEvents != null) {
+        console.log("Personal history events loaded:", personalHistoryEvents);
+        for (const [id, person] of Object.entries(personalHistoryEvents)) {
+            const fullName = Array.isArray(person.name) ? person.name.join(" ") : person.name;
+            peopleList.push({ id, name: fullName });
+            //console.log("Loading List", fullName);
+        }
+    } else {
+        console.log("Failed to load historical events");
+    }  
+    postMessageToInfoCenter("Personal History Events Loaded from Server...");
+
+    // ================================
+    // 1️⃣ Load offline historical events
+    // ================================
+    let offlineEvents = [];
+
+    offlineEvents = await loadBackendData("OffLineEvents");
+    if (offlineEvents != null) {
+        console.log("Offline events loaded:", offlineEvents);
+    } else {
+        console.log("Failed to load offline events");
+    }
+
+// ----------------------------- Birth Groups ------------------------
+// Groups are a series of nodes that share a common attribute, like birth location
+// --------------------------------------------------------------------
+    let birthLocationGroups = [];
+    postMessageToInfoCenter("Loading Birth Clusters from Server...");
+    console.log("Calling Backend to Load Birth Location Groups:");
+    birthLocationGroups = await loadBackendData("BirthLocationGroups");
+    if (birthLocationGroups != null) {
+        console.log("Birth Location Groups loaded:", birthLocationGroups);
+    } else {
+        console.log("Failed to load offline events");
+    }
+
+//    let birthinitialized = false;
+    let Birth_Cluster = new Clusters();  // create a new cluster class object for birth location groups
+//    network.once("afterDrawing", ctx => {
+//        postMessageToInfoCenter("Initializing Birth Clusters...");
+//        if(!birthinitialized) {
+//            Birth_Cluster.init(birthLocationGroups, nodes, "BirthGroup",userId, network,boxWidth);
+//            birthinitialized = true;
+//        }
+//    });
+    InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
+    postMessageToInfoCenter("Birth Clusters Loaded...");
+//----------------------- Death Groups --------------------------------
+// Groups are a series of nodes that share a common attribute, like death location
+// --------------------------------------------------------------------
+    let DeathLocationGroups = [];
+    
+    DeathLocationGroups = await loadBackendData("DeathLocationGroups");
+    if (DeathLocationGroups != null) {
+        console.log("Death Location Groups loaded:", DeathLocationGroups);
+    } else {
+        console.log("Failed to load offline events");
+    }
+
+    let deathinitialized = false;
+    let Death_Cluster = new Clusters();  // create a new cluster class object for birth location groups
+    network.once("afterDrawing", ctx => { 
+        if(!deathinitialized) {
+            Death_Cluster.init(DeathLocationGroups, nodes, "DeathGroup",userId, network,boxWidth);
+            deathinitialized = true;
+        }
+    }); 
+    postMessageToInfoCenter("Death Clusters Loaded...");
+
+    // loadEvidencefromBackend(userData);
+
+// ----------------------------------------------------------------------------------
+// --------------------------------- LISTENERS --------------------------------------
+// ----------------------------------------------------------------------------------
+    console.log("Installing Listeners...");
+    postMessageToInfoCenter("Installing Listeners...");
+
+    // ------------------------------------ People Search Bar-------------------------
+    searchBox.addEventListener("input", () => {
+        const query = searchBox.value.trim().toLowerCase();
+        console.log("Search input:", query, "People list length:", peopleList.length);
+        suggestionsDiv.innerHTML = "";
+        if (!query) {
+            suggestionsDiv.style.display = "none";
+            return;
+        }
+        // Filter names to display for user to pick from
+        const matches = peopleList.filter(p => p.name.toLowerCase().includes(query)).slice(0, 20);
+        console.log("Name Matches found:", matches.length);
+        // Show matches for users to select from
+        if (matches.length > 0) {
+            suggestionsDiv.style.display = "block";
+            matches.forEach(match => {
+                const div = document.createElement("div");
+                div.textContent = match.name;
+                div.style.padding = "8px";
+                div.style.cursor = "pointer";
+                div.style.borderBottom = "1px solid #eee";
+                div.addEventListener("mouseenter", () => (div.style.background = "#f0f0f0"));
+                div.addEventListener("mouseleave", () => (div.style.background = "white"));
+                div.addEventListener("click", () => {
+                    searchBox.value = "";
+                    suggestionsDiv.style.display = "none";
+                    centerOnPerson(match.id);
+                });
+                suggestionsDiv.appendChild(div);
+            });
+        } else {
+            suggestionsDiv.style.display = "none";
+        }
+    });
+
+    searchBoxLocation.addEventListener("input", () => {
+        const query = searchBoxLocation.value.trim().toLowerCase();
+        suggestionsDiv.innerHTML = "";
+
+        if (!query) {
+            suggestionsDiv.style.display = "none";
+            return;
+        }
+
+        console.log("Locations in list:", locationList.length);
+
+        // Convert Set → Array and filter
+        const matches = locationList.filter(loc => loc.place.includes(query)).slice(0, 20);
+
+        console.log("LocationMatches found:", matches.length);
+
+        if (matches.length > 0) {
+            suggestionsDiv.style.display = "block";
+
+            let count = 0;
+            matches.forEach(loc => {
+                console.log(count, " Location match:", loc.place, "for person ID:", loc.personId);
+                count = count + 1;
+                const person = peopleList.find(p => p.id === loc.personId);
+                const div = document.createElement("div");
+                div.textContent = `${person.name}, ${loc.place}, ${loc.date || ""} `;
+                div.style.padding = "8px";
+                div.style.cursor = "pointer";
+                div.style.fontSize = "10px";
+                div.style.borderBottom = "1px solid #eee";
+
+                div.addEventListener("mouseenter", () => (div.style.background = "#f0f0f0"));
+                div.addEventListener("mouseleave", () => (div.style.background = "white"));
+
+                div.addEventListener("click", () => {
+                    searchBoxLocation.value = "";
+                    suggestionsDiv.style.display = "none";
+                    centerOnPerson(loc.personId);
+                });
+
+                suggestionsDiv.appendChild(div);
+            });
+        } else {
+            suggestionsDiv.style.display = "none";
+        }
+    });
+
+    rootBox.addEventListener("input", () => {
+        const query = rootBox.value.trim().toLowerCase();
+        console.log("Search input:", query, "People list length:", peopleList.length);
+        suggestionsDiv.innerHTML = "";
+        if (!query) {
+            suggestionsDiv.style.display = "none";
+            return;
+        }
+        // Filter names to display for user to pick from
+        const matches = peopleList.filter(p => p.name.toLowerCase().includes(query)).slice(0, 20);
+        console.log("Name Matches found:", matches.length);
+        // Show matches for users to select from
+        if (matches.length > 0) {
+            suggestionsDiv.style.display = "block";
+            matches.forEach(match => {
+                const div = document.createElement("div");
+                div.textContent = match.name;
+                div.style.padding = "8px";
+                div.style.cursor = "pointer";
+                div.style.borderBottom = "1px solid #eee";
+                div.addEventListener("mouseenter", () => (div.style.background = "#f0f0f0"));
+                div.addEventListener("mouseleave", () => (div.style.background = "white"));
+                div.addEventListener("click", () => {
+                    rootBox.value = "";
+                    suggestionsDiv.style.display = "none";
+                    rootBox.value = match.name;
+                    // this is where a call to update tree with new root would go, for now we just center on the person
+                    rootName = match.name
+                    updateTree();      
+                    InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");              
+                    centerTree(network, nodes, network_container);
+    //                centerOnPerson(match.id);
+                });
+                suggestionsDiv.appendChild(div);
+            });
+        } else {
+            suggestionsDiv.style.display = "none";
+        }
+    });
+
+    maxGenBox.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            const value = parseInt(maxGenBox.value, 10);
+
+            if (!isNaN(value) && value >= 0) {
+                maxGenerations = value;
+                maxGenBox.value = value;
+                updateTree();
+                InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
+                centerTree(network, nodes, network_container);
+            }
+        }
+    });
+
+    // ---------------- Listener for login button ---------------------------------------------------
+    document.getElementById("loginButton").addEventListener("click", loginUser);
+
+    // ---------Node and Cluster Biography/History Modal Listeners -------------------
+    document.getElementById("bioSaveBtn").addEventListener("click", saveBioData);
+    document.getElementById("bioCancelBtn").addEventListener("click", closeBioEditor);
+    document.getElementById("bioAttachmentBtn").addEventListener("click", BioAddAttachment);
+    document.getElementById("bioMakeRootBtn").addEventListener("click", MakeRoot);
+
+    // Close modal when clicking outside the content
+    document.getElementById("bioModal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("bioModal")) {
+            closeBioEditor();
+        }
+    });
+
+    function MakeRoot() {
+        if (currentEditingNodeId == null) {
+            showError("function MakeRoot: currentEditingNodeId == null");
+            return;
+        } 
+        rootNodeId = currentEditingNodeId;
+        rootName = nodes.get(rootNodeId).Name;
+        rootBox.value = rootName;
+
+        updateTree();
+        InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
+        
+        network.redraw();
+        closeBioEditor();
+        centerTree(network, nodes, network_container);
+    }
+//---------------------------------------------------Ctrl - Y ----------------------
+// - Relign all nodes in the x direction based on birth year        
+// ---------------------------------------------------------------------------------
+    document.addEventListener("keydown", function (e) {
+        if (e.ctrlKey && e.key === "y") {
+            positionNodesByBirthYear();
+        }
+    });
+
+// ----------------------------------------- Birth toggle (Clusters On/Off) --------
+// - toggle the global variable "BirthclustersEnabled"
+// ---------------------------------------------------------------------------------
+    document.getElementById("birthToggle").addEventListener("change", (e) => {
+        BirthclustersEnabled = e.target.checked;
+        if (BirthclustersEnabled) {
+            BirthclustersEnabled = true;
+        } else {
+            BirthclustersEnabled = false;
+        }
+        network.redraw();
+    });
+// ----------------------------------------- Death toggle (Clusters On/Off) --------
+// - toggle the global variable "DeathclustersEnabled"
+// ---------------------------------------------------------------------------------
+    document.getElementById("deathToggle").addEventListener("change", (e) => {
+        DeathclustersEnabled = e.target.checked;
+        if (DeathclustersEnabled) {
+            DeathclustersEnabled = true;
+        } else {
+            DeathclustersEnabled = false;
+        }
+        network.redraw();
+    });
+    // ----------------------------------------- Migration toggle (Clusters On/Off) --------
+// - toggle the global variable "MigrationclustersEnabled"
+// ---------------------------------------------------------------------------------
+    document.getElementById("migrationToggle").addEventListener("change", (e) => {
+        MigrationclustersEnabled = e.target.checked;
+        if (MigrationclustersEnabled) {
+            MigrationclustersEnabled = true;
+        } else {
+            MigrationclustersEnabled = false;
+        }
+        network.redraw();
+    });
+    // ---------------------------------------------------------------------------
+    // ----------------------------------------- Evidence Panel Listeners --------
+    // ---------------------------------------------------------------------------
+    // ----------- close evidence panel, open evidence form for adding new evidence -------------
+    document.getElementById("closeEvidencePanel").addEventListener("click", () => {
+        document.getElementById("relationshipEvidencePanel").classList.remove("open");
+        currentEdgeId = null;
+    });
+    // ----------- add evidence button listener -------------
+    document.getElementById("addEvidenceBtn").addEventListener("click", () => {
+        currentEvidenceEditId = null;  // means "adding new"
+        document.getElementById("evidenceFormTitle").textContent = "Add Evidence";
+
+        // Clear form fields
+        document.getElementById("evidenceName").value = "";
+        document.getElementById("evidenceDescription").value = "";
+        document.getElementById("evidenceDate").value = "";
+        document.getElementById("evidenceScoreSource").value = "3";
+        document.getElementById("evidenceScoreInfo").value = "3";
+        document.getElementById("evidenceScoreEvidence").value = "3";
+
+        // Show the form
+        document.getElementById("evidenceFormContainer").classList.remove("hidden");
+    });
+    // ----------- save evidence button listener -------------
+    document.getElementById("saveEvidenceBtn").addEventListener("click", () => {
+        const edge = edges.get(currentEdgeId);
+        if (!edge) return;
+
+        if (!edge.evidence) edge.evidence = [];
+
+        const name = document.getElementById("evidenceName").value.trim();
+        const description = document.getElementById("evidenceDescription").value.trim();
+        const date = document.getElementById("evidenceDate").value.trim();
+        const scoreSource = parseInt(document.getElementById("evidenceScoreSource").value);
+        const scoreInfo = parseInt(document.getElementById("evidenceScoreInfo").value);
+        const scoreEvidence = parseInt(document.getElementById("evidenceScoreEvidence").value);
+
+        const total = scoreSource + scoreInfo + scoreEvidence;
+
+        // ADD NEW EVIDENCE
+        if (currentEvidenceEditId == null) {
+            edge.evidence.push({
+                id: crypto.randomUUID(),
+                name,
+                description,
+                date,
+                scoreSource,
+                scoreInfo,
+                scoreEvidence,
+                total
+            });
+        } else {
+            // EDIT EXISTING EVIDENCE
+            const evidence = edge.evidence.find(ev => ev.id === currentEvidenceEditId);
+            if (evidence) {
+                evidence.name = name;
+                evidence.description = description;
+                evidence.date = date;
+                evidence.scoreSource = scoreSource;
+                evidence.scoreInfo = scoreInfo;
+                evidence.scoreEvidence = scoreEvidence;
+                evidence.total = total;
+            }
+        }
+
+        const canvas = network.canvas.frame.canvas;  
+        const ctx = canvas.getContext("2d");
+        // Update total score on the edge
+        edge.totalScore = edge.evidence.reduce((sum, ev) => sum + ev.total, 0);
+        updateEdgeColor(edge)
+
+        const score = edge.totalScore || 0;
+        if (score > 0) { console.log(`Edge ${edge.id} has score ${score}, applying color.`); }
+
+
+        // Save edge back to dataset
+        edges.update(edge);
+
+        // ------- Save edges with evidence to backend --------
+        saveEvidenceToBackend();
+
+        // Refresh the table
+        renderEvidenceList(edge);
+
+        // Update total score display
+        document.getElementById("relationshipTotalScore").textContent = edge.totalScore;
+
+        // Hide the form
+        document.getElementById("evidenceFormContainer").classList.add("hidden");
+    });
+    // --------------------------------------------------------
+    // ----------- cancel evidence button listener -------------
+    document.getElementById("cancelEvidenceBtn").addEventListener("click", () => {
+        document.getElementById("evidenceFormContainer").classList.add("hidden");
+    });
+    // -------------------------------------------------------------
+    // ----------- edit evidence button listener -------------
+    document.addEventListener("click", function (e) {
+        if (!e.target.classList.contains("editEvidenceBtn")) return;
+
+        const evidenceId = e.target.dataset.id;
+        startEditingEvidence(evidenceId);
+    });
+    // -------------------------------------------------------------
+    // ----------- delete evidence button listener -------------
+    document.addEventListener("click", function (e) {
+        if (!e.target.classList.contains("deleteEvidenceBtn")) return;
+
+        const evidenceId = e.target.dataset.id;
+        deleteEvidence(evidenceId);
+    });
+
+    const menu = document.getElementById("nodeOptionsMenu");
+    menu.addEventListener("click", (e) => {
+        console.log("Node options menu clicked, action:", e.target.dataset.action);
+        currentEditingNodeId = menu.dataset.nodeId;
+        switch (e.target.dataset.action) {
+
+            case "root":
+                MakeRoot();
+                break;
+
+            case "attachment":
+                BioAddAttachment();
+                break;
+
+            case "bio":
+                const node = nodes.get(currentEditingNodeId);
+                name = node.Name;
+                openBioEditor(currentEditingNodeId,name);
+                break;
+        }
+        // Hide menu
+        menu.style.display = "none";
+
+    });
+
+
+    // ----------------------------------------------------------------------------------
+    // ------------------------------ Left Click ----------------------------------------
+    // ----------------------------------------------------------------------------------
+    // ---------------- Attach files to nodes / pin info in Information Center ----------
+    // ----- Attach evidence to edges (like confidence level, evidence, etc) ---------
+    // ----------------------------------------------------------------------------------
+    network.on("click", function (params) {
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+        }
+        hideAttachmentPreview(); 
+        clickTimer = setTimeout(() => {
+            if (params.nodes.length > 0) {
+                // ----------------------------------------------------------
+                // ------------- Single Click on a Node ---------------------
+                // ----------------------------------------------------------   
+                // A node was clicked - pin this node's info
+                console.log("Node clicked:", params.nodes[0]);
+                console.log("Cluster turned off");
+                const nodeId = params.nodes[0];
+                Pinned_NodeId = nodeId;
+                displayNodeInfo(nodeId);
+                displayPinIndicator(true);
+                showNodeOptionsMenu(nodeId, params.pointer.DOM);
+ //               displayMigrationMap(nodeId);
+            }
+            else if (params.edges.length > 0) {
+                // ----------------------------------------------------------
+                // ------------- Single Click on an Edge ---------------------
+                // ----------------------------------------------------------   
+                // An edge was clicked - show edge information (like confidence, evidence, etc)
+                console.log("Edge clicked:", params.edges[0]);
+                const edgeId = params.edges[0];
+                const edge = edges.get(edgeId);
+                openRelationshipEvidencePanel(edgeId);
+                // --- add listener for closing the evidence panel
+
+            }
+            else 
+            {
+                // -----------------------------------------------------
+                // -- Single Left Click outside a Node or Edge----------
+                // -----------------------------------------------------    
+                // No node was clicked - check if a cluster was clicked
+                const clickPos = params.pointer.canvas;
+                let activeclusterID = Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y);
+
+                if (activeclusterID != null) {
+                // ---------------------------------------------------------
+                // ------------- Single Click on a Cluster -------------------
+                // ---------------------------------------------------------
+                        Pinned_NodeId = activeclusterID;  
+                        displayClusterInfo(Birth_Cluster, activeclusterID);
+                        displayPinIndicator(true);  
+                        console.log("Cluster clicked:", activeclusterID);
+                        console.log("Node selection cleared");
+                } else {
+                    // --------------------------------------------------------------
+                    // ---------------- Clicked on Empty Space ----------------------   
+                    // --------------------------------------------------------------   
+                    console.log("No node or cluster clicked - clearing selection");
+                    Pinned_NodeId = null;
+                    displayPinIndicator(false);
+                    HideAttachments();
+                    const contextDisplay = document.getElementById('contextDisplay');
+                    contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+                    hideMap();
+                    HideAttachments();
+                    hideNodeOptionsMenu();
+                }
+            }
+        }, 250); // wait to see if doubleClick happens
+    });
+//---------------------------------------------------------------------------------------
+// Double click a node to add parents---------------Double Click-------------------------
+//---------------------------------------------------------------------------------------
+    network.on("doubleClick", function(params) {
+        if (clickTimer) {
+            clearTimeout(clickTimer); // cancel single-click
+            clickTimer = null;
+        }
+
+    });
+// ----------------------------------------- Drag End-----------------------
+    network.on("dragEnd", function (params) {
+        const canvas = network.canvas.frame.canvas;  
+        const ctx = canvas.getContext("2d");
+//        if (params.nodes.length === 1 ) {
+//            setTimeout(() => {
+//                positions = network.getPositions();
+//                if (Birth_Cluster) {
+//                    Birth_Cluster.Create(network,boxWidth);
+//                    if (BirthclustersEnabled) {
+//                        Birth_Cluster.Draw(ctx, groupColors,null);
+//                    }
+//                }
+//                saveState();
+//            }, 0);
+//        }
+    });
+//------------------------------------------ Drag Start-------------------
+    network.on("dragStart", function() {
+        // Save the positions of all nodes as dragging begins 
+        previousPositions = network.getPositions();
+    });
+//  --------------------------------------- Dragging -----------------------------
+    network.on("dragging", function (params) {
+        if (params.nodes.length === 1 ) {
+            const movedNodeId = params.nodes[0];
+            // Get the current position of the node being dragged
+            const currentPositions = network.getPositions([movedNodeId]);
+            // Delta from where it started
+            const dx = 0;
+            const dy = currentPositions[movedNodeId].y - previousPositions[movedNodeId].y;
+            // Apply delta once to ancestors (using their original positions, not chained!)
+//            nodes.update({id: movedNodeId,
+//                x: previousPositions[movedNodeId].x, 
+//                fixed: false
+//            });
+//            moveAncestors(movedNodeId, dx, dy);
+        }
+    });
+// ------------------------- Hover over node -----------------------------
+    
+    network.on("hoverNode", async function (params) {
+
+        clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+            runHoverLogic(params);
+        }, 1000); // delay to prevent flickering when quickly moving between nodes
+    });
+// --------------------------------------------------------------------------
+// Mouse Move - tracking the mouse position to be used to detect if mouse is over a cluster or node
+// --------------------------------------------------------------------------
+    const canvas = network.canvas.frame.canvas;    
+    canvas.addEventListener("mousemove", event => {
+        // DOM coordinates (screen-relative)
+        const rect = canvas.getBoundingClientRect();
+        const domPos = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        // Convert to network coordinates (same system as your nodes/clusters)
+        canvasPos = network.DOMtoCanvas(domPos);
+
+        const nodeId = network.getNodeAt(domPos);
+
+        if (nodeId) {
+            // Mouse is over a node
+            if (Hover_NodeActive == null) {
+                // We just entered a new node OR Vis.js missed the hover event
+
+            }
+        } else {
+            // Mouse is NOT over any node
+            if ( Pinned_NodeId == null) {
+                // We were hovering a node, but now we’re not
+                // the code thinks we are hovering but we are not
+                // and nothing is pinned, so clear the hover state and reset the context display
+                Hover_NodeActive = null;
+                const contextDisplay = document.getElementById("contextDisplay");
+                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+                hideMap();
+                HideAttachments();
+            }
+        }
+        network.redraw(); // forces redraw to trigger testing of inside or outside of clusters
+    });
+//-------------------------------------------------------------------------------
+//----fires when a node that was previously selected loses focus (i.e. the user clicks away or deselects it) --------------------------------
+//  --------------------------------------- Blur Node ----------------------------- 
+
+    network.on("blurNode", function () {
+//        hideRenderAttachment();
+        if (Pinned_NodeId == null) Hover_NodeActive = null;
+        document.getElementById("nodeMenu").style.display = "none";
+        // Reset context display to default message only if no node or cluster is selected/pinned
+        if (Pinned_NodeId == null) {
+            const contextDisplay = document.getElementById("contextDisplay");
+            contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+            hideMap();
+            HideAttachments();
+        }
+    });
+    //  --------------------------------------- Right Click -----------------------------
+    // Handle right-clicks on nodes
+    network.on("oncontext", function(params) {
+        params.event.preventDefault(); // disable browser menu
+        const nodeId = network.getNodeAt(params.pointer.DOM);
+
+        if (!nodeId) {
+            // -----------------------------------------------
+            // No node clicked, check if a cluster was clicked
+            // -----------------------------------------------
+            let activeclusterID = Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y);
+            if (activeclusterID != null) {
+                // ---------------------------------
+                // ---- A cluster was right-clicked
+                // ---------------------------------
+                console.log("Right-clicked on cluster ID:", activeclusterID);
+                if (isAdmin()) {
+                    // if cluster selected and user is admin, open cluster info editor
+                    name = Birth_Cluster.GetClusterName(nodeId);
+                    openBioEditor(activeclusterID,name);
+                }
+            } else {
+                // ---------------------------------
+                // --- No node or cluster clicked
+                // --- Check if an edge was right-clicked for evidence editing
+                if (params.edges.length > 0) {
+                    // ----------------------------------------------------------
+                    // ------------- Single Click on an Edge ---------------------
+                    // ----------------------------------------------------------   
+                    // An edge was clicked - show edge information (like confidence, evidence, etc)
+                    console.log("Edge clicked:", params.edges[0]);
+                    const edgeId = params.edges[0];
+                    const edge = edges.get(edgeId);
+                    if (isAdmin()) { 
+                        openRelationshipEvidencePanel(edgeId);
+                    }
+                    // --- add listener for closing the evidence panel
+                }
+                console.log("No cluster or node selected");
+            }
+            return;
+        } else {
+            // -----------------------------------------------
+            // Node selected
+            // -----------------------------------------------
+            if (isAdmin()) {
+                const node = nodes.get(nodeId);
+                name = node.Name;
+                console.log("Node selected: ", nodeId);
+                openBioEditor(nodeId, name);
+            }
+        }
+    });
+
+// --------------------------------------------------beforeDrawing----------------------------
+    network.on("beforeDrawing", function(ctx) {
+
+        if (nodes.length === 0) return; // no nodes to draw
+
+ //       drawClusterAttachments(ctx, Birth_Cluster, Death_Cluster);
+        
+        // ---------------- Draw timeline
+        DrawTimeline(ctx,network);
+
+        // --------------Handle clusters drawing ----------------   
+        if (BirthclustersEnabled || DeathclustersEnabled) {
+            // --------------------------------------------------
+            // -------- Clusters turned on, Draw Clusters--------
+            // --------------------------------------------------
+        //    let activeCluster = null;
+            let activeCluster = Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y);
+            if (BirthclustersEnabled) {
+                //Birth_Cluster.Draw(ctx, groupColors,null);
+                // ---------------------------------------------------
+                // ------------ Highlight a cluster if the mouse is inside it
+                // ---------------------------------------------------
+     
+                Birth_Cluster.Draw(ctx, groupColors,activeCluster);  // Draw with highlight if activeCluster not null
+            } 
+            if (DeathclustersEnabled) {
+                Death_Cluster.Draw(ctx, groupColors,null);
+                // ---------------------------------------------------
+                // ------------ Highlight a cluster if the mouse is inside it
+                // ---------------------------------------------------
+                if (activeCluster == null) {
+                    activeCluster = Death_Cluster.insideClusters(canvasPos.x, canvasPos.y);
+                    Death_Cluster.Draw(ctx, groupColors,activeCluster);  // Draw with highlight if activeCluster not null                
+                }
+            }
+            // ---------------------------------------------------
+            // --Update Info Center based on active cluster or node -----
+            // ---------------------------------------------------
+            if(activeCluster != null && Hover_NodeActive == null) {
+                //------------------------------------------------------
+                // ---- Mouse inside a cluster, not over a node -----
+                // -----------------------------------------------------
+                if (Pinned_NodeId == null) {
+                    // Nothing Pinned - update context display with active cluster info
+                    if (Birth_Cluster.Exist(activeCluster)) {
+                        const info = Birth_Cluster.GetInfo(activeCluster);  // get cluster info to display
+                        displayClusterInfo(Birth_Cluster,activeCluster); // Show cluster info in context display
+                    } else if (Death_Cluster.Exist(activeCluster)) {
+                        const info = Death_Cluster.GetInfo(activeCluster);  // get cluster info to display
+                        displayClusterInfo(Death_Cluster,activeCluster); // Show cluster info in context display
+                    }
+                    RenderNodeAttachments(activeCluster);
+ //                 console.log("Drawtimeline - active cluster != null && Hover_NodeActive == null");
+                }
+            }
+            if(activeCluster == null && Hover_NodeActive == null && Pinned_NodeId == null) {
+                // No cluster is active, no node is active (Hover), nothing pinned - clear context display
+                const contextDisplay = document.getElementById('contextDisplay');
+                HideAttachments();
+                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+            }
+        } // end of cluster drawing
+
+        // Draw edges on top of everything else so they are always visible and not overlapped by nodes or clusters
+        // factors in evidence-based coloring and width
+        DrawAllEdges(ctx);  
+
+    });
+//-----------------------------------------------afterDrawing----------------------------
+    network.on("afterDrawing", function(ctx) {
+
+        if (nodes.length === 0) return; // no nodes to draw
+
+        drawNodeAttachments(ctx);
+        drawNodeText(ctx);
+
+        // ----------------Draw paperclips on nodes with attachments ----------
+        Object.entries(nodeInformation).forEach(([id,info]) => {
+            if (info && Array.isArray(info.attachments) && info.attachments.length > 0){ // && BirthclustersEnabled) {
+                // Get node position in canvas space
+                const pos = Birth_Cluster.GetCentroid(id);
+                const Npos = network.getPositions([id])[id];
+                if(pos != null && BirthclustersEnabled)
+                {
+                    // Draw paperclip in top‑right corner of the cluster name
+                    const size = 64; // icon size
+                    ctx.drawImage(
+                        paperclipImg,
+                        pos.x + boxWidth / 2 - 40,
+                        pos.y - boxHeight / 2 - 20,
+                        size,
+                        size
+                    );
+                    // Draw picture behind name
+                } else if (Npos) {
+                    // Draw paperclip in top‑right corner of the node
+                    const size = 64; // icon size
+                    ctx.drawImage(
+                        paperclipImg,
+                        Npos.x + boxWidth / 2 - 40,
+                        Npos.y - boxHeight / 2 - 20,
+                        size,
+                        size
+                    );
+                }
+            }
+        });
+        updateVisibleGroups();
+        // Not sure what the next two lines are for
+//        if(Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y) != null) {
+//            const info = Birth_Cluster.GetInfo(Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y));
+//            console.log(info);
+//        }
+    });
+    postMessageToInfoCenter("Installing Listeners, Complete...");
+    network.redraw();
+}
+// ----------------------------------------------------------------------------------
+//------------------------------- END OF MAIN FUNCTION ------------------------------
+// ----------------------------------------------------------------------------------
+function centerTree(network, nodes, container) {
+
+    const bounds = computeBounds(nodes.get());
+    const center = computeCenter(bounds);
+    const scale = computeScale(bounds, container);
+
+    console.log("Centering tree with bounds:", bounds, "center:", center, "scale:", scale);
+//    console.log(nodes.get().map(n => [n.id, n.x, n.y]));
+
+    network.moveTo({
+        position: center,
+        scale: scale,
+        animation: true
+    });
+    function computeScale(bounds, container) {
+
+        const width = bounds.maxX - bounds.minX;
+        const height = bounds.maxY - bounds.minY;
+
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        const scaleX = containerWidth / (width * 1.2);
+        const scaleY = containerHeight / (height * 1.2);
+
+        return Math.min(scaleX, scaleY, 1); // never zoom in too far
+    }
+    function computeCenter(bounds) {
+        return {
+            x: (bounds.minX + bounds.maxX) / 2,
+            y: (bounds.minY + bounds.maxY) / 2
+        };
+    }
+    function computeBounds(nodes) {
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+
+        nodes.forEach(n => {
+            if (n.x == null || n.y == null) return;
+
+            //console.log(`Node ${n.Name} position: x=${n.x}, y=${n.y}`);
+
+            if (n.x < 25000) {
+                minX = Math.min(minX, n.x);
+                maxX = Math.max(maxX, n.x);
+                minY = Math.min(minY, n.y);
+                maxY = Math.max(maxY, n.y);
+            }
+        });
+        return { minX, maxX, minY, maxY };
+    }
+}
+function DrawAllEdges(ctx) {
+    const allEdges = edges.get();
+    allEdges.forEach(edge => {
+        const fromNode = nodes.get(edge.from);
+        const toNode = nodes.get(edge.to);
+        if (fromNode && toNode) {
+            const fromPos = network.getPositions([edge.from])[edge.from];
+            const toPos = network.getPositions([edge.to])[edge.to];
+            const score = edge.totalScore || 0;
+            const width = edge.width || 1;
+            const color = edge.color || "#888888";
+            drawEdge(ctx, fromPos, toPos, width, color);
+        }
+    });
+}
+function drawEdge(ctx, fromPos, toPos, width, color) {
+    ctx.beginPath();
+    ctx.moveTo(fromPos.x, fromPos.y);
+    ctx.lineTo(toPos.x, toPos.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+}
+// ------------------------------------------ Evidence Functions ---------------------------------------------
+
+// -----------------Open Evidence Page for a relationship (edge)----------------
+function openRelationshipEvidencePanel(edgeId) {
+
+    currentEdgeId = edgeId; // Store the current edge ID for reference in the evidence form
+    const edge = edges.get(edgeId);
+    if (!edge) return;
+
+    const parent = nodes.get(edge.from);
+    const child = nodes.get(edge.to);
+
+    // Set the title
+    const titleEl = document.getElementById("relationshipTitle");
+    titleEl.innerHTML = `
+        <div class="rel-title-name">${parent.Name}</div>
+        <div class="rel-title-mid">relationship to</div>
+        <div class="rel-title-name">${child.Name}</div>
+    `;
+
+    // Load evidence list into the table
+    renderEvidenceList(edge);
+
+    // Update total score
+    const totalScore = edge.totalScore || 0;
+    document.getElementById("relationshipTotalScore").textContent = totalScore;
+
+    // Show the panel
+    document.getElementById("relationshipEvidencePanel").classList.add("open");
+}
+function renderEvidenceList(edge) {
+    const tbody = document.getElementById("evidenceTableBody");
+    tbody.innerHTML = "";
+
+    if (!edge.evidence || edge.evidence.length === 0) return;
+
+    edge.evidence.forEach((ev, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${ev.name}</td>
+            <td>${ev.description}</td>
+            <td>${ev.date}</td>
+            <td>${ev.scoreSource}</td>
+            <td>${ev.scoreInfo}</td>
+            <td>${ev.scoreEvidence}</td>
+            <td>${ev.total}</td>
+            <td class="evidence-actions">
+                <div class = "action-wrapper">
+                    <button class="editEvidenceBtn" data-id="${ev.id}">✎</button>
+                    <button class="deleteEvidenceBtn" data-id="${ev.id}">🗑</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+function deleteEvidence(evidenceId) {
+    const edge = edges.get(currentEdgeId);
+    if (!edge || !edge.evidence) return;
+
+    const canvas = network.canvas.frame.canvas;  
+    const ctx = canvas.getContext("2d");
+
+    // Remove the evidence item
+    edge.evidence = edge.evidence.filter(ev => ev.id !== evidenceId);
+
+    // Recalculate total score
+    edge.totalScore = edge.evidence.reduce((sum, ev) => sum + ev.total, 0);
+    updateEdgeColor(edge)
+
+    // Save back to DataSet
+    edges.update(edge);
+
+    // Save to backend
+    saveEvidenceToBackend();
+
+    // Refresh UI
+    renderEvidenceList(edge);
+    document.getElementById("relationshipTotalScore").textContent = edge.totalScore;
+}
+
+function startEditingEvidence(evidenceId) {
+    const edge = edges.get(currentEdgeId);
+    if (!edge || !edge.evidence) return;
+
+    const ev = edge.evidence.find(e => e.id === evidenceId);
+    if (!ev) return;
+
+    // Mark which evidence is being edited
+    currentEvidenceEditId = evidenceId;
+
+    // Update form title
+    document.getElementById("evidenceFormTitle").textContent = "Edit Evidence";
+
+    // Load values into form
+    document.getElementById("evidenceName").value = ev.name;
+    document.getElementById("evidenceDescription").value = ev.description;
+    document.getElementById("evidenceDate").value = ev.date;
+    document.getElementById("evidenceScoreSource").value = ev.scoreSource;
+    document.getElementById("evidenceScoreInfo").value = ev.scoreInfo;
+    document.getElementById("evidenceScoreEvidence").value = ev.scoreEvidence;
+
+    // Show form
+    document.getElementById("evidenceFormContainer").classList.remove("hidden");
+}
+
+function getEdgeColor(score) {
+    if (score <= 5)  return "#BBBBBB";   // very light gray
+    if (score <= 10) return "#777777";   // light gray
+    if (score <= 15) return "#555555";   // medium gray
+    if (score <= 25) return "#222222";   // dark gray
+    return "#000000";                    // black (highest confidence)
+}
+
+function getEdgeWidth(score) {
+    if (score <= 5) return 1;     // red
+    if (score <= 10) return 3;     // orange
+    if (score <= 15) return 5;     // yellow
+    if (score <= 25) return 7;     // light green
+    return 9;                      // strong green
+}
+function updateAllEdgeColors() {
+    const allEdges = edges.get();
+
+    allEdges.forEach(edge => {
+        const score = edge.totalScore || 0;
+        if (score > 0) { console.log(`Updating color for Edge ${edge.id} with score ${score}`); }   
+        edges.update({
+            id: edge.id,
+            color: {
+                color: getEdgeColor(score),
+                highlight: getEdgeColor(score),
+                hover: getEdgeColor(score)
+            },
+            width: getEdgeWidth(score),
+            selectionWidth: getEdgeWidth(score),   // slightly wider when selected
+            hoverWidth: getEdgeWidth(score),       // slightly wider on hover
+        });
+    });
+//    network.setData({ nodes: nodes, edges: edges }); // Refresh the network with updated edge colors
+//    network.redraw();
+}
+function updateEdgeColor(edge) {
+    if (!edge) return;
+
+    const score = edge.totalScore || 0;
+    let color = getEdgeColor(score);
+    let width = getEdgeWidth(score);
+
+    console.log(`Updating edge ${edge.id} with score ${score}, color ${color}, width ${width}`);
+
+    edge.color = {
+        color: color,
+        highlight: color,
+        hover: color,
+        inherit: false
+    };
+    edge.width = width;
+    edge.selectionWidth = width+1;   // slightly wider when selected
+    edge.hoverWidth = width+1;       // slightly wider on hover
+
+    console.log("Edge updated", edges.get(edge.id));
+//    network.redraw();
+}
+
+
+// ---------- Hover Logic (showing migration path on map) -----------------------------
+function runHoverLogic(params) {
+
+    const nodeId = params.node;
+    // Only display hover info if no node or cluster is currently selected/pinned
+    if (!Pinned_NodeId &&  currentEdgeId == null) {
+        HideAttachments();
+        displayNodeInfo(nodeId);
+        if (nodeId != null) Hover_NodeActive = nodeId;
+    //    displayMigrationMap(nodeId);
+    }
+
+}
+
+// ------------------------------------------------------------
+// function to calculate distance between two lat/lon points, 
+// used to determine if migration line should be drawn 
+// (e.g. only draw if > 50km apart)
+// ------------------------------------------------------------
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371; // km
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1*Math.PI/180) *
+              Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function BuildMigrationStops(person, residences, token) {
+
+    let migrationStops = [];
+
+    // Birth
+    if (person.birthPlace) {
+        migrationStops.push({
+            label: "Birth",
+            date: person.birthdatestring || null,
+            place: person.birthPlace
+        });
+        console.log("Added Birth Stop:", migrationStops[migrationStops.length - 1]);
+    }
+
+    // Residences
+    for (const r of residences) {
+        if (r.date > 2100 || r.date < 100) continue; // skip empty entries
+        migrationStops.push({
+            label: "Residence",
+            date: r.date,
+            place: r.place
+        });
+        console.log("Added Residence Stop:", migrationStops[migrationStops.length - 1]);
+    }
+
+    // Death
+    if (person.deathPlace) {
+        migrationStops.push({
+            label: "Death",
+            date: person.deathdatestring || null,
+            place: person.deathPlace
+        });
+        console.log("Added Death Stop:", migrationStops[migrationStops.length - 1]);
+    }
+
+    let geoStops = [];
+    for (const stop of migrationStops) {
+        const coords = await geocodeWithFallback(stop.place);
+        if (coords) {
+            geoStops.push({
+                ...stop,
+                lat: coords.lat,
+                lon: coords.lon,
+                usedQuery: coords.usedQuery
+            });
+        }
+    }
+
+    const COLLAPSE_DISTANCE_KM = 10;
+    let collapsed = [];
+
+    for (let i = 0; i < geoStops.length; i++) {
+        if (i === 0) {
+            collapsed.push(geoStops[i]);
+            continue;
+        }
+
+        console.log("GeoStop:", i, " ", geoStops[i]);
+        const prev = collapsed[collapsed.length - 1];
+        const curr = geoStops[i];
+
+        const dist = haversine(prev.lat, prev.lon, curr.lat, curr.lon);
+
+        if (dist < COLLAPSE_DISTANCE_KM) {
+            // Merge: keep earliest date, combine labels if needed
+            prev.label += " / " + curr.label;
+            if (!prev.date && curr.date) prev.date = curr.date;
+        } else {
+            collapsed.push(curr);
+        }
+    }
+    return collapsed;
+
+}
+function addFamily(nodeId) {
+    const children = dataJSON.children_of[nodeId] || [];
+    let index = 1;
+    const nodeupdates = [];
+    const edgesupdates = []; 
+    children.forEach(childId => {
+        addNode(dataJSON.individuals[childId], childId, 0, nodeupdates );
+        edgesupdates.push ({id: `${nodeId}-${childId}`, 
+            from: nodeId, 
+            to: childId,
+            smooth: false,
+            inherit: false, 
+            evidence: [], 
+            confidence: 0 });
+    });
+    nodes.update(nodeupdates);
+    edges.update(edgesupdates);
+}
+const spouses_of = {};
+let SpouseTableBuilt = false;
+function BuildSpouseTable()
+{
+    if (SpouseTableBuilt) return;
+    SpouseTableBuilt = true;
+    for (const famId in dataJSON.families) {
+        const fam = dataJSON.families[famId];
+        if (fam.husb && fam.wife) {
+            // Husband ↔ Wife
+            if (!spouses_of[fam.husb]) spouses_of[fam.husb] = [];
+            if (!spouses_of[fam.wife]) spouses_of[fam.wife] = [];
+            spouses_of[fam.husb].push(fam.wife);
+            spouses_of[fam.wife].push(fam.husb);
+        }
+    }
+    // Add spouse for root node only
+    console.log(`Update Tree: checking for spouse of root ID:`, rootNodeId);
+    const spouses = spouses_of[rootNodeId] || [];
+    if (spouses.length > 0) {
+        console.log(`Update Tree: Spouse found for root ID:`, rootNodeId);
+        const rootPos = { x: 0, y: 0 }; // default if not yet placed
+        const rootNodePos = network ? network.getPositions([rootNodeId])[rootNodeId] : null;
+        if (rootNodePos) {
+            rootPos.x = rootNodePos.x;
+            rootPos.y = rootNodePos.y;
+        }
+
+        spouses.forEach((spouseId, index) => {
+            if (!nodes.get(spouseId)) {
+                const spouse = dataJSON.individuals[spouseId];
+                const spouseupdates = [];
+                addNode(spouse, spouseId, nodes.get(rootNodeId).level, spouseupdates);
+                nodes.update(spouseupdates);
+
+                // In LR orientation, place spouse above or below
+                const dy = index % 2 === 0 ? -80 : 80;
+                nodes.update({
+                    id: spouseId,
+                    x: rootPos.x,
+                    y: rootPos.y + dy,
+                    fixed: false
+                });
+                console.log('Added spouse node:', spouseId, 'at position:', { x: rootPos.x, y: rootPos.y + dy });
+                // -------------------------------------------------------
+                // the network does not like @ symbols in ids, so we have to clean them out for the edge ids, but we can keep them in the node ids since they are unique and the network doesn't complain about them there
+                const cleanParentId = rootNodeId.replace(/@/g, "");
+                const cleanPid = spouseId.replace(/@/g, "");
+                // Add dashed "marriage" edge
+                console.log(`*** Adding spouse edge between ${rootNodeId} and ${spouseId} with cleaned IDs: ${cleanParentId}-${cleanPid}`);
+                edges.add({id: `${cleanParentId}-${cleanPid}`,
+                    from: rootNodeId,
+                    to: spouseId,
+                    dashes: true,
+                    smooth: false,
+                    physics: false,
+                    color: { color: "#666" }, 
+                    inherit: false,
+                    evidence: [],
+                });
+            }
+        });
+    }
+}
+//---------------------------------------------------------------------------------------------------------
+//                                         Handle Image Rotation
+//---------------------------------------------------------------------------------------------------------
+// Load an image and fix orientation
+function loadImageWithOrientation(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // optional, if loading from another domain
+    img.onload = () => {
+      EXIF.getData(img, function () {
+        const orientation = EXIF.getTag(this, "Orientation") || 1;
+        resolve({ img, orientation });
+      });
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+// When caching
+function GetImageOrientation(img) {
+  return new Promise((resolve, reject) => {
+    if (!img.complete) {
+      img.onload = () => {
+        EXIF.getData(img, function () {
+          resolve(EXIF.getTag(this, "Orientation") || 1);
+        });
+      };
+      img.onerror = reject;
+    } else {
+      EXIF.getData(img, function () {
+        resolve(EXIF.getTag(this, "Orientation") || 1);
+      });
+    }
+  });
+}
+
+// Draw the image with orientation applied
+function drawImageWithOrientation(ctx, img, orientation, x, y, width, height) {
+  ctx.save();
+
+  switch (orientation) {
+    case 3: // 180°
+      ctx.translate(x + width, y + height);
+      ctx.rotate(Math.PI);
+      ctx.drawImage(img, 0, 0, width, height);
+      break;
+    case 6: // 90° CW
+      ctx.translate(x + height, y);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, 0, 0, height, width); // swapped
+      break;
+    case 8: // 90° CCW
+      ctx.translate(x, y + width);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(img, 0, 0, height, width); // swapped
+      break;
+    default: // normal
+      ctx.translate(x, y);
+      ctx.drawImage(img, 0, 0, width, height);
+      break;
+  }
+
+  ctx.restore();
+}
+// ---------------------------------------------
+// -------------- Map Functions ----------------
+// ---------------------------------------------
+// ---------- Clean up Map Panel when hiding ---
+
+async function displayMigrationMap(nodeId) {
+    // -----------------------------------------------------
+    // ---- display migration map for the node, 
+    // ---- showing birth location, death location, 
+    // ---- and residences in between 
+    // ------------------------------------------------------
+    // Position the popup near the cursor 
+    // ---------------------------------------------
+    const hovernode = nodes.get(nodeId);
+    const residences = hovernode.residences || [];
+    
+    const token = ++currentHoverToken; // create a new token for this hover event
+    
+    // Remove previous line + markers from map 
+    clearMigrationLayer();
+
+    // Geocode birth and death locations in parallel to get their lat/lon coordinates
+    const coords = await geocodeWithFallback(hovernode.birthPlace);
+    const dcoords = await geocodeWithFallback(hovernode.deathPlace);
+
+    if(token !== currentHoverToken) {
+        // A newer hover event has occurred, so we should ignore this one
+        console.log("Hover event ignored due to newer event");
+        return;
+    }
+
+    // Build migration stops list in chronological order
+    migrationLine = await BuildMigrationStops(hovernode, residences, token);
+
+    // ----------------------------------------------------------
+    // Draw migration path with stops
+    // ----------------------------------------------------------
+    for (let i = 0; i < migrationLine.length - 1; i++) {
+        const a = migrationLine[i];
+        const b = migrationLine[i+1];
+
+        const curvePoints = createCurve(
+            [a.lat, a.lon],
+            [b.lat, b.lon],
+            0.25
+        );
+
+        const line = L.polyline(curvePoints, {
+            color: "green",
+            weight: 3,
+            opacity: 0.8
+        }).addTo(map);
+        migrationLayers.push(line);
+    }
+    // ------------------------------------------------------
+    // Add markers and date for each stop
+    // ------------------------------------------------------
+    for (const stop of migrationLine) {
+        const color =
+            stop.label.includes("Birth") ? "green" :
+            stop.label.includes("Death") ? "red" :
+            "orange";
+
+        const radius = stop.label.includes("Birth") ? 4 : 6;
+
+        const marker = L.circleMarker([stop.lat, stop.lon], {
+            radius: radius,
+            color,
+            fillColor: color,
+            fillOpacity: 0.9
+        }).addTo(map);
+        migrationLayers.push(marker);
+
+        console.log("Migration Stop:", stop);
+
+        // Add date label next to marker
+        if (stop.date) {
+            const label = L.marker([stop.lat, stop.lon], {
+                icon: L.divIcon({
+                    className: "",
+                    html: `<div class="migration-label"><strong>${extractYear(stop.date)}</strong><br><small>${stop.usedQuery}</small></div>`
+                }),
+                interactive: false
+            }).addTo(map);
+            migrationLayers.push(label);
+        }
+    }
+
+    if (coords != null) {
+        if (dcoords != null) {
+//            console.log(`Showing migration from ${coords.usedQuery} to ${dcoords.usedQuery}`);
+            const bounds = L.latLngBounds( [coords.lat, coords.lon], [dcoords.lat, dcoords.lon] ); 
+            map.fitBounds(bounds, { 
+                padding: [30, 30], // keeps markers away from edges 
+                maxZoom: 8 // optional: prevents zooming in too far 
+            });
+        } else {
+//            console.log(`Showing birth location at ${coords.usedQuery}, death location unknown`);
+        }
+        const mapPanel = document.getElementById("mapPanel"); 
+        mapPanel.classList.add("visible"); // add class to trigger CSS transition
+        // Update the map
+        if (dcoords == null) {
+            map.setView([coords.lat, coords.lon], 8); 
+        } 
+
+//        document.getElementById("mapQueryText").textContent = "Name : " + hovernode.Name + "\n" + "Birth : " + coords.usedQuery + "\n" + "Death : " + (dcoords ? dcoords.usedQuery : "Unknown");
+        document.getElementById("mapQueryText").innerHTML = '<strong>Name :</strong> ' + hovernode.Name + '<br><strong>Birth :</strong> ' + coords.usedQuery + '<br><strong>Death :</strong> ' + (dcoords ? dcoords.usedQuery : "Unknown");
+        setTimeout(() => { map.invalidateSize(); }, 50);
+    }
+}
+
+function hideMap() {
+    const mapPanel = document.getElementById("mapPanel");
+    mapPanel.classList.remove("visible"); // remove class to trigger CSS transition 
+    clearMigrationLayer();
+  
+}
+function clearMigrationLayer() {
+    for (const layer of migrationLayers) {
+        map.removeLayer(layer);
+    }
+    migrationLayers = [];
+}
+
+// ------------ Create a curve between two points for migration paths
+function createCurve(start, end, curveOffset = 0.2) {
+    // Convert to Leaflet LatLng objects
+    const latlng1 = L.latLng(start[0], start[1]);
+    const latlng2 = L.latLng(end[0], end[1]);
+
+    // Midpoint between the two
+    const midpoint = L.latLng(
+        (latlng1.lat + latlng2.lat) / 2,
+        (latlng1.lng + latlng2.lng) / 2
+    );
+
+    // Perpendicular offset for the curve
+    const offsetLat = (latlng2.lng - latlng1.lng) * curveOffset;
+    const offsetLng = (latlng1.lat - latlng2.lat) * curveOffset;
+
+    const controlPoint = L.latLng(
+        midpoint.lat + offsetLat,
+        midpoint.lng + offsetLng
+    );
+
+    // Generate a smooth curve with N segments
+    const points = [];
+    const steps = 50; // more steps = smoother curve
+
+    for (let t = 0; t <= 1; t += 1 / steps) {
+        const lat =
+            (1 - t) * (1 - t) * latlng1.lat +
+            2 * (1 - t) * t * controlPoint.lat +
+            t * t * latlng2.lat;
+
+        const lng =
+            (1 - t) * (1 - t) * latlng1.lng +
+            2 * (1 - t) * t * controlPoint.lng +
+            t * t * latlng2.lng;
+
+        points.push([lat, lng]);
+    }
+    points.push([latlng2.lat, latlng2.lng]); // ensure the end point is included
+
+    return points;
+}
+
+//---------------------------------------------------------------------------------------------------------
+//                                         Attachment Handling
+//---------------------------------------------------------------------------------------------------------
+
+// ---------------------------------- Load Attachments from backend ---------------------------------------
+// --------------------------------------------------------------------------------------------------------
+async function SelectAttachment() {
+    
+    if (isAdmin()) {
+        //------------------------------------------------------------
+        // ------------User has administrative rights ----------------
+        //------------------------------------------------------------
+        // Prompt user for a file to attach
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".pdf,.png,.jpg,.jpeg,.gif";
+        input.multiple = true;
+
+        input.onchange = async function (event) { 
+            const files = event.target.files; 
+            if (!files || files.length === 0) return;
+
+            for (const file of files) {
+                //----------------------------------------------
+                // a file was selected -------------------------
+                //----------------------------------------------
+                // Prompt for a user-visible name/description for this attachment
+                let attName = window.prompt("Enter a name/description for this attachment:", file.name);
+                if (attName === null) {
+                    // user cancelled
+                    continue;
+                }
+                attName = attName.trim() || file.name;
+                let attPath = "";
+                let attPathTN = "";
+
+                attPath = `users/${userName}/files/${file.name}`;  
+                attPathTN = `users/${userName}/thumbnails/${file.name}`;  
+
+                SendAttachmentToBackend(file)
+                    .then(result => {
+                        // ---------------------------------------
+                        // -- Successfully uploaded file to backend ----
+                        // ---------------------------------------
+                        console.log("Success Uploading File to Backend:", result);
+                        const attachmentInfo = { 
+                            name: attName,
+                            filename: file.name, 
+                            fileUrl: result.fileUrl, 
+                            thumbUrl: result.thumbUrl,
+                            uploadedAt: new Date().toISOString(), 
+                            type: input.type, 
+                            selected: false
+                        };
+                        if (currentEditingNodeId != null) {
+                            console.log("Adding attachment to node:", currentEditingNodeId, attachmentInfo);
+                            AddNodeAttachment(currentEditingNodeId, attachmentInfo);
+                        }
+                    })
+                    .catch(err => {
+                        showError("Caught error uploading attachment:", err);
+                    });   
+            }
+        };
+        input.click();
+    }
+}
+function AddNodeAttachment(nodeId,attachmentInfo) {
+
+    // Add an attachment to a node's attachments array in nodeInformation, creating the structure if it doesn't exist
+    if (!nodeInformation[nodeId]) { 
+        // Create the node entry if it doesn't exist 
+        nodeInformation[nodeId] = { attachments: [] }; 
+    }
+    if (!Array.isArray(nodeInformation[nodeId].attachments)) 
+    { 
+        nodeInformation[nodeId].attachments = []; 
+    }
+    if (!nodeInformation[nodeId].attachments) { 
+        nodeInformation[nodeId].attachments = []; 
+    } 
+    // ----------------------------------------------------------
+    // nodeInformation is confirmed to have an attachments array at this point, so we can safely push the new attachment info
+    // Add the new attachment to the node's attachments array
+    // -----------------------------------------------------------
+    console.log("Adding attachment to nodeInformation:", nodeId, attachmentInfo);
+    nodeInformation[nodeId].attachments.push(attachmentInfo);
+
+    const newAtt = nodeInformation[nodeId].attachments[ nodeInformation[nodeId].attachments.length - 1 ];
+    newAtt.selected = false; // default to not selected for display
+    RenderNodeAttachments(nodeId);
+
+    // ------------------------------------------------------
+    // Need to add logic here to send to backend server to store attachment metadata
+    return;
+}   
+
+async function SendAttachmentToBackend(file) {
+    const formData = new FormData();
+    formData.append("attachment", file);
+
+    try {
+        const response = await fetch(`http://localhost:4000/uploadAttachment/${userName}`, {
+            method: "POST",
+            body: formData
+        });
+        let result = null;
+        if (!response.ok) {
+            if (response.status === 409) {
+                console.log("Duplicate attachment detected, File not downloaded but attachment metadata saved.");
+                result = await response.json();
+            } else {
+                // Error thrown, file not uploaded and attachment metadata not saved
+                throw new Error("Failed to upload attachment");
+            }
+        } else {
+            // Successful upload
+            result = await response.json();
+            console.log("Attachment uploaded successfully:", result);
+        }
+        return result; // return attachment metadata from backend
+    } catch (error) {
+        showError("Error uploading attachment:", error);
+        throw error;
+    }
+}
+
+function HideAttachments() {
+    const list = document.getElementById("attachmentsList");
+    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attached files here ... left click on a node or cluster to pin the information, left click on open space to release</p>'; // clear old entries
+}   
+function RenderNodeAttachments(nodeId) {
+
+    if (!nodeInformation[nodeId]) { 
+        return;
+    }
+    if (!Array.isArray(nodeInformation[nodeId].attachments)) 
+    { 
+        return;
+    }
+    if (!nodeInformation[nodeId].attachments) { 
+        return;
+    } 
+//    console.log(" Attachments: for node:", nodeId, nodeInformation[nodeId]);
+// ----------------------------------------------------------------------------
+// --- Create a row for each attachment (Name, Open, Download, Delete) --------
+// ----------------------------------------------------------------------------
+    const list = document.getElementById("attachmentsList");
+    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attached files here ... left click on a node or cluster to pin the information, left click on open space to release</p>'; // clear old entries
+    let html = '';
+    nodeInformation[nodeId].attachments.forEach(att => {
+        const displayName = att.name || att.filename;
+        const extraFilename = (att.name && att.name !== att.filename) ? ` <small style="color:#666; margin-left:6px;">(${att.filename})</small>` : '';
+        const ext = att.filename.split('.').pop().toLowerCase();
+ 
+        html += BuildAttachmentRow(att, nodeId, displayName,ext,html);
+    });
+    list.innerHTML = html;  
+    BuildListenersForAttachmentButtons(nodeInformation[nodeId].attachments,nodeId);
+}
+
+function BuildAttachmentRow(att, ID, displayName,ext,html) {
+
+//    console.log(" Building attachment row for:", att, ID);
+    // Build edit and delete buttons only if user is admin
+    const adminButtons = userRole === "admin" ? `
+                <button class="edit-btn" 
+                    data-name="${att.name || att.filename}" 
+                    data-id="${att.uploadedAt}" title="Edit name">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="delete-btn" 
+                    data-id="${att.uploadedAt}" 
+                    data-filename="${att.filename}" 
+                    data-node="${ID}" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            ` : '';
+    
+    html = `
+    <div class="attachment-row" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px dashed rgba(0,0,0,0.05);">
+        <div style="flex:1; display:flex; align-items:center; gap:6px;">
+        <button class="star-btn ${att.selected == 1 ? 'active' : ''}" title="Select for display"
+            data-id="${att.uploadedAt}" >
+            <i class="${att.selected == 1 ? 'fa-solid fa-star' : 'fa-regular fa-star'}" style="${att.selected == 1 ? 'color:gold' : 'color: black'}"></i>
+        </button>
+        <div>
+            <div class="attachment-name" style="font-weight:600; font-size:12px;">${truncate(displayName,30)}</div>
+            <div style="font-size:11px; color:#666;">${truncate(att.filename,30)}</div>
+        </div>
+        </div>
+        <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
+        <button class="open-btn" 
+            data-url="${att.fileUrl}" 
+            data-tnurl="${att.thumbUrl}"    
+            data-type="${ext}" title="Open">
+            <i class="fa-solid fa-eye"></i>
+        </button>
+        <button class="download-btn" 
+            data-url="${att.fileUrl}" 
+            data-filename="${att.filename}" title="Download">
+            <i class="fa-solid fa-download"></i>
+        </button>
+        ${adminButtons}
+        </div>
+    </div>
+    `;
+
+    return html;
+}
+function BuildListenersForAttachmentButtons(attachments,ID) {
+// ----------------------------------------------------------------
+// --------------- Listeners for buttons for attachments ----------
+// ----------------------------------------------------------------
+    // Open buttons
+//console.log(" BuildListenersForAttachmentButtons for nodeId:", nodeId, attachments);
+    document.querySelectorAll(".open-btn").forEach(btn => {
+//        console.log("Binding open button listener for:", btn.dataset.url, btn.dataset.type);
+        // click still opens in a new tab/modal
+        btn.addEventListener("click", () => {
+            console.log("Opening attachment - Event listener: ", btn.dataset.url, btn.dataset.type);
+            const url = btn.dataset.url;
+            const type = btn.dataset.type;
+            OpenAttachmentInNewTab(url, type);
+        });
+
+        // hover preview (replace previous handlers to avoid duplicate bindings)
+        btn.onmouseenter = (e) => {
+            const url = btn.dataset.tnurl;
+            const type = 'jpg';
+            console.log("Calling attachment preview - Hover event: ", url, type);
+            showAttachmentPreview(url, type, btn);
+        };
+        btn.onmouseleave = (e) => {
+            // small timeout to allow moving into the preview element without it disappearing immediately
+            setTimeout(() => {
+                // if mouse is not over the preview, hide it
+                // we check the last hovered element
+                const hovered = document.elementFromPoint(e.clientX, e.clientY);
+                if (!hovered || !attachmentPreview.contains(hovered)) hideAttachmentPreview();
+            }, 100);
+        };
+    });
+
+    // Download buttons
+    document.querySelectorAll(".download-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const url = btn.dataset.url;
+            const filename = btn.dataset.filename;
+//          Download attachment
+            console.log("Downloading attachment :", url);
+            const link = document.createElement("a");
+            link.href = `http://localhost:4000/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`;;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const ID = btn.dataset.id;
+            const filename = btn.dataset.filename;
+
+            if (findAttachment(nodeInformation, filename, Pinned_NodeId) != null) {
+                showError("This file is shared by another node or cluster, It will be removed from this entity but the file will remain on the server");
+                // -----------------------------------
+                // --- remove attachment from this entity -------------
+                // --- but leave the file on the server -------------
+                // --------------------------------------------------
+                nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.filter(att => att.uploadedAt !== ID);
+                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                RenderNodeAttachments(Pinned_NodeId);
+                return;
+            }
+
+            if (!confirm(`Delete ${filename}?`)) return;
+
+            try {
+                const response = await fetch(
+                    `http://localhost:4000/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`,
+                    { method: "DELETE" }
+                );
+                if (response.ok) {
+                    if (Pinned_NodeId != null) {
+                        console.log("Deleting attachment and Re-rendering node attachments for node:", Pinned_NodeId);
+                        // -----------------------------------
+                        // --- remove attachment -------------
+                        nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.filter(att => att.uploadedAt !== ID);
+                        UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                        RenderNodeAttachments(Pinned_NodeId);
+                    }
+                    else {
+                        showError("No node or cluster pinned, cannot update attachment");
+                    }
+                    console.log("Deleted:", filename);
+                    // Optionally re-render your attachment list
+                } else {
+                    showError("Failed to delete:", await response.text());
+                }
+            } catch (err) {
+                showError("Error:", err);
+            }
+        });
+    });
+
+    // Edit name buttons
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const currentName = btn.dataset.name;
+            const ID = btn.dataset.id;
+            console.log("Editing attachment name - ID:", ID, " Current Name:", currentName);
+            // -----------------------------
+            // -- Open prompt to edit name
+            // -----------------------------    
+            const newName = window.prompt("Edit attachment name:", currentName);
+            if (newName === null) return; // cancelled
+            
+            if (Pinned_NodeId != null) {
+                console.log("Re-rendering node attachments for node:", Pinned_NodeId);
+                nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.map(att => {
+                    if (att.uploadedAt === ID) {
+                        return { ...att, name: newName.trim() || att.filename };
+                    }
+                    return att;
+                });
+                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                RenderNodeAttachments(Pinned_NodeId);
+            }
+            else {
+                showError("No node or cluster pinned, cannot update attachment");
+            }
+        });
+    });
+    // ---------------------------------------------------------------------
+    // Favorite selections
+    // Star buttons ---------------------------------------------------------
+    document.querySelectorAll(".star-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const ID = btn.dataset.id; // set in HTML
+            console.log("Toggling star for attachment ID:", ID);
+
+            // Toggle active class
+            btn.classList.toggle("active");
+
+            const icon = btn.querySelector("i");
+            const isSelected = btn.classList.contains("active"); // <-- true or false
+
+            if (isSelected) {
+                icon.classList.remove("fa-regular");
+                icon.classList.add("fa-solid");
+                icon.style.color = "gold";
+                console.log("turn on star");
+            } else {
+                console.log("turn off star");
+                icon.classList.remove("fa-solid");
+                icon.classList.add("fa-regular");
+                icon.style.color = "black";
+                network.redraw();
+            }
+            let orientation  = 1;
+            // Update your data model
+            if (Pinned_NodeId != null) {
+                nodeInformation[Pinned_NodeId].attachments =
+                    nodeInformation[Pinned_NodeId].attachments.map(att => {
+                        if (att.uploadedAt === ID) {
+                            att.selected = isSelected; // update selection state in data model
+                            if (isSelected){
+                                // ------------------------------
+                                // - Cache image if selection turned on
+                                // ------------------------------
+                                // async/await style
+                                (async () => {
+                                    cacheImage(att).then(() => {
+                                        // now att.image is safe to use in beforeDrawing
+                                        console.log("Cached:", att.name, att);
+                                        console.log("redraw network");
+                                        network.redraw();
+                                    });
+                                })();
+                            }
+                            else {
+                                network.redraw();
+                            }
+                        }
+                        return att; // return unchanged object
+                    });
+                // write the updated "selection" to the backend
+                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+            }
+
+        });
+    });
+}
+function findAttachment(nodeInformation, filename, Sid) {
+    for (const [id, obj] of Object.entries(nodeInformation)) {
+//        console.log("findAttachment: ",id, " :", filename);
+        if (Array.isArray(obj.attachments) && obj.attachments.some(att => att.filename === filename)) {
+            if (id != Sid) {
+                console.log("Found id:",id, " Search ID:",Sid);
+                return { id, obj }; // return the first match
+            }
+        }
+    }
+    console.log("No match found");
+    return null; // no match found
+}
+  
+function OpenAttachmentInNewTab(url, type) {
+    if (!url) return;
+
+    console.log("Opening attachment :", url, type  );
+    if (type.includes("jpg") || type.includes("jpeg") || type.includes("png") || type.includes("gif") || type.includes("image/")) {
+        window.open(url,"_blank");
+    } else if (type.includes("pdf")) {
+        window.open(url, "_blank");
+    }
+
+}
+
+// ---------------------------------- Pop-up menu for managing attachments --------------------------------
+// -------------------------------------------------------------------------------------------------------- 
+const tooltip = document.getElementById("tooltip") || document.createElement("div");
+tooltip.id = "tooltip";
+// Style tooltip to match nodeMenu for a seamless look
+tooltip.style.position = "absolute";
+tooltip.style.display = "none";
+tooltip.style.background = "#fff";
+tooltip.style.border = "1px solid #ccc";
+tooltip.style.padding = "8px";
+tooltip.style.borderRadius = "4px";
+tooltip.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+tooltip.style.zIndex = 100000;
+if (!document.getElementById("tooltip")) document.body.appendChild(tooltip);
+
+// Attachment preview panel (shown when hovering the Open icon)
+const attachmentPreview = document.createElement('div');
+attachmentPreview.id = 'attachmentPreview';
+attachmentPreview.style.position = 'absolute';
+attachmentPreview.style.display = 'none';
+attachmentPreview.style.background = '#fff';
+attachmentPreview.style.border = '1px solid #ccc';
+attachmentPreview.style.padding = '6px';
+attachmentPreview.style.borderRadius = '6px';
+attachmentPreview.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+attachmentPreview.style.zIndex = 100001;
+//attachmentPreview.style.maxWidth = '420px';
+//attachmentPreview.style.maxHeight = '560px';
+attachmentPreview.style.overflow = 'auto';
+document.body.appendChild(attachmentPreview);
+
+function showAttachmentPreview(url, type, anchorEl) {
+    attachmentPreview.innerHTML = '';
+    if (!url) return;
+    let previewHeight = 200;
+    let previewWidth = 200;
+
+    console.log("Showing preview for:", url, type);
+    const lowerType = (type || '').toLowerCase();
+
+    if (lowerType.startsWith('image/') || ['jpg','jpeg','png','gif'].includes(lowerType)) {
+        const img = new Image();
+        img.src = url;
+        img.style.display = 'block';
+        img.style.objectFit = 'contain';
+
+        img.onload = () => {
+            const maxWidth = 300;
+            const maxHeight = 300;
+
+            const { naturalWidth, naturalHeight } = img;
+
+            // Calculate scale factor
+            const scale = Math.max(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+
+            img.width = naturalWidth * scale;
+            img.height = naturalHeight * scale;
+            attachmentPreview.appendChild(img);
+            previewHeight = attachmentPreview.offsetHeight;
+            previewWidth = attachmentPreview.offsetWidth;
+
+//            console.log ("Height: ", previewHeight, " Width: ", previewWidth);
+
+                // Position preview near the anchor element, prefer to the right
+            const rect = anchorEl.getBoundingClientRect();
+            const bodyRect = document.body.getBoundingClientRect();
+
+            let left = rect.left - previewWidth;
+            let top = rect.bottom - previewHeight; // align bottoms
+//            console.log ("left: ", left, " top:", top, " rect.bottom:", rect.bottom, " preview height: ", previewHeight);
+
+
+            // keep inside viewport horizontally
+            if (left + previewWidth > window.innerWidth - 10) {
+                left = rect.left - previewWidth - 8;
+            }
+            // keep inside viewport vertically 
+            if (top < 8) { 
+                top = 8; // ensure not off top of screen 
+            } 
+//            console.log ("left: ", left, " top:", top);
+
+            attachmentPreview.style.left = `${left}px`;
+            attachmentPreview.style.top = `${top}px`;
+            attachmentPreview.style.display = 'block';
+            return;
+        };
+    } else if (lowerType === 'application/pdf' || lowerType === 'pdf') {
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.width = '360px';
+        iframe.style.height = '480px';
+        iframe.style.border = 'none';
+        attachmentPreview.appendChild(iframe);
+    } else {
+        const p = document.createElement('div');
+        p.textContent = 'Preview not available for this file type.';
+        p.style.padding = '8px';
+        attachmentPreview.appendChild(p);
+        const a = document.createElement('a');
+        a.href = url;
+        a.textContent = 'Open / Download';
+        a.style.display = 'inline-block';
+        a.style.marginTop = '8px';
+        a.target = '_blank';
+        attachmentPreview.appendChild(a);
+    }
+
+    // Position preview near the anchor element, prefer to the right
+    const rect = anchorEl.getBoundingClientRect();
+    const bodyRect = document.body.getBoundingClientRect();
+//    let left = rect.left  + 8;
+    let left = rect.left - 300;
+    let top = rect.bottom - previewHeight; // align bottoms
+//    console.log ("left: ", left, " top:", top, " rect.bottom:", rect.bottom, " preview height: ", previewHeight);
+
+
+    // keep inside viewport horizontally
+    if (left + previewWidth > window.innerWidth - 10) {
+        left = rect.left - previewWidth - 8;
+    }
+    // keep inside viewport vertically 
+    if (top < 8) { 
+        top = 8; // ensure not off top of screen 
+    } 
+//    console.log ("left: ", left, " top:", top);
+
+    attachmentPreview.style.left = `${left}px`;
+    attachmentPreview.style.top = `${top}px`;
+    attachmentPreview.style.display = 'block';
+}
+
+function hideAttachmentPreview() {
+    attachmentPreview.style.display = 'none';
+    attachmentPreview.innerHTML = '';
+}
+function drawNodeText(ctx) {
+
+    if (nodes.length === 0) return;
+
+    nodes.forEach(node => {
+
+        const pos = network.getPositions([node.id])[node.id];
+
+        if (!pos) return;
+
+        // draw custom text here
+        ctx.font = "bold 24px Arial";
+        ctx.fillStyle = "#222";
+        ctx.textAlign = "center";
+        const textX = pos.x + (boxHeight/2);
+        let textY = pos.y - (boxHeight / 2) + 20;
+
+        ctx.fillText(truncate(node.Name, 23) || "Blank", textX, textY);
+        
+        textY = textY + 22;
+        ctx.font = "18px Arial";
+        const birth = node.birthdatestring || "";
+        const death = node.deathdatestring || "";
+        ctx.fillText(`${birth} - ${death}`, textX, textY);
+
+        textY = textY + 22;
+        const birthlocation = truncate(node.birthPlace, 25);
+        ctx.fillText(`Birth: ${birthlocation}`, textX, textY);
+        if(node.deathPlace.length > 0) {
+            textY = textY + 22;
+            const deathlocation = truncate(node.deathPlace, 25);
+            ctx.fillText(`Death: ${deathlocation}`, textX, textY);
+        }
+    });   
+}
+function drawNodeAttachments(ctx) {
+
+        Object.entries(nodeInformation).forEach(([id,info]) => {
+            if (info && Array.isArray(info.attachments) && info.attachments.length > 0){ // && BirthclustersEnabled) {
+                // -------------------------------------
+                // ---- Get node or cluster position in canvas space
+                // --------------------------------------
+            //    const pos = Birth_Cluster.GetCentroid(id);
+                const Npos = network.getPositions([id])[id];
+                // ------------------------------------------------
+                // ------- cycle through each of the attachments --
+                // ------------------------------------------------
+                let count = 0;
+                info.attachments.forEach(att => {
+//                    console.log("attachment count = ",count);
+                     if (Npos != null && att.selected == true) {
+//                        console.log("inside node image drawing", att);
+                        // ----------------------------------------------
+                        // Draw picture in top‑right corner of the node
+                        // ----------------------------------------------
+                        if (att.image instanceof HTMLImageElement && att.image.complete && att.image.naturalWidth > 0) {
+//                            console.log("drawing node image for ",att.name, att.selected);
+                            const maxWidth = boxHeight - 10;
+                            const maxHeight = boxHeight - 10;
+                            const { naturalWidth, naturalHeight } = att.image;
+
+                            const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+                            const width = naturalWidth * scale;
+                            const height = naturalHeight * scale;
+
+                            const imgX = Npos.x - (boxWidth/2) + 5; // position to the left of the top-right corner
+                            const imgY = Npos.y - (height / 2); // vertically centered on
+                            const radius = height/2; // rounded corners
+
+                            // ---------- SHADOW ----------
+                            ctx.save();
+
+                            ctx.beginPath();
+                            ctx.roundRect(imgX, imgY, width, height, radius);
+
+                            ctx.shadowColor = "rgba(0,0,0,0.5)";
+                            ctx.shadowBlur = 12;
+                            ctx.shadowOffsetX = 3;
+                            ctx.shadowOffsetY = 5;
+
+                            // fill invisible shape to cast shadow
+                            ctx.fillStyle = "white";
+                            ctx.fill();
+
+                            ctx.restore();
+
+                            ctx.save();
+
+                            ctx.beginPath();
+                            ctx.roundRect(imgX, imgY, width, height, radius);
+                            ctx.clip();
+
+                            ctx.drawImage(att.image, imgX, imgY, width, height);
+
+                            ctx.restore();
+                            ctx.beginPath();
+
+                            ctx.roundRect(imgX, imgY, width, height, radius);
+
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = "#666";
+                            ctx.stroke();
+                        //    ctx.drawImage(att.image, imgX, imgY, width, height);
+
+                        //    ctx.font = "28px Arial";
+                        //    ctx.textAlign = "center";
+                        //    ctx.fillStyle = "black";
+                        //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
+                        //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
+                            count = count + 1;
+                        } else {
+                            console.log("Node Image not ready or invalid:", count, att);
+                        }
+                    }
+                }); // cycle through the attachments
+            }
+        });  // cycle through the biographies
+}
+function drawClusterAttachments(ctx, Birth_Cluster, Death_Cluster) {
+
+        Object.entries(nodeInformation).forEach(([id,info]) => {
+            if (info && Array.isArray(info.attachments) && info.attachments.length > 0){ // && BirthclustersEnabled) {
+                // -------------------------------------
+                // ---- Get node or cluster position in canvas space
+                // --------------------------------------
+                const pos = Birth_Cluster.GetCentroid(id);
+            //    const Npos = network.getPositions([id])[id];
+                // ------------------------------------------------
+                // ------- cycle through each of the attachments --
+                // ------------------------------------------------
+                let count = 0;
+                info.attachments.forEach(att => {
+//                    console.log("attachment count = ",count);
+                    if( pos != null && att.selected == true &&
+                        ((BirthclustersEnabled && Birth_Cluster.GetClusterType() == "BirthGroup") ||
+                        (DeathclustersEnabled && Death_Cluster.GetClusterType() == "DeathGroup") ) 
+                    )
+                    {
+//                        console.log("inside cluster image drawing", att);
+                        // Draw Picture in top‑right corner of the cluster name
+                        if (att.image instanceof HTMLImageElement && att.image.complete && att.image.naturalWidth > 0) {
+                            const maxWidth = 600;
+                            const maxHeight = 600;
+                            const { naturalWidth, naturalHeight } = att.image;
+
+                            const scale = Math.max(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+                            const width = naturalWidth * scale;
+                            const height = naturalHeight * scale;
+
+                            ctx.drawImage(att.image, pos.x - width/2 - 400*count, pos.y - height/2 + 400*count, width, height);
+
+                            ctx.font = "28px Arial";
+                            ctx.textAlign = "center";
+                            ctx.fillStyle = "black";
+                            ctx.fillText(att.name, pos.x - 400*count, pos.y + height/2 + 30 + 400*count);
+                            count = count + 1;
+                        } else {
+                            console.log("Cluster Image not ready or invalid:", count, att);
+                        }
+                    }
+                }); // cycle through the attachments
+            }
+        });  // cycle through the biographies
+}
+function centerOnPerson(personId) {
+  const nodeId = personId;
+  if (network.body.nodes[nodeId]) {
+    network.focus(nodeId, {
+      scale: 0.75,
+      animation: { duration: 500, easingFunction: "easeInOutQuad" }
+    });
+    network.selectNodes([nodeId]);
+  }
+}
+function estimateAllBirthYears() {
+    const updates = [];
+    nodes.forEach((node, id) => {
+        let birth = node.birthdatestring || "";
+
+        const name = truncate(node.Name,15);
+//        console.log(`in estimateAllBirthYears ... name =  ${name} - ${node.birthdatestring}`);
+
+        // Extract a 4-digit year
+        const yearMatch = birth.match(/\b(\d{4})\b/);
+        const year = yearMatch ? Number(yearMatch[1]) : null;
+
+        // Determine if we need to estimate
+        const needsEstimate = !year || year < 1000 || year > 2030;
+
+        if (needsEstimate) {
+            console.log(`in estimateAllBirthYears ...${name} needs an estimate ${birth}`);
+            const estimatedYear = estimateBirthYear(id);
+            if (estimatedYear) {
+                node.birthdatestring = estimatedYear.toString();
+
+                // Update label to reflect estimated year
+                const updatedLabel = node.label.replace(
+                    /Birth:<\/b>\s*[^<]*/,
+                    `Birth:</b> ${estimatedYear} \n`
+                );
+                updates.push({ id, label: updatedLabel });
+            //    nodes.update({ id, label: updatedLabel });
+//                console.log(`Estimated ${id}: ${estimatedYear}`);
+            }
+        }
+    });
+    if (updates.length > 0) {
+        nodes.update(updates);
+    }
+}
+function estimateBirthYear(nodeId) {
+
+    const node = nodes.get(nodeId);
+    if (!node) return null;
+
+    // Try actual birthdate first
+    const birthYear = extractYear(node.birthdatestring);
+    if (birthYear) return birthYear;
+
+    // Otherwise, estimate from relatives
+    const parents = dataJSON.parents_of[nodeId] || [];
+    const children = dataJSON.children_of[nodeId] || [];
+    const spouses = spouses_of[nodeId] || [];
+
+    // Try parent first — subtract ~30 years
+    for (const parentId of parents) {
+        const parent = nodes.get(parentId);
+        const parentYear = parent ? extractYear(parent.birthdatestring) : null;
+        if (parentYear) return parentYear + 30; // child born ~30 years later
+    }
+
+    // Try child — subtract ~30 years
+    for (const childId of children) {
+        const child = nodes.get(childId);
+        const childYear = child ? extractYear(child.birthdatestring) : null;
+        if (childYear) return childYear - 30; // parent born ~30 years earlier
+    }
+
+    // Try spouse — similar logic to child
+    for (const spouseId of spouses) {
+        const spouse = nodes.get(spouseId);
+        const spouseYear = spouse ? extractYear(spouse.birthdatestring) : null;
+        if (spouseYear) return spouseYear; // parent born ~30 years earlier
+    }   
+
+    // Nothing found
+    return null;
+}
+function getAncestorNodes(nodeId, collected = new Set()) {
+    if (collected.has(nodeId)) return Array.from(collected);
+    collected.add(nodeId);
+
+    const parents = dataJSON.parents_of[nodeId] || [];
+    parents.forEach(parentId => {
+        getAncestorNodes(parentId, collected);
+    });
+
+    return Array.from(collected);
+}
+function getAncestorYSpan(nodeId) {
+    let min = 1000000;
+    let max = -1000000;
+
+    const parents = dataJSON.parents_of[nodeId] || [];
+    parents.forEach(parentId => {
+        if (nodes.get(parentId)) {
+            const pos = network.getPositions([parentId])[parentId];
+            if (pos.y < min) min = pos.y;
+            if (pos.y > max) max = pos.y;
+        }
+        getAncestorYSpan(parentId);
+    });
+    const span = max - min; 
+    return span;
+}
+
+function PlotOrganized(plotnode,leaf)
+{
+    const year = extractYear(plotnode.birthdatestring);
+    const plotx = yearToX(year); 
+
+    let ploty; 
+    if (leaf)
+    {
+        // Leaf node so plot at the next available y position (Nexty) and then 
+        // increment Nexty for the next leaf
+        ploty = Nexty;
+        Nexty = Nexty + boxHeight + Gapy;
+    } else {
+        // if multiple parents, offset y to center them
+        ploty = ChildPt(plotnode.id);
+    }
+    //  store the new positions in a temporary object, plotupdates, and then
+    //  call nodes.update once at the end of the loop for better performance
+    const update = { id: plotnode.id, x: plotx, y: ploty, fixed: true };
+    plotupdates.push(update);
+    plotPositionMap.set(plotnode.id, update);
+    //
+    //  ChildPt calculates the average Y position of the parents of a node, 
+    //  so that if there are multiple parents, the child can be plotted centered below them.
+    //
+    function ChildPt(NodeId)
+    {
+        const parents = dataJSON.parents_of[NodeId] || [];
+        let toty = 0;
+
+        parents.forEach(parentId => {
+            const ParentPos = plotPositionMap.get(parentId);
+            if (ParentPos) {
+//                console.log(`**** Parent ${truncate(nodes.get(parentId)?.label || parentId,15)} Y: ${ParentPos.y}`);
+                toty = toty + ParentPos.y;
+            } 
+        });
+        //console.log(`Calculating ChildPt for ${truncate(nodes.get(NodeId).label,15)} with parents ${parents.map(pid => truncate(nodes.get(pid)?.label || pid,15)).join(", ")}; total Y of parents: ${toty} ; number of parents: ${parents.length} `);
+        return toty / parents.length;
+    } 
+}
+// 
+//  arrangeAncestors is a recursive function that starts with the a node (nodeID passed in) 
+// and traverses up the tree to the ancestors, calculating positions and plotting as it goes.
+// ** Important Note: This function navigates from the root to the leaves and calculates the coordinates (PlotOrganized)
+// ** starting at the leaves and working back to the root.  Therefore before a node is given coordinates, all of its 
+// ** parents will need to have coordinates first.
+//    
+function arrangeAncestors(nodeId,depth) {
+
+    const clickednode = nodes.get(nodeId);
+    const name = truncate(clickednode.label,15);
+    //console.log(`Entering new arrangeAncestors; Name = ${name} ;node ID = ${nodeId} depth = ${depth} maxGen = ${maxGenerations} `);
+    const parents = dataJSON.parents_of[nodeId] || [];
+
+    // if the node has no parents, or we've reached the max generations to show, 
+    // assign an x,y position to the node (PlotOrganized) and return (this node is a leaf on the tree)
+    // the structure "parents" is created from dataJSON which includes everyone in the family tree, not limited by maxGenerations
+    // therefore a node (nodeID) may have parents in the dataJSON structure but if those parents are beyond the maxGenerations 
+    // limit, we want to treat this node as a leaf and not plot the parents
+    if ((parents.length === 0) || (depth == (maxGenerations)))   
+    {
+        // found a leaf on the tree, i.e. no parents or at maxGenerations
+        // assign coordinates (x,y) to the node and return
+        PlotOrganized(clickednode,true);
+        //console.log(`LEAF in arrangeAncestors for ${name}, assigning x,y and returning`);
+        return;
+    }
+    //
+    // The node has parents, and is less than the max generations to show
+    //
+    //console.log(`Not a LEAF Looping Parents - ${name} has ${parents.length} parents, arranging them with depth ${depth}`);
+    let parentIndex = 1;   // parent counter for debugging/logging purposes only
+    //
+    // loop through each parent and call arrangeAncestors recursively
+    // this will work its way up the tree until it reaches a leaf node 
+    // (no parents or at maxGenerations), at which point it will plot the leaf node
+    //  and then when it returns from the recursive call it will plot the current node below
+    parents.forEach((parentId, index) => {
+        const parentNode = nodes.get(parentId);
+        if (parentNode) {
+            // Parent node exists
+            // recursively call arrangeAncestors for the parent node, to plot the grandparents and great grandparents before we plot the parent
+            arrangeAncestors(parentId,depth + 1);
+        } else {
+            return;
+        }
+    });
+    //
+    // after recursively plotting all the parents in the loop above, 
+    // now plot this node (the child of the parents we just plotted) using PlotOrganized, 
+    // which will calculate the x position based on birth year and the y position based on 
+    // the average y of the parents
+    //
+    PlotOrganized(clickednode,false);
+    //console.log(`Finished arranging ancestors for ${name}`);
+}
+function offsetDescendants(nodeId, dy) {
+    const children = dataJSON.children_of[nodeId] || [];
+    children.forEach(childId => {
+        const ChildPos = plotPositionMap.get(childId);
+        if (ChildPos) {
+            const update = {
+                id: childId,
+                // x: plotx,
+                y: ChildPos.y - dy,
+                fixed: true
+            };
+
+            plotupdates.push(update);
+            plotPositionMap.set(childId, update);
+            // recurse downwards
+            offsetDescendants(childId, dy);
+        }
+    });
+
+    offsetSpouses(nodeId, dy);
+
+    function offsetSpouses(nodeId, dy) {
+        const spouses = spouses_of[nodeId] || [];
+        console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with ${spouses.length} spouses `);
+        spouses.forEach(spouseId => {
+            const SpousePos = plotPositionMap.get(spouseId);
+            console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} spouse ${truncate(nodes.get(spouseId)?.Name || spouseId,15)} `);
+            console.log('SpousePos: ', SpousePos, ' dy: ', dy  );
+            if (SpousePos) {
+                const update = {
+                    id: spouseId,
+                    // x: plotx,
+                    y: SpousePos.y - dy,
+                    fixed: true
+                };
+
+                plotupdates.push(update);
+                plotPositionMap.set(spouseId, update);
+            }
+        });
+    }
+}
+function arrangeDescendants(nodeId,depth)
+{
+    // recursively call arrangeDescendants until a root is found or maxGenerations is reached
+    // then assign an x,y position to the node
+    const clickednode = nodes.get(nodeId);
+    const children = dataJSON.children_of[nodeId] || [];
+    const rootNodePos = network.getPositions([rootNodeId])[rootNodeId] || null;
+
+    console.log(`arrangeDescendants for ${clickednode.Name} with ${children.length} children at depth ${depth} maxGen: ${maxGenerations} `);
+
+    if (children.length === 0 || depth == maxGenerations) {
+        console.log('plot');
+        PlotDescendant(clickednode,true,depth);
+        plotSpouses(nodeId);
+        return;
+    }
+    children.forEach(childId => {
+        const childNode = nodes.get(childId);
+        console.log(`arrangeDescendants loop for ${clickednode.Name} child ${childNode.Name} depth ${depth}`);
+        if (childNode) {
+            arrangeDescendants(childId,depth + 1);
+        }
+    });
+
+    PlotDescendant(clickednode,false);
+    plotSpouses(nodeId);
+
+    function plotSpouses(nodeId) {
+        const spouses = spouses_of[nodeId] || [];
+        const clickPos = plotPositionMap.get(nodeId);
+//        console.log(`** arrangeDescendants for ${clickednode.Name} with ${spouses.length} spouses `);
+        let index = 1;
+        let Spousey = 0;
+        spouses.forEach(spouseId => {
+            Spousey = clickPos.y + index * (boxHeight + Gapy); // reset Nexty to below the current node before plotting each spouse, so that multiple spouses
+            index = index + 1; // increment index for the next spouse
+            const update = {
+                id: spouseId, 
+                x: 0, // will be adjusted in positionNodesByBirthYear()
+                y: Spousey, // nodeId y + boxHeight + gapY
+                fixed: true };
+
+            plotupdates.push(update);
+            plotPositionMap.set(spouseId, update);
+
+            if (Nexty <= Spousey + (boxHeight + Gapy)) {
+                Nexty = Spousey + (boxHeight + Gapy);
+            } 
+
+        });
+    }
+
+}
+function PlotDescendant(node, leaf)
+{
+    const year = extractYear(node.birthdatestring);
+    const plotx = yearToX(year); 
+
+    let ploty;
+
+    console.log(`PlotDescendant for ${node.Name} leaf: ${leaf} Nexty: ${Nexty}  `);
+
+    if (leaf) {
+        ploty = Nexty;
+        Nexty += boxHeight + Gapy;
+    } else {
+        ploty = ChildrenCenter(node.id);
+    }
+
+    const update = {
+        id: node.id,
+        x: plotx,
+        y: ploty,
+        fixed: true
+    };
+
+    plotupdates.push(update);
+    plotPositionMap.set(node.id, update);
+
+    function ChildrenCenter(nodeId) {
+        const children = dataJSON.children_of[nodeId] || [];
+        let totalY = 0;
+
+        children.forEach(childId => {
+            const childPos = plotPositionMap.get(childId);
+            if (childPos) {
+                totalY += childPos.y;
+            }
+        });
+
+        return totalY / children.length;
+    }
+}
+function NumParents(nodeId) {
+    const parents = dataJSON.parents_of[nodeId] || [];
+    return parents.length;
+}  
+
+function getVisibleAncestorGenerations(nodeId) {
+    const visited = new Set();
+    let maxGen = 0;
+
+    function traverse(pid) {
+        if (!pid || visited.has(pid)) return;
+        visited.add(pid);
+
+        const parents = dataJSON.parents_of[pid] || [];
+        parents.forEach(parentId => {
+            const parentNode = nodes.get(parentId);
+            if (parentNode) {
+                // update max generation seen
+                maxGen = Math.max(maxGen, parentNode.level || 0);
+                traverse(parentId); // recursive
+            }
+        });
+    }
+
+    traverse(nodeId);
+    return maxGen; // number of generations visible above this node
+}
+
+function RecordPositions()
+{
+    // Save current positions of each node
+    positions = network.getPositions();
+}
+function PlotNodes()
+{
+    requestAnimationFrame(() => {
+        for (const id in positions) {
+            //const newX = yearToX(positions[id].year);
+            nodes.update({id,
+                x: positions[id].x, 
+                y: positions[id].y,
+                fixed: false
+            });
+        };
+    });         
+}
+function yearToX(year) {
+    const deltaYears = year - startYear;
+    const newX = rootPos - (deltaYears / yearsPerXSpacing) * xSpacingBetweenLines;
+    return newX;
+}
+function moveAncestors(pid, dx, dy) {
+//    console.log(`x: ${dx} y: ${dy}`);
+    const parents = dataJSON.parents_of[pid] || [];
+    parents.forEach(parentId => {
+        if (previousPositions[parentId]) {
+            nodes.update({
+                id: parentId,
+                x: previousPositions[parentId].x + dx,
+                y: previousPositions[parentId].y + dy
+            });
+            // recurse upwards
+            moveAncestors(parentId, dx, dy);
+        }
+    });
+}
+function positionNodesByBirthYear() {
+
+
+//    requestAnimationFrame(() => {
+        const updates = []; 
+        nodes.forEach((node, id) => {
+            const nodeYear = extractYear(node.birthdatestring);
+            if (!nodeYear) return;
+            // Calculate X offset relative to root
+            const deltaYears = nodeYear - startYear;
+//console.log(`Calculating position for ${node.Name} - birth year: ${nodeYear} deltaYears: ${deltaYears}`);
+//console.log(`yearsperXSpacing: ${yearsPerXSpacing} xSpacingBetweenLines: ${xSpacingBetweenLines} `);
+            const newX = rootPos - (deltaYears / yearsPerXSpacing) * xSpacingBetweenLines;
+            // Keep Y the same for now
+            const newY = node.y;
+ //console.log("years, x -> newX", node.Name, nodeYear, node.x, newX);
+            updates.push({ id: id, x: newX, y: newY, fixed: false });
+        });
+        nodes.update(updates);  
+//    });
+
+
+    // Redraw network after repositioning
+    network.redraw();
+}
+
+function extractYear(dateStr) {
+    if (!dateStr) return null;
+    const match = dateStr.match(/\b(1\d{3}|2\d{3})\b/);
+    return match ? parseInt(match[0], 10) : null;
+}
+let historytoggle = 0;
+//----------------------------------------------------DrawTimeLine--------------
+function DrawTimeline(ctx, network) {
+    const scale = network.getScale();
+
+    const bounds = getVisibleBounds();
+    const width = bounds.right - bounds.left;
+    const height = bounds.bottom - bounds.top;
+
+    const topY = 40; // pixels from top of screen
+    const eventBandHeight = height * 0.2;
+
+//    console.log("Inside DrawTimeLine", ctx);
+  //  network.once("stabilized", () => { 
+        const rootPos = network.getPositions([rootNodeId])[rootNodeId].x; 
+        const node = nodes.get(rootNodeId);
+        const rootYear = extractYear(node.birthdatestring);
+//        console.log(`DrawTimeline: Start Year =${startYear}`);
+        // Determine year step based on zoom level
+        // Zoomed out (scale < 0.5): use 200 year steps
+        // Moderate zoom (0.5-1.0): use 100 year steps
+        // Zoomed in (scale >= 1.0): use 25 year steps
+        // console.log(`DrawTimeline: scale = ${scale}`);
+        let yearStep = 25;
+        if (scale < 0.1) {
+            yearStep = 100;
+        } else if (scale < .2) {
+            yearStep = 50;
+        }else if (scale > .4)
+        {
+            yearStep = 10;
+        }
+
+        // Draw vertical timeline lines
+        for (let year = startYear; year >= 1000; year -= yearStep) {
+//            console.log(`Drawing timeline year: ${year}`);
+            const xNetwork = rootPos + ((rootYear - year) / yearsPerXSpacing) * xSpacingBetweenLines;
+//            console.log(`xNetwork for year ${year} : ${xNetwork}`);
+            // Draw Line
+            ctx.strokeStyle = "rgba(0,0,0,0.5)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xNetwork, bounds.bottom);
+            ctx.lineTo(xNetwork, bounds.top);
+            ctx.stroke();
+
+            // Label Line with date (Date text stays constant size  ---------------------------
+            // --------********* changed coordinate system
+            ctx.save();
+            // Get current canvas transform
+            const t = ctx.getTransform();
+            const screenX = t.a * xNetwork + t.e;   // apply transform manually
+            const screenY = t.d * (bounds.bottom - 0.05 * height) + t.f;
+        
+            // Reset transform so text is not scaled
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            // label style
+            ctx.font = "18px Arial";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "black";
+    //        ctx.fillText(year, xNetwork, bounds.bottom - .05* height);
+            ctx.fillText(year, screenX, screenY - 20);
+            ctx.restore();
+            // --------------------------------------------------------------------------------
+        }
+  //  }); // end of stabilized once
+    const YSpacing = eventBandHeight/6;
+    const eventHeightFactor = 0.15;
+
+    if(historytoggle)
+    {
+    // --- Draw historical events ---
+    historicalEvents.forEach(event => {
+        const startXNetwork = rootPos + ((rootYear - event.startYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+        const endXNetwork = rootPos + ((rootYear - event.endYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+
+        const EventY = event.level*YSpacing - 20;
+        const iconSize = 30; // pixels
+        const icon = eventIcons[event.category];
+        if (icon && icon.complete) { // make sure image is loaded
+            ctx.drawImage(icon, startXNetwork - iconSize, EventY - iconSize/5, iconSize, iconSize);
+        }
+        ctx.fillStyle = event.color || "rgba(100,150,255,1)";
+        ctx.fillRect(startXNetwork, EventY , endXNetwork - startXNetwork, eventBandHeight * eventHeightFactor);
+        ctx.strokeRect(startXNetwork, EventY, endXNetwork - startXNetwork, eventBandHeight * eventHeightFactor);
+
+        ctx.fillStyle = "black";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(event.label, startXNetwork + 5, EventY + eventBandHeight * eventHeightFactor / 2);
+    });
+    }
+    const personalBandHeight = height * 0.1; // height of personal band
+    const personalBandY = eventBandHeight;   // starts just below general band
+
+  // ---Draw personal history bands (up to 2) ---
+    activePersonEvents.forEach((person, index) => {
+        const bandTop = eventBandHeight + index * eventBandHeight; // stack below main band
+        const bandBottom = bandTop + eventBandHeight;
+        ctx.fillStyle = index === 0 ? "rgba(255,240,200,0.95)" : "rgba(220,240,255,0.95)";
+        ctx.fillRect(0, bandTop, width, eventBandHeight);
+        ctx.strokeRect(0, bandTop, width, eventBandHeight);
+
+            // 1️⃣ Get min/max year from events
+        const years = person.events.map(e => e.startYear).filter(y => y);
+        const minYear = Math.min(...years);
+        const maxYear = Math.max(...years);
+        const mineventx = rootPos + ((rootYear - minYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+
+        person.events.forEach(event => {
+//            console.log(`Event ${event.label} - ${event.startYear} `);
+            const startX = rootPos + ((rootYear - event.startYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+            const endX = rootPos + ((rootYear - event.endYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+            const EventY = bandTop + event.level*YSpacing;
+            const EventHeight = eventBandHeight * eventHeightFactor;
+            
+            if (event.startYear === event.endYear) {
+                // Use an icon for single-year events
+                const iconSize = 30; // pixels
+                const icon = eventIcons[event.type];
+
+                if (icon && icon.complete) { // make sure image is loaded
+                    ctx.drawImage(icon, startXNetwork - iconSize/2, EventY - iconSize/4, iconSize, iconSize);
+                    ctx.fillStyle = "black";
+                    ctx.font = "13px Arial";
+                    ctx.textAlign = "left";
+                    wrapTextTwoLines(ctx,event.label,startXNetwork + 15, EventY+5,100,11);
+                    //ctx.fillText(event.label, startXNetwork + 15, EventY+EventHeight/2);
+                } else {
+                    ctx.fillStyle = "rgba(240,240,240,0.95)";
+                    ctx.fillRect(startXNetwork, EventY, endXNetwork - startXNetwork, EventHeight);
+                    ctx.strokeRect(startXNetwork, EventY, endXNetwork - startXNetwork, EventHeight);
+                    ctx.fillStyle = "black";
+                    ctx.font = "14px Arial";
+                    ctx.textAlign = "left";
+                    wrapTextTwoLines(ctx,event.label,startXNetwork + 5, EventY+EventHeight/2,15,16);
+                    //ctx.fillText(event.label, startXScreen + 5, EventY+EventHeight/2);
+                }
+            } else {
+                ctx.fillStyle = "rgba(240,240,240,0.95)";
+                ctx.fillRect(startXNetwork, EventY, endXNetwork - startXNetwork, EventHeight);
+                ctx.strokeRect(startXNetwork, EventY, endXNetwork - startXNetwork, EventHeight);
+                ctx.fillStyle = "black";
+                ctx.font = "14px Arial";
+                ctx.textAlign = "left";
+                ctx.fillText(event.label, startXNetwork + 5, EventY+EventHeight/2);
+            }
+        });
+        // ---------------------------Draw Age lines  ----------------------------
+        const events = person.events;
+        if (!events || events.length === 0) return;
+
+        // 2️⃣ Find birth year (anchor for age ticks)
+        const birthEvent = events.find(e => e.type === "Birth");
+        if (!birthEvent || !birthEvent.startYear)
+        {
+            // ----------Birthdate unknown -------------
+        } else {
+            const birthYear = birthEvent.startYear;
+            for (let ageYear = birthYear; ageYear <= birthYear+100; ageYear += 10) {
+                // Birthdate known
+                const ageX = rootPos + ((rootYear - ageYear) / yearsPerXSpacing) * xSpacingBetweenLines;
+     //           const XScreen = (ageX - viewPosition.x) * scale + width / 2;
+                // Draw tick line
+                ctx.beginPath();
+                ctx.moveTo(XNetwork, bandTop);
+                ctx.lineTo(XNetwork, bandTop + eventBandHeight );
+                ctx.stroke();
+                // Label (Age)
+                ctx.fillText(`Age ${ageYear-birthYear}`, XNetwork + 2, bandTop + 10);
+            }
+        }
+        // -----------put persons name in the personal history area
+        ctx.font = "16px Arial";
+        let str = person.name + " — Personal History";
+        let strpix = getTextWidth(str,ctx.font );
+        ctx.fillStyle = "rgba(225,210,170,0.95)";
+        let xp = width - strpix - 10;
+        let yp = bandTop + eventBandHeight-20;
+        ctx.fillRect(xp, yp, strpix + 10, 20);
+        ctx.strokeRect(xp, yp, strpix + 10, 20);
+        ctx.fillStyle = "blue";      
+        ctx.fillText(str, xp + 5, yp + 10);
+
+    });
+
+
+}
+function getVisibleBounds() {
+    const rect = network.canvas.frame.canvas.getBoundingClientRect();
+
+    // Screen pixel coords of the corners
+    const topLeft     = { x: 0, y: 0 };
+    const topRight    = { x: rect.width, y: 0 };
+    const bottomLeft  = { x: 0, y: rect.height };
+    const bottomRight = { x: rect.width, y: rect.height };
+
+    // Convert to network coordinates
+    const ntl = network.DOMtoCanvas(topLeft);
+    const ntr = network.DOMtoCanvas(topRight);
+    const nbl = network.DOMtoCanvas(bottomLeft);
+    const nbr = network.DOMtoCanvas(bottomRight);
+
+    return {
+        top: ntl.y,
+        bottom: nbl.y,
+        left: ntl.x,
+        right: ntr.x,
+        width: ntr.x - ntl.x,
+        height: nbl.y - ntl.y,
+        corners: { ntl, ntr, nbl, nbr }
+    };
+}
+
+function wrapTextTwoLines(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let lineCount = 0;
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const testWidth = ctx.measureText(testLine).width;
+
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line.trim(), x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+      lineCount++;
+
+      if (lineCount === 1) { // we've just drawn the first line
+        // If there are still words left, prepare to stop after the 2nd line
+        if (n < words.length - 1) {
+          // Build second line with possible ellipsis
+          let remaining = '';
+          for (let m = n; m < words.length; m++) {
+            const test = remaining + words[m] + ' ';
+            if (ctx.measureText(test).width > maxWidth) break;
+            remaining = test;
+          }
+          remaining = remaining.trim();
+          if (n < words.length - 1) remaining += '…';
+          ctx.fillText(remaining, x, y);
+          return; // stop after second line
+        }
+      }
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+function getTextWidth(text, font = '16px Arial') {
+  // Create a canvas (no need to add it to the DOM)
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  
+  // Set the same font you plan to render with
+  context.font = font;
+  
+  // Measure the text
+  const metrics = context.measureText(text);
+  
+  // Return width in pixels
+  return metrics.width;
+}
+
+// --------------------------------------------Update Visible Groups ---------------------------------
+let visibleGroupCenters = {}; 
+let groups = {};  // Global variable that stores the visible nodes, arrayed by BirthGroup
+let immigrants = {};  // Global variable that stores visible nodes that have different birth and death groups
+let migrationLines = {}; // Global variable that is grouped by "birth - death" pair, contains all nodes with that pairing
+function updateVisibleGroups() {
+    // Get all node IDs currently visible in the network viewport
+    const visibleNodeIds = getVisibleNodes();
+
+    // Collect unique BirthGroups
+    const groupsSet = new Set();
+    groups = {};    // reset the global variables before computing what is visible
+    immigrants = {};
+    migrationLines = {};
+    const pairSet = new Set();
+
+    visibleNodeIds.forEach(id => {      // Cycle through each node that is visible on the screen
+        const node = nodes.get(id);
+        if (node.BirthGroup) {          // if the node has a BirthGroup assigned, based on birth location in .ged file
+            groupsSet.add(node.BirthGroup);     // add this BirthGroup to a set of BirthGroups  (groupsSet)
+            const pos = network.getPositions([id])[id];
+            if (!groups[node.BirthGroup]) groups[node.BirthGroup] = [];    
+            groups[node.BirthGroup].push({
+                id,
+                x: pos.x,
+                y: pos.y,
+                BirthGroup: node.BirthGroup,
+                DeathGroup: node.DeathGroup,
+                startYear: node.startYear,
+                endYear: node.endYear
+            });  // add the position of the node to the global var groups
+            // Check if node is an immigrant (BirthGroup !== DeathGroup)
+            if (!immigrants[node.BirthGroup]) immigrants[node.BirthGroup] = [];
+            if (node.DeathGroup && node.BirthGroup !== node.DeathGroup) {
+                immigrants[node.BirthGroup].push({
+                    id,
+                    x: pos.x,
+                    y: pos.y,
+                    BirthGroup: node.BirthGroup,
+                    DeathGroup: node.DeathGroup,
+                    startYear: node.startYear,
+                    endYear: node.endYear
+                });
+                const pairLabel = `${node.BirthGroup} → ${node.DeathGroup}`;
+                pairSet.add(pairLabel);
+            }
+        }
+    });
+
+    // now groups[] holds all the visible nodes sorted by BirthGroup
+    // immigrants[] holds all visible nodes with different BirthGroup and DeathGroup
+
+    // Now compute the migrationLines from the immigration data
+    for (const [BirthGroup, arr] of Object.entries(immigrants)) {
+        for (const node of arr) {
+            const birth = node.BirthGroup;
+            const death = node.DeathGroup;
+
+            // Create key like "England - Massachusetts"
+            const key = `${birth} - ${death}`;
+
+            if (!migrationLines[key]) {
+                migrationLines[key] = [];
+            }
+            migrationLines[key].push(node.id);  // Or push full node if needed
+        }
+    }
+
+    // Turn groupsSet → array of { groupName, count }  ------------------- prepare birthgroups for display 
+    const groupsArray = Array.from(groupsSet).map(groupName => {
+        const count = visibleNodeIds.filter(id => {
+            const node = nodes.get(id);
+            return node.BirthGroup === groupName;
+        }).length;
+        return { groupName, count };
+    });
+
+    // now we know the number of instances (count) of each BirthGroup (groupName)
+
+    // Sort by count DESC (largest groups first)
+    groupsArray.sort((a, b) => b.count - a.count);
+    // Filter out groups with fewer than 3 nodes
+    const filteredGroups = groupsArray.filter(item => item.count >= 3);
+    // Take the top 6
+    const topGroups = filteredGroups.slice(0, 5);
+
+        // Compute centroids of birth groups -----------------------------------
+    visibleGroupCenters = {};  // reset
+    for (const [groupName, positions] of Object.entries(groups)) {
+        if (positions.length === 0) continue;
+
+        const avgX = positions.reduce((a, p) => a + p.x, 0) / positions.length;
+        const avgY = positions.reduce((a, p) => a + p.y, 0) / positions.length;
+
+        visibleGroupCenters[groupName] = { x: avgX, y: avgY };
+    }
+}
+
+function getVisibleNodes() {
+    const allNodes = nodes.get(); // get all nodes
+    const visibleNodes = [];
+
+    const canvasRect = network.canvas.body.container.getBoundingClientRect();
+    const scale = network.getScale();
+    const viewPos = network.getViewPosition(); // center in canvas coords
+
+    // network.canvasToDOM converts network coordinates to DOM coordinates
+    allNodes.forEach(node => {
+        const pos = network.getPositions([node.id])[node.id];
+        const domPos = network.canvasToDOM(pos);
+    
+        if (
+        domPos.x >= 0 && domPos.x <= canvasRect.width &&
+        domPos.y >= 0 && domPos.y <= canvasRect.height
+        ){
+            visibleNodes.push(node.id);
+        }
+    });
+// console.log("visibleNodes:", visibleNodes);
+    return visibleNodes;
+}
+
+
+function saveState() {
+    // get positions of all currently visible nodes
+    const savepositions = network.getPositions();
+
+    // create object with visible node data
+    const visibleNodes = nodes.get();  // includes all visible node data
+    const state = {
+        nodes: visibleNodes.map(n => ({
+            id: n.id,
+            x: savepositions[n.id].x,
+            y: savepositions[n.id].y,
+            fixed: {x: true, y: true},
+            level: n.level || 0
+        })),
+        edges: edges.get(),
+
+    };
+
+    const viewPosition = network.getViewPosition();
+    const scale = network.getScale();
+    state.view = {position: viewPosition, scale: scale};
+    
+
+    // save to localStorage
+    localStorage.setItem("familyTreeState", JSON.stringify(state));
+    postMessageToInfoCenter("State saved locally in browser.");
+    console.log("State saved:", state);
+}
+
+function restoreState() {
+    const stateStr = localStorage.getItem("familyTreeState");
+//    console.log("Restoring state:", stateStr);
+    if (!stateStr) return;
+    const state = JSON.parse(stateStr);
+    // Exit if state has no nodes or edges 
+    if (!state.nodes || state.nodes.length === 0 || !state.edges || state.edges.length === 0) { 
+        console.warn("Saved state is empty, skipping restore."); 
+        return; 
+    }
+    console.log("State restored 1:", state);
+
+    nodes.clear();
+    edges.clear();
+
+    const updates = [];
+    state.nodes.forEach(savedNode => {
+        const ind = dataJSON.individuals[savedNode.id];
+        if (ind) {
+            addNode(ind, savedNode.id, savedNode.level, updates);
+            nodes.update({
+                id: savedNode.id,
+                x: savedNode.x,
+                y: savedNode.y,
+            });
+        }
+    });
+
+    nodes.update(updates);
+    edges.add(state.edges);
+
+    if (state.view) {
+        const {position, scale} = state.view;
+        setTimeout(() => {
+            network.moveTo({position:position, scale:scale, animation:false});
+        },500);
+    }
+
+    network.setOptions({
+        layout: { hierarchical: false} ,physics : false, 
+            interaction: {dragNodes: isAdmin(), dragView: true}
+        });
+
+    console.log("State restored 2:", state);
+}
+function showLoading() {
+    document.getElementById("loadingOverlay").style.display = "flex";
+}
+
+function hideLoading() {
+    document.getElementById("loadingOverlay").style.display = "none";
+}
+// Utility: add a message to the context display
+function postMessageToInfoCenter(msg) {
+    const contextDisplay = document.getElementById("contextDisplay");
+    const p = document.createElement("p");
+    p.textContent = msg;
+    p.style.color = "#333";
+    p.style.fontSize = "12px";
+    contextDisplay.appendChild(p);
+}
+function hideNodeOptionsMenu() {
+    const menu = document.getElementById("nodeOptionsMenu");
+    menu.style.display = "none";
+    delete menu.dataset.nodeId;
+}
+function showNodeOptionsMenu(nodeId, domPos)
+{
+    const menu = document.getElementById("nodeOptionsMenu");
+
+    menu.style.left = `${domPos.x}px`;
+    menu.style.top = `${domPos.y}px`;
+
+    menu.dataset.nodeId = nodeId;
+    menu.style.display = "block";
+
+
+}
+
+// Utility: clear all messages
+function clearContextMessages() {
+    const contextDisplay = document.getElementById("contextDisplay");
+    contextDisplay.innerHTML = "";
+}
+
+async function Splashscreen() {
+    document.getElementById("ss_loginButton").addEventListener("click", async () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        console.log(`splash screen - Logging in with email: ${email} - password: ${password}`);
+
+        try {
+            let data = await Login(email, password);  // ✅ await the Promise
+//            console.log("splash screen - after login", data);
+
+            if (data && data.token) {
+                document.getElementById("splashScreen").style.display = "none";
+                document.getElementById("mainContainer").style.display = "flex";
+                onLoginSuccess(data.userData);
+            } else {
+                showError("splash screen - Login failed: No user found " + (data?.message || "Unknown error"));
+            }
+        } catch (err) {
+            showError("Login error:", err);
+            showError("splash screen - Login failed due to error");
+        }
+    });
+}
+
+
+function onLoginSuccess(userData){
+    loadNodeInformation(userData);
+    console.log("Post second message ---------------");
+    postMessageToInfoCenter("Node Information Loaded from Server...");
+    InitializeTree(userData);
+    console.log("loading evidence ---------------");
+    clearContextMessages();
+}
+
+
+// Update tree on root change
+//document.getElementById("rootSelect").addEventListener("change", updateTree);
+console.log("Family Tree V2.5 Loaded");
+// Load JSON and initialize
+Splashscreen();
+
+</script>
+
+</body>
+</html>
