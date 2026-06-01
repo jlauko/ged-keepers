@@ -14,7 +14,7 @@
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
     </script>
-
+    <script src="config.js"></script>
     <!-- Include exif-js -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 
@@ -483,7 +483,7 @@ async function Login(email, password) {
     }
 
     try {
-        const res = await fetch("http://localhost:4000/auth/login", {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
@@ -538,7 +538,7 @@ async function loadEvidencefromBackend(userData) {
 
     try {
         postMessageToInfoCenter("Loading Evidence from Backend...");
-        const response = await fetch(`http://localhost:4000/edgeInfo/${userName}`, {
+        const response = await fetch(`${API_BASE_URL}/edgeInfo/${userName}`, {
             headers: { "Authorization": "Bearer " + authToken }
         });
  
@@ -566,7 +566,7 @@ async function saveEvidenceToBackend() {
     const evidenceList = edges.get();   // this includes evidence arrays
 
     try {
-        const response = await fetch(`http://localhost:4000/edgeInfo/${userName}`, {
+        const response = await fetch(`${API_BASE_URL}/edgeInfo/${userName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -596,7 +596,7 @@ async function saveEvidenceToBackend() {
 async function loadNodeInformation(userData) {
 
     try {
-        const response = await fetch(`http://localhost:4000/nodeInfo/${userName}`, {
+        const response = await fetch(`${API_BASE_URL}/nodeInfo/${userName}`, {
             headers: { "Authorization": "Bearer " + authToken }
         });
  
@@ -643,7 +643,7 @@ async function loadNodeInformation(userData) {
     // ---------------------------------------------------------------------
     if (needsupdate){
         try {
-            const response = await fetch(`http://localhost:4000/nodeInfo/${userName}`, {
+            const response = await fetch(`${API_BASE_URL}/nodeInfo/${userName}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -763,7 +763,7 @@ async function UpdateIndividualNode(nodeId, bioData) {
     let response = null;
 
     try {
-        const response = await fetch(`http://localhost:4000/nodeInfo/${userName}/nodes/${nodeId}`, {
+        const response = await fetch(`${API_BASE_URL}/nodeInfo/${userName}/nodes/${nodeId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -906,7 +906,7 @@ async function InitializeTree(userData) {
 async function loadBackendData (info) {
     let data = null;
     try {
-        const response = await fetch(`http://localhost:4000/${info}/${userName}`, {
+        const response = await fetch(`${API_BASE_URL}/${info}/${userName}`, {
             headers: { "Authorization": "Bearer " + authToken }
         });
         if (response.ok) {
@@ -1078,7 +1078,7 @@ async function geocodeWithFallback(birthPlace) {
 // ------------ send data to backend for geocoding, which will handle the attempts and return the first successful geocode result, or null if all attempts fail -------------
     try {
 
-        const response = await fetch("http://localhost:4000/api/geocode", {
+        const response = await fetch(`${API_BASE_URL}/api/geocode`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -2933,7 +2933,7 @@ async function SendAttachmentToBackend(file) {
     formData.append("attachment", file);
 
     try {
-        const response = await fetch(`http://localhost:4000/uploadAttachment/${userName}`, {
+        const response = await fetch(`${API_BASE_URL}/uploadAttachment/${userName}`, {
             method: "POST",
             body: formData
         });
@@ -3083,7 +3083,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
 //          Download attachment
             console.log("Downloading attachment :", url);
             const link = document.createElement("a");
-            link.href = `http://localhost:4000/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`;;
+            link.href = `${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
@@ -3114,7 +3114,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
 
             try {
                 const response = await fetch(
-                    `http://localhost:4000/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`,
+                    `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`,
                     { method: "DELETE" }
                 );
                 if (response.ok) {
