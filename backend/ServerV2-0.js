@@ -36,8 +36,8 @@ app.use((req, res, next) => {
 
 // ---------------- MOCK DATA ----------------
 let users = [
-  { id: 1, username: "Lauko", email: "Lauko", password: "Lauko", role: "admin" },
-  { id: 2, username: "Guest", email: "Guest", password: "Guest", role: "viewer" }
+  { id: 1, username: "lauko", email: "Lauko", password: "Lauko", role: "admin" },
+  { id: 2, username: "guest", email: "Guest", password: "Guest", role: "viewer" }
 ];
 // ---------------------------------------------
 // ------ AUTH ROUTES - Login  -----------------
