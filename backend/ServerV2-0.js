@@ -308,7 +308,7 @@ app.post('/uploadAttachment/:username', upload.single('attachment'), async (req,
     }
 });
 
-const pdf = require('pdf-poppler');
+//temp because render does not support pdf-poppler     const pdf = require('pdf-poppler');
 
 async function createPdfThumbnail(filePath, thumbDir, fileName) {
     const baseName = path.basename(fileName, path.extname(fileName));
@@ -322,7 +322,7 @@ async function createPdfThumbnail(filePath, thumbDir, fileName) {
     };
 
     try {
-        await pdf.convert(filePath, options);
+// temp because render does not support pdf-poppler        await pdf.convert(filePath, options);
 
         // Find the generated file (could be -01.jpg, -001.jpg, etc.)
         const files = await fsp.readdir(thumbDir);
