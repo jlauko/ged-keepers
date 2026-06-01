@@ -439,7 +439,7 @@ app.get("/HistoricalEvents/:username", (req, res) => {
 // -------------------------------------------------
 app.get("/PersonalHistoryEvents/:username", (req, res) => {
     const username = req.params.username;
-    const Path = path.join(__dirname, "users", username, "GED", "PersonalHistoryEvents.json");
+    const Path = path.join(__dirname, "users", username, "GED", "personalHistoryEvents.json");
 
     console.log("Fetching Personal History Event information from:", username, "from file:", Path);
     try { 
