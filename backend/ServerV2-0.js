@@ -7,7 +7,7 @@ const fsp = require('fs/promises');
 const sharp = require('sharp');
 
 const CACHE_FILE = "./geoCache.json";
-const geoCache = {}; // in-memory cache for geocoding results
+let geoCache = {}; // in-memory cache for geocoding results
 
 const app = express();
 app.use(express.json({limit: '50mb'})); // for parsing application/json with larger payloads
