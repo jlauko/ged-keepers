@@ -7,6 +7,6 @@ start "Frontend Server" cmd /k ^
 
 REM --- Start backend server ---
 start "Backend Server" cmd /k ^
-    "cd /d C:\Users\Lauko\OneDrive - SRC Inc. (Syracuse Research)\Desktop\Personal\geneology\GED Keepers\backend && node serverV1-1.js"
+    "cd /d C:\Users\Lauko\OneDrive - SRC Inc. (Syracuse Research)\Desktop\Personal\geneology\GED Keepers\backend && node serverV2-0.js"
 
 echo Both servers started.

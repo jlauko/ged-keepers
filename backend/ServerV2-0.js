@@ -12,17 +12,25 @@ const geoCache = {}; // in-memory cache for geocoding results
 const app = express();
 app.use(express.json({limit: '50mb'})); // for parsing application/json with larger payloads
 
-// Manual CORS headers
+const allowedOrigins = [
+  "http://localhost:8000",
+  "https://jlauko.github.io"
+];
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:8000"); // allow your frontend
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  
-  // Handle preflight requests
+
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
-  
+
   next();
 });
 
@@ -321,7 +329,7 @@ async function createPdfThumbnail(filePath, thumbDir, fileName) {
         const generated = files.find(f => f.startsWith(baseName) && f.endsWith('.jpg'));
 
         if (!generated) {
-        throw new Error("No thumbnail generated");
+            throw new Error("No thumbnail generated");
         }
 
         const oldPath = path.join(thumbDir, generated);
@@ -559,4 +567,6 @@ function loadCache() {
 const PORT = process.env.PORT || 4000;
 // Load cache and start server
 loadCache();
-app.listen(PORT, () => console.log(`Mock server running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+    console.log(`GED Keepers server running on port ${PORT}`);
+});

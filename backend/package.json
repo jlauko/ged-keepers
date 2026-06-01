@@ -1,0 +1,14 @@
+{
+  "name": "ged-keepers-backend",
+  "version": "1.0.0",
+  "main": "serverV2-0.js",
+  "scripts": {
+    "start": "node serverV2-0.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.3",
+    "pdf-poppler": "^0.2.1"
+  }
+}
