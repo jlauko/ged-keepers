@@ -64,6 +64,21 @@ app.get("/download/:username/:filename", (req, res) => {
         }
     });
 });
+// ---------------------------------------------
+// --------- Download thumbnail (.jpg) to client --------------
+// ---------------------------------------------
+app.get("/thumbnail/:username/:filename", (req, res) => {
+    const { username, filename } = req.params;
+    const userDir = path.join(__dirname, 'users', username, 'thumbnails');
+    const file = path.join(userDir, filename);
+    console.log("Attempting to download thumbnail:", file);
+    res.download(file, (err) => {
+        if (err) {
+            console.error("Error downloading thumbnail:", err);
+            res.status(404).send("File not found");
+        }
+    });
+});
 // ---------------------------------------------------------
 // ---------------- Delete Files ---------------------------
 // ---------------------------------------------------------

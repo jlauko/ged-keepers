@@ -628,10 +628,9 @@ async function loadNodeInformation(userData) {
                 if (att.selected) {
                     // async/await style
                     (async () => {
-                        cacheImage(att).then(() => {
-                            // now att.image is safe to use in beforeDrawing
-                            console.log("Cached:", att.name, orientation);
-                        });
+                        await cacheImage(att);
+                        // now att.image is safe to use in beforeDrawing
+                        console.log("Cached:", att.name, orientation);
                     })();
                 }
             });
@@ -667,25 +666,29 @@ async function loadNodeInformation(userData) {
         }
     }
 }
-function cacheImage(att) {
-  return new Promise((resolve, reject) => {
+async function cacheImage(att) {
+
+    console.log("cacheImage: fetching thumbnail for:", att.filename);
+
+    const url = await getThumbnailUrl("lauko", att.filename);
+
     const img = new Image();
 
-    // first event handler ensures the image is fully loaded before we try to read its properties
-    img.onload = () => {
-        att.image = img;              // ✅ now it's valid
-        GetImageOrientation(img).then(o => att.orientation = o);
-        resolve(att);
-        console.log("cacheImage function: loaded:", att.thumbUrl);
-    };
+    await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(
+            new Error("Failed to load: " + url)
+        );
 
-    // second event handler catches any loading errors
-    img.onerror = () => reject(new Error("Failed to load: " + att.thumbUrl));
+        img.src = url;
+    });
 
-    // start loading the image after setting up handlers
-    img.src = att.thumbUrl;         // start loading after handlers
+    att.image = img;
+    att.orientation = await GetImageOrientation(img);
 
-  });
+    console.log("cacheImage loaded:", url);
+
+    return att;
 }
 
 
@@ -2927,7 +2930,18 @@ function AddNodeAttachment(nodeId,attachmentInfo) {
     // Need to add logic here to send to backend server to store attachment metadata
     return;
 }   
+async function getThumbnailUrl(username, filename) {
+    const response = await fetch(
+        `${API_BASE_URL}/thumbnail/${username}/${filename}`
+    );
 
+    if (!response.ok) {
+        throw new Error(`Thumbnail fetch failed: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+}
 async function SendAttachmentToBackend(file) {
     const formData = new FormData();
     formData.append("attachment", file);
@@ -3207,12 +3221,12 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
                                 // ------------------------------
                                 // async/await style
                                 (async () => {
-                                    cacheImage(att).then(() => {
-                                        // now att.image is safe to use in beforeDrawing
-                                        console.log("Cached:", att.name, att);
-                                        console.log("redraw network");
-                                        network.redraw();
-                                    });
+                                    await cacheImage(att);
+                                    // now att.image is safe to use in beforeDrawing
+                                    console.log("Cached:", att.name, att);
+                                    console.log("redraw network");
+                                    network.redraw();
+                            //    });
                                 })();
                             }
                             else {
