@@ -668,7 +668,7 @@ async function loadNodeInformation(userData) {
 }
 async function cacheImage(att) {
 
-    console.log("cacheImage: fetching thumbnail for:", att.filename);
+    // console.log("cacheImage: fetching thumbnail for:", att.filename);
 
     const url = await getThumbnailUrl("lauko", att.filename);
 
@@ -686,7 +686,7 @@ async function cacheImage(att) {
     att.image = img;
     att.orientation = await GetImageOrientation(img);
 
-    console.log("cacheImage loaded:", url);
+    // console.log("cacheImage loaded:", url);
 
     return att;
 }
