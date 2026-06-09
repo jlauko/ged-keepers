@@ -10,7 +10,10 @@
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
+    <link rel="stylesheet"
+      href="https://unpkg.com/intro.js/minified/introjs.min.css">
 
+    <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
     </script>
@@ -240,6 +243,7 @@
             </div>
         </div>
 
+        <!--- Root/Max Generations -->
         <div class="configureSection">
             <div class="configureHeader">        
                 <div class="panelSectionTitle">Configure the Tree</div>
@@ -254,14 +258,14 @@
         </div>
 
         <!-- Clusters Section -->
-        <div class="panelSection">
+        <div id="clustersSection" class="panelSection">
 
             <div class="clusterHeader">
                 <div class="panelSectionTitle">Clusters</div>
 
                 <p class="clusterDescription">
                     Clusters group people that share a common attribute:
-                    such as Birth location, Death location, or Immigration pattern
+                    such as Birth location
                 </p>
             </div>
 
@@ -273,8 +277,8 @@
                 </label>
                 <span>Birth</span>
                 </div>
-
-                <div class="toggleItem">
+<!--
+               <div class="toggleItem">  
                 <label class="switch">
                     <input type="checkbox" id="deathToggle">
                     <span class="slider"></span>
@@ -289,6 +293,7 @@
                 </label>
                 <span>Migration</span>
                 </div>
+            -->
             </div>
 
         </div>
@@ -296,7 +301,9 @@
 
         <!-- Context Display Section -->
         <div class="panelSection" style="flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: none;">
-        <div class="panelSectionTitle" id="infoCenterTitle">Information Center</div>
+        <div class="panelSectionTitle" id="infoCenterTitle">Information Center
+            <button id="makeRoot" style="float: right; display: none">Make Root</button> 
+        </div>
         <div id="contextDisplay" class="contextDisplay">
             <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
         </div>
@@ -537,7 +544,7 @@ async function loadEvidencefromBackend(userData) {
     let edgeInformation = {};
 
     try {
-        postMessageToInfoCenter("Loading Evidence from Backend...");
+        //postMessageToInfoCenter("Loading Evidence from Backend...");
         const response = await fetch(`${API_BASE_URL}/edgeInfo/${userName}`, {
             headers: { "Authorization": "Bearer " + authToken }
         });
@@ -545,7 +552,7 @@ async function loadEvidencefromBackend(userData) {
         if (response.ok) {
             edgeInformation = await response.json();
             console.log("Edge Information loaded: (edgeInformation)", edgeInformation);
-            postMessageToInfoCenter("Evidence loaded from Backend...");
+            //postMessageToInfoCenter("Evidence loaded from Backend...");
             edges.clear();
             edges.add(edgeInformation);
             updateAllEdgeColors();
@@ -838,7 +845,7 @@ function displayNodeInfo(nodeId) {
 function displayPinIndicator(showPin) {
     const panelTitle = document.getElementById('infoCenterTitle');
     if (!panelTitle) return;
-
+    
     // Find any existing pin indicator
     const existingPin = panelTitle.querySelector('.pin-indicator');
 
@@ -851,12 +858,16 @@ function displayPinIndicator(showPin) {
             PinImg.style.height = '20px';
             PinImg.style.width = '20px';
             panelTitle.appendChild(PinImg);
+            // show the make root button if pinning is enabled
+            document.getElementById("makeRoot").style.display = "block";
         }
     } else {
         // If we want to hide/remove the pin
         if (existingPin) {
             existingPin.remove();
         }
+        // show the make root button if pinning is enabled
+        document.getElementById("makeRoot").style.display = "none";
     }
 }
 
@@ -898,8 +909,8 @@ async function InitializeTree(userData) {
     if (dataJSON != null) {
         console.log("Family data loaded:", dataJSON);
         console.log("Post first Message -----------------");
-        postMessageToInfoCenter("Successful Login...");
-        postMessageToInfoCenter("Backend Family Data Loaded ")
+        //postMessageToInfoCenter("Successful Login...");
+        //postMessageToInfoCenter("Backend Family Data Loaded ")
         createTree(userData);
     } else {
         console.log("Failed to load family data for user:", userName);
@@ -926,7 +937,81 @@ async function loadBackendData (info) {
         return null;    
     }
 }
+function startGuidedTour()
+{
+    console.log("Starting guided tour...");
+    introJs().setOptions({
 
+        nextLabel: 'Next →',
+        prevLabel: '← Back',
+        doneLabel: 'Finish',
+
+        steps: [
+            {
+                title: 'Welcome to The Lauko Family Tree Explorer',
+                intro:
+                    'Family Tree Explorer preserves family stories, documents, photographs, and relationships.'
+            },
+            
+            {
+                element: document.querySelector('#mainContainer'),
+                title: 'Family Tree',
+                intro:
+                    'The family tree visualization is in the center. It shows your ancestors and relatives, organized by generation. Hover over a person to see details, and click to explore their biography and attachments.'
+            },
+
+            {
+                element: document.querySelector('#rightPanel'),
+                title: 'Information Panel',
+                intro:
+                    'The information panel on the right shows information about your ancestors and relatives.'
+            },
+
+            // Search
+            {
+                element: document.querySelector('#search-container'),
+                title: 'Search the Tree',
+                intro:
+                    'Search for a family member by name to quickly find and explore their story. You can also search for locations to see who was born, lived, or died there.'
+            },
+
+            // Root, Max Gens
+            {
+                element: document.querySelector('#configure-container'),
+                title: 'Configure',
+                intro:
+                    'Search for a family member by name and jump directly to them.'
+            },
+            // Clusters
+            {
+                element: document.querySelector('#clustersSection'),
+                title: 'Clustering',
+                intro:
+                    'Highlight family members with common characteristics.'
+            },
+            // Information Center
+            {
+                element: document.querySelector('#contextDisplay'),
+                title: 'Information Center',
+                intro:
+                    'View detailed information about family members here.  Click on a person to see their biography, key facts, and attachments. Hover over clusters to learn about shared characteristics and histories.'
+            },
+            // Attachments
+            {
+                element: document.querySelector('#attachmentsList'),
+                title: 'Attachments',
+                intro:
+                    'Photos, PDFs, certificates, and other records appear here.'
+            },
+            // End Tour
+            {
+                title: 'Ready to Explore',
+                intro:
+                    'Click any person in the tree to begin exploring your family history.'
+            }
+        ]
+    }).start();
+}
  // Utility: truncate text
 function truncate(text, maxLength) {
     if (!text) return "";
@@ -1165,7 +1250,7 @@ function InitializeCluster(cluster,locationGroups,groupName) {
     let birthinitialized = false;
 //    let Birth_Cluster = new Clusters();  // create a new cluster class object for birth location groups
     network.once("afterDrawing", ctx => {
-        postMessageToInfoCenter("Initializing " + groupName + " Clusters...");
+        //postMessageToInfoCenter("Initializing " + groupName + " Clusters...");
         if(!birthinitialized) {
             cluster.init(locationGroups, nodes, groupName,userId, network,boxWidth);
             birthinitialized = true;
@@ -1277,7 +1362,7 @@ function updateTree() {
     addDescendants(rootNodeId, 0, nodeupdates);
     edges.update(edgesupdates);
     nodes.update(nodeupdates);
-    postMessageToInfoCenter("Tree Loaded...");
+    // postMessageToInfoCenter("Tree Loaded...");
     //
     // build spouse lookup table
     //
@@ -1373,7 +1458,7 @@ async function createTree(userData) {
     }
               
 
-    // -----------------------------------Load Historical Events -----------------------
+    //-----------------------------------Load Historical Events -----------------------
 
     historicalEvents = await loadBackendData("HistoricalEvents");
     if (historicalEvents != null) {
@@ -1381,7 +1466,7 @@ async function createTree(userData) {
     } else {
         console.log("Failed to load historical events");
     }
-    postMessageToInfoCenter("Historical Events Loaded from Server...");
+    //postMessageToInfoCenter("Historical Events Loaded from Server...");
     //-------------------------------------Load Personal Events--------------------------
 
     personalHistoryEvents = await loadBackendData("PersonalHistoryEvents");
@@ -1395,7 +1480,7 @@ async function createTree(userData) {
     } else {
         console.log("Failed to load historical events");
     }  
-    postMessageToInfoCenter("Personal History Events Loaded from Server...");
+    //postMessageToInfoCenter("Personal History Events Loaded from Server...");
 
     // ================================
     // 1️⃣ Load offline historical events
@@ -1413,7 +1498,7 @@ async function createTree(userData) {
 // Groups are a series of nodes that share a common attribute, like birth location
 // --------------------------------------------------------------------
     let birthLocationGroups = [];
-    postMessageToInfoCenter("Loading Birth Clusters from Server...");
+    //postMessageToInfoCenter("Loading Birth Clusters from Server...");
     console.log("Calling Backend to Load Birth Location Groups:");
     birthLocationGroups = await loadBackendData("BirthLocationGroups");
     if (birthLocationGroups != null) {
@@ -1432,7 +1517,7 @@ async function createTree(userData) {
 //        }
 //    });
     InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
-    postMessageToInfoCenter("Birth Clusters Loaded...");
+    //postMessageToInfoCenter("Birth Clusters Loaded...");
 //----------------------- Death Groups --------------------------------
 // Groups are a series of nodes that share a common attribute, like death location
 // --------------------------------------------------------------------
@@ -1453,7 +1538,7 @@ async function createTree(userData) {
             deathinitialized = true;
         }
     }); 
-    postMessageToInfoCenter("Death Clusters Loaded...");
+    //postMessageToInfoCenter("Death Clusters Loaded...");
 
     // loadEvidencefromBackend(userData);
 
@@ -1461,7 +1546,7 @@ async function createTree(userData) {
 // --------------------------------- LISTENERS --------------------------------------
 // ----------------------------------------------------------------------------------
     console.log("Installing Listeners...");
-    postMessageToInfoCenter("Installing Listeners...");
+    //postMessageToInfoCenter("Installing Listeners...");
 
     // ------------------------------------ People Search Bar-------------------------
     searchBox.addEventListener("input", () => {
@@ -1655,27 +1740,27 @@ async function createTree(userData) {
 // ----------------------------------------- Death toggle (Clusters On/Off) --------
 // - toggle the global variable "DeathclustersEnabled"
 // ---------------------------------------------------------------------------------
-    document.getElementById("deathToggle").addEventListener("change", (e) => {
-        DeathclustersEnabled = e.target.checked;
-        if (DeathclustersEnabled) {
-            DeathclustersEnabled = true;
-        } else {
-            DeathclustersEnabled = false;
-        }
-        network.redraw();
-    });
+//    document.getElementById("deathToggle").addEventListener("change", (e) => {
+//        DeathclustersEnabled = e.target.checked;
+//        if (DeathclustersEnabled) {
+//            DeathclustersEnabled = true;
+//        } else {
+//            DeathclustersEnabled = false;
+//        }
+//        network.redraw();
+//    });
     // ----------------------------------------- Migration toggle (Clusters On/Off) --------
 // - toggle the global variable "MigrationclustersEnabled"
 // ---------------------------------------------------------------------------------
-    document.getElementById("migrationToggle").addEventListener("change", (e) => {
-        MigrationclustersEnabled = e.target.checked;
-        if (MigrationclustersEnabled) {
-            MigrationclustersEnabled = true;
-        } else {
-            MigrationclustersEnabled = false;
-        }
-        network.redraw();
-    });
+//    document.getElementById("migrationToggle").addEventListener("change", (e) => {
+//        MigrationclustersEnabled = e.target.checked;
+//        if (MigrationclustersEnabled) {
+//            MigrationclustersEnabled = true;
+//        } else {
+//            MigrationclustersEnabled = false;
+//        }
+//        network.redraw();
+//   });
     // ---------------------------------------------------------------------------
     // ----------------------------------------- Evidence Panel Listeners --------
     // ---------------------------------------------------------------------------
@@ -1789,6 +1874,13 @@ async function createTree(userData) {
         deleteEvidence(evidenceId);
     });
 
+    const mroot = document.getElementById("makeRoot");
+    mroot.addEventListener("click", (e) => {
+        console.log("Make Root clicked for node:", Pinned_NodeId);
+        currentEditingNodeId = Pinned_NodeId;
+        MakeRoot();
+    });
+
     const menu = document.getElementById("nodeOptionsMenu");
     menu.addEventListener("click", (e) => {
         console.log("Node options menu clicked, action:", e.target.dataset.action);
@@ -1837,9 +1929,12 @@ async function createTree(userData) {
                 console.log("Cluster turned off");
                 const nodeId = params.nodes[0];
                 Pinned_NodeId = nodeId;
+                console.log("Pinned_NodeId set to:", Pinned_NodeId);
                 displayNodeInfo(nodeId);
                 displayPinIndicator(true);
-                showNodeOptionsMenu(nodeId, params.pointer.DOM);
+                if (isAdmin()) {
+                    showNodeOptionsMenu(nodeId, params.pointer.DOM);
+                }
  //               displayMigrationMap(nodeId);
             }
             else if (params.edges.length > 0) {
@@ -2165,7 +2260,7 @@ async function createTree(userData) {
 //            console.log(info);
 //        }
     });
-    postMessageToInfoCenter("Installing Listeners, Complete...");
+    //postMessageToInfoCenter("Installing Listeners, Complete...");
     network.redraw();
 }
 // ----------------------------------------------------------------------------------
@@ -4424,7 +4519,7 @@ function saveState() {
 
     // save to localStorage
     localStorage.setItem("familyTreeState", JSON.stringify(state));
-    postMessageToInfoCenter("State saved locally in browser.");
+    //postMessageToInfoCenter("State saved locally in browser.");
     console.log("State saved:", state);
 }
 
@@ -4498,8 +4593,8 @@ function showNodeOptionsMenu(nodeId, domPos)
 {
     const menu = document.getElementById("nodeOptionsMenu");
 
-    menu.style.left = `${domPos.x}px`;
-    menu.style.top = `${domPos.y}px`;
+    menu.style.left = `${domPos.x + 100}px`;
+    menu.style.top = `${domPos.y }px`;
 
     menu.dataset.nodeId = nodeId;
     menu.style.display = "block";
@@ -4541,10 +4636,12 @@ async function Splashscreen() {
 function onLoginSuccess(userData){
     loadNodeInformation(userData);
     console.log("Post second message ---------------");
-    postMessageToInfoCenter("Node Information Loaded from Server...");
+    //postMessageToInfoCenter("Node Information Loaded from Server...");
     InitializeTree(userData);
     console.log("loading evidence ---------------");
     clearContextMessages();
+    console.log("Information Loaded from Server...Starting guided tour...");
+    startGuidedTour();  
 }
 
 
