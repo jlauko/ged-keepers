@@ -1318,7 +1318,7 @@ function updateTree() {
         //console.log(`addDescendant Name: ${node ? node.Name : "Unknown"} at depth: ${depth}`);
         //const ind = dataJSON.individuals[pid];
         if (!visited.has(pid)) {
-            console.log(`Adding node for descendant ${dataJSON.individuals[pid].name}  at depth: ${depth}`);
+//            console.log(`Adding node for descendant ${dataJSON.individuals[pid].name}  at depth: ${depth}`);
             addNode(dataJSON.individuals[pid],pid,depth, nodeupdates);
             visited.add(pid);
         }
@@ -3895,11 +3895,11 @@ function offsetDescendants(nodeId, dy) {
 
     function offsetSpouses(nodeId, dy) {
         const spouses = spouses_of[nodeId] || [];
-        console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with ${spouses.length} spouses `);
+//        console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with ${spouses.length} spouses `);
         spouses.forEach(spouseId => {
             const SpousePos = plotPositionMap.get(spouseId);
-            console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} spouse ${truncate(nodes.get(spouseId)?.Name || spouseId,15)} `);
-            console.log('SpousePos: ', SpousePos, ' dy: ', dy  );
+            // console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} spouse ${truncate(nodes.get(spouseId)?.Name || spouseId,15)} `);
+            // console.log('SpousePos: ', SpousePos, ' dy: ', dy  );
             if (SpousePos) {
                 const update = {
                     id: spouseId,
@@ -3922,17 +3922,17 @@ function arrangeDescendants(nodeId,depth)
     const children = dataJSON.children_of[nodeId] || [];
     const rootNodePos = network.getPositions([rootNodeId])[rootNodeId] || null;
 
-    console.log(`arrangeDescendants for ${clickednode.Name} with ${children.length} children at depth ${depth} maxGen: ${maxGenerations} `);
+//    console.log(`arrangeDescendants for ${clickednode.Name} with ${children.length} children at depth ${depth} maxGen: ${maxGenerations} `);
 
     if (children.length === 0 || depth == maxGenerations) {
-        console.log('plot');
+//        console.log('plot');
         PlotDescendant(clickednode,true,depth);
         plotSpouses(nodeId);
         return;
     }
     children.forEach(childId => {
         const childNode = nodes.get(childId);
-        console.log(`arrangeDescendants loop for ${clickednode.Name} child ${childNode.Name} depth ${depth}`);
+//        console.log(`arrangeDescendants loop for ${clickednode.Name} child ${childNode.Name} depth ${depth}`);
         if (childNode) {
             arrangeDescendants(childId,depth + 1);
         }
