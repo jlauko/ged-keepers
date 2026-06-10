@@ -235,7 +235,7 @@
             -->
 
         <!-- Search Section -->
-        <div class="panelSection">
+        <div id="searchSection" class="panelSection">
             <div class="panelHeader">
                 <div class="panelSectionTitle">Search the Tree</div>
                 <div id="search-container" class="searchContainer">
@@ -249,7 +249,7 @@
         </div>
 
         <!--- Root/Max Generations -->
-        <div class="configureSection">
+        <div id="configureSection" class="configureSection">
             <div class="configureHeader">        
                 <div class="panelSectionTitle">Configure the Tree</div>
                 <div id="configure-container" class="configureContainer">
@@ -977,18 +977,42 @@ function startGuidedTour()
 
             // Search
             {
-                element: document.querySelector('#search-container'),
+                element: document.querySelector('#searchSection'),
                 title: 'Search the Tree',
                 intro:
-                    'Search for a family member by name to quickly find and explore their story. You can also search for locations to see who was born, lived, or died there.'
+                    'Search for a family member and explore their story. '
+            },
+            {
+                element: document.querySelector('#searchBox'),
+                title: 'Search by Name',
+                intro:
+                    'Enter a name '
+            },
+                        {
+                element: document.querySelector('#searchBoxLocation'),
+                title: 'Search by Location',
+                intro:
+                    'Enter a location'
             },
 
             // Root, Max Gens
             {
-                element: document.querySelector('#configure-container'),
+                element: document.querySelector('#configureSection'),
                 title: 'Configure',
                 intro:
-                    'Search for a family member by name and jump directly to them.'
+                    'Define a "root individual" and how many generations to display.'
+            },
+            {
+                element: document.querySelector('#rootBox'),
+                title: 'Root Individual',
+                intro:
+                    'Type the name of any person in the tree to make them the root.'
+            },
+            {
+                element: document.querySelector('#maxGenBox'),
+                title: 'Generations',
+                intro:
+                    'Enter the number of generations to explore more or less of your family tree at once.'
             },
             // Clusters
 //            {
