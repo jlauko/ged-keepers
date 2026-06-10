@@ -207,13 +207,19 @@
 
 <!-- Main display -->
 <div id="mainContainer">
-    <div id="mynetwork"></div>
+    <!-- Help Button -->
+    <button id="helpButton">
+        <i class="fas fa-question" color="red"></i>
+    </button>
+    <div id="mynetwork"> </div>
 
     <!-- Right-side panel for login, search, and info display -->
     <div id="rightPanel">
+
+
         <!-- Login Section -->
+         <!-- Commenting out login for now, will add back in later with more robust functionality
         <div class="panelSection">
-            <!-- Header row: Title on left, Login button on right -->
             <div class="loginHeader">
                 <div class="loginLeft">
                     <div class="panelSectionTitle">Login</div>
@@ -221,13 +227,12 @@
                 </div>
                 <button id="loginButton">Login</button>
             </div>
-            <!-- Two-column row: Email + Password -->
             <div class="loginInputs">
                 <input id="emailpanel" type="text" placeholder="Email">
                 <input id="passwordpanel" type="password" placeholder="Password">
             </div>
         </div>
-
+            -->
 
         <!-- Search Section -->
         <div class="panelSection">
@@ -258,6 +263,7 @@
         </div>
 
         <!-- Clusters Section -->
+         <!-- Commenting out clusters for now, will add back in later with more robust functionality
         <div id="clustersSection" class="panelSection">
 
             <div class="clusterHeader">
@@ -277,7 +283,7 @@
                 </label>
                 <span>Birth</span>
                 </div>
-<!--
+
                <div class="toggleItem">  
                 <label class="switch">
                     <input type="checkbox" id="deathToggle">
@@ -293,21 +299,22 @@
                 </label>
                 <span>Migration</span>
                 </div>
-            -->
+
             </div>
 
         </div>
-
+                    -->
 
         <!-- Context Display Section -->
         <div class="panelSection" style="flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: none;">
-        <div class="panelSectionTitle" id="infoCenterTitle">Information Center
-            <button id="makeRoot" style="float: right; display: none">Make Root</button> 
+            <div class="panelSectionTitle" id="infoCenterTitle">Information Center
+                <button id="makeRoot" style="float: right; display: none">Make Root</button> 
+            </div>
+            <div id="contextDisplay" class="contextDisplay">
+                <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
+            </div>
         </div>
-        <div id="contextDisplay" class="contextDisplay">
-            <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
-        </div>
-        </div>
+
         <!-- Attachments Section -->
         <div class="panelSection" id="attachmentsSection" style="border-top:1px solid #ccc; padding-top:8px;">
             <div class="panelSectionTitle">Attachments</div>
@@ -317,6 +324,7 @@
     </div>
 
 </div>
+
 
 <script type="module">
 //    <script type="text/javascript">
@@ -474,11 +482,11 @@ const network_options = {
 };
 
 
-async function loginUser() {
-    const email = document.getElementById("emailpanel").value;
-    const password = document.getElementById("passwordpanel").value;
-    Login(email, password);
-}
+//async function loginUser() {
+//    const email = document.getElementById("emailpanel").value;
+//    const password = document.getElementById("passwordpanel").value;
+//    Login(email, password);
+//}
 async function Login(email, password) {
     let data = null;
     
@@ -511,8 +519,8 @@ async function Login(email, password) {
         }
         
         // Update the userRole display
-        const roleText = document.getElementById("userRoleText");
-        roleText.textContent = userRole;
+ //       const roleText = document.getElementById("userRoleText");
+ //       roleText.textContent = userRole;
 
         // Update network interaction based on role
 //        if (network) {
@@ -983,12 +991,12 @@ function startGuidedTour()
                     'Search for a family member by name and jump directly to them.'
             },
             // Clusters
-            {
-                element: document.querySelector('#clustersSection'),
-                title: 'Clustering',
-                intro:
-                    'Highlight family members with common characteristics.'
-            },
+//            {
+//                element: document.querySelector('#clustersSection'),
+//                title: 'Clustering',
+//                intro:
+//                    'Highlight family members with common characteristics.'
+//            },
             // Information Center
             {
                 element: document.querySelector('#contextDisplay'),
@@ -998,7 +1006,7 @@ function startGuidedTour()
             },
             // Attachments
             {
-                element: document.querySelector('#attachmentsList'),
+                element: document.querySelector('#attachmentsSection'),
                 title: 'Attachments',
                 intro:
                     'Photos, PDFs, certificates, and other records appear here.'
@@ -1684,8 +1692,12 @@ async function createTree(userData) {
         }
     });
 
+    // ---------------- Listener for Help button ---------------------------------------------------
+    document.getElementById("helpButton").addEventListener("click", startGuidedTour);
+
+
     // ---------------- Listener for login button ---------------------------------------------------
-    document.getElementById("loginButton").addEventListener("click", loginUser);
+//    document.getElementById("loginButton").addEventListener("click", loginUser);
 
     // ---------Node and Cluster Biography/History Modal Listeners -------------------
     document.getElementById("bioSaveBtn").addEventListener("click", saveBioData);
@@ -1728,15 +1740,15 @@ async function createTree(userData) {
 // ----------------------------------------- Birth toggle (Clusters On/Off) --------
 // - toggle the global variable "BirthclustersEnabled"
 // ---------------------------------------------------------------------------------
-    document.getElementById("birthToggle").addEventListener("change", (e) => {
-        BirthclustersEnabled = e.target.checked;
-        if (BirthclustersEnabled) {
-            BirthclustersEnabled = true;
-        } else {
-            BirthclustersEnabled = false;
-        }
-        network.redraw();
-    });
+//    document.getElementById("birthToggle").addEventListener("change", (e) => {
+//        BirthclustersEnabled = e.target.checked;
+//        if (BirthclustersEnabled) {
+//            BirthclustersEnabled = true;
+//        } else {
+//            BirthclustersEnabled = false;
+//        }
+//        network.redraw();
+//    });
 // ----------------------------------------- Death toggle (Clusters On/Off) --------
 // - toggle the global variable "DeathclustersEnabled"
 // ---------------------------------------------------------------------------------

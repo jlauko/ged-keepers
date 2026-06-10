@@ -13,6 +13,28 @@
   display: none; /* hidden by default */
 }
 
+#helpButton {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+
+    width: 50px;
+    height: 50px; 
+    border-radius: 50%; /* makes it circular */
+
+    background: radial-gradient(circle, yellow, orange);
+
+    z-index: 9999;
+
+    padding: 10px 16px;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+}
+
 /* Each attachment row */
 .attachment-row {
   display: flex;
@@ -525,3 +547,4 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .nodeOptionsMenu div:hover {
     background: #f0f0f0;
 }
+
