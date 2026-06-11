@@ -254,8 +254,14 @@
                 <div class="panelSectionTitle">Configure the Tree</div>
                 <div id="configure-container" class="configureContainer">
                     <div class="configureGroup">
-                        <input id="rootBox" type="text" placeholder="Root person...">
-                        <input id="maxGenBox" type="text" placeholder="Max generations...">
+                        <div class="configRow"> 
+                            <label for="rootBox">Root Individual: </label> 
+                            <input id="rootBox" type="text" placeholder="Root person..."> 
+                        </div>
+                        <div class="configRow">
+                            <label for="maxGenBox">Generations: </label>
+                            <input id="maxGenBox" type="number" min="1" max="10" placeholder="Max generations...">
+                        </div>
                         <div id="configsuggestions"></div>
                     </div>
                 </div>
@@ -965,7 +971,7 @@ function startGuidedTour()
                 element: document.querySelector('#mainContainer'),
                 title: 'Family Tree',
                 intro:
-                    'The family tree visualization is in the center. It shows your ancestors and relatives, organized by generation. Hover over a person to see details, and click to explore their biography and attachments.'
+                    'The family tree shows ancestors and descendants of the "Root Individual".  You can configure the "Root Individual" and the number of "Generations" to display using the "Configure the Tree" inputs on the right.  To see details of any individual, hover over them and click to explore their biography and attachments.'
             },
 
             {
@@ -1702,8 +1708,8 @@ async function createTree(userData) {
         }
     });
 
-    maxGenBox.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
+    maxGenBox.addEventListener("change", (event) => {
+
             const value = parseInt(maxGenBox.value, 10);
 
             if (!isNaN(value) && value >= 0) {
@@ -1713,8 +1719,21 @@ async function createTree(userData) {
                 InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
                 centerTree(network, nodes, network_container);
             }
-        }
+
     });
+//    maxGenBox.addEventListener("keydown", (event) => {
+//        if (event.key === "Enter") {
+//            const value = parseInt(maxGenBox.value, 10);
+
+//            if (!isNaN(value) && value >= 0) {
+//                maxGenerations = value;
+//                maxGenBox.value = value;
+//                updateTree();
+//                InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
+//                centerTree(network, nodes, network_container);
+//            }
+//        }
+//    });
 
     // ---------------- Listener for Help button ---------------------------------------------------
     document.getElementById("helpButton").addEventListener("click", startGuidedTour);

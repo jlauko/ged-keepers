@@ -184,7 +184,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     font-size: 14px;
   }
   .contextDisplay {
-    flex: 1;
+    flex: 3;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
@@ -200,6 +200,28 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     margin: 5px 0;
     border-radius: 3px;
   }
+
+  #attachmentsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  }
+
+  #attachmentsList li {
+    display: flex 2;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  #attachmentsList button {
+    margin-left: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+  }
+
   /* Modal styles */
   #bioModal {
     display: none;
@@ -281,39 +303,12 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
 
 #attachmentsSection {
-  flex: 0 0 100px;        /* reserve more vertical space */
-  max-height: 100px;      /* cap the height */
+  flex: 0 0 200px;        /* reserve more vertical space */
+  max-height: 200px;      /* cap the height */
   overflow-y: auto;       /* enable scrolling if content exceeds height */
   border-top: 1px solid #ccc;
   padding: 8px;
   background-color: #f9f9f9;
-}
-
-#attachmentsSection .panelSectionTitle {
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-#attachmentsList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#attachmentsList li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-  font-size: 12px;
-}
-
-#attachmentsList button {
-  margin-left: 4px;
-  font-size: 11px;
-  padding: 2px 6px;
-  cursor: pointer;
 }
 
 .toggleContainer {
@@ -350,7 +345,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 }
 .panelSectionTitle {
   padding-top: 5px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   white-space: nowrap; /* prevents wrapping */
 }
@@ -374,7 +369,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   width: 100%;
   padding: 3px;
   height: 20px;            /* force identical height */
-  font-size: 12px;         /* force identical font */
+  font-size: 14px;         /* force identical font */
   border: 1px solid #ccc;  /* ensure same border */
   border-radius: 8px;
   box-sizing: border-box;
@@ -384,23 +379,24 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   padding-bottom: 6px;
   margin-bottom: 6px;
 }
+/*
 .configureContainer {
-  flex: 1; /* search box expands to fill remaining space */
+  flex: 1; 
 }
 .configureGroup {
   display: flex;
   flex-direction: row; 
-  flex-wrap: nowrap; /* keep inputs on the same line */
-  gap: 10px; /* space between the two inputs */
+  flex-wrap: nowrap; 
+  gap: 10px; 
   align-items: center;
   width: 100%;
 }
-
+*/
 #rootBox,
 #maxGenBox {
   padding: 6px 8px;
   height: 20px;
-  font-size: 12px;
+  font-size: 14px;
   border: 1px solid #ccc;
   border-radius: 8px;   /* more rounded corners */
   box-sizing: border-box;
@@ -548,3 +544,20 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     background: #f0f0f0;
 }
 
+.configRow {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.configRow label {
+    width: 100px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.configRow input {
+    flex: 1;
+}
