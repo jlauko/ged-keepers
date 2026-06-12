@@ -85,7 +85,6 @@ input[type="file"] {
   margin-top: 6px;
 }
 
-
 .role-admin {
   color: green;   /* admin in green */
 }
@@ -121,47 +120,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     min-width: 0; /* allows it to shrink properly in flex layout */
 }
 
-#mapPanel {
-    position: absolute;
-    top: 50%;
-    right: 30%; /* width of your rightPanel */
-    width: 30%;
-    height: 50%;
-    background: white;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    padding: 8px;
-    box-sizing: border-box;
-    z-index: 999;  /* sits above the tree */
-    flex-direction: column;
-
-    /* Animation setup */ 
-    opacity: 0; 
-    transform: translateX(20px); /* start slightly off-screen */ 
-    pointer-events: none; /* prevent interaction when hidden */
-    transition: 
-      opacity 0.25s ease-out, 
-      transform 0.25s ease-out;
-}
-#mapPanel.visible {
-    opacity: 1;
-    transform: translateX(0);   /* slide into place */
-    pointer-events: auto; /* allow interaction when visible */
-}
-
-
-#mapContainer {
-    width: 100%;
-    height: 80%;
-    border: 1px solid #aaa;
-}
-
-#mapQueryText {
-    margin-top: 8px;
-    font-size: 12px;
-    color: #444;
-}
-
   #rightPanel {
     width: 30%;
     height: 100%;
@@ -175,16 +133,9 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     flex-shrink: 0;
     position: relative;
   }
-
-  .toggleItem {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 14px;
-  }
+/*
   .contextDisplay {
-    flex: 3;
+    flex: 1;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
@@ -194,21 +145,38 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     font-size: 15px;
     line-height: 1.4;
   }
-  .contextDisplay img {
+.contextDisplay img {
     max-width: 100%;
     height: auto;
     margin: 5px 0;
     border-radius: 3px;
   }
+    */
+#infoSection {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
 
+#attachmentsSection {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.contextDisplay,
   #attachmentsList {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   list-style: none;
   padding: 0;
   margin: 0;
   }
 
   #attachmentsList li {
-    display: flex 2;
+    flex: 2;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
@@ -301,16 +269,16 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   .bioModalButtons .btnCancel:hover {
     background: #bbb;
   }
-
+/*
 #attachmentsSection {
-  flex: 0 0 200px;        /* reserve more vertical space */
-  max-height: 200px;      /* cap the height */
-  overflow-y: auto;       /* enable scrolling if content exceeds height */
+  flex: 0 0 200px;     
+  max-height: 200px;    
+  overflow-y: auto;      
   border-top: 1px solid #ccc;
   padding: 8px;
   background-color: #f9f9f9;
 }
-
+*/
 .toggleContainer {
   display: flex;          /* put children side by side */
   gap: 20px;              /* space between toggles */
@@ -428,20 +396,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-.clusterHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.clusterDescription {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
-  margin: 0;
-  flex: 1; /* allows description to take remaining space */
-}
-
 /* Align toggles with the description's left edge */
 .toggleContainer {
   display: flex;
@@ -449,35 +403,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   margin-left: calc(70px + 12px); 
   /* 18px = approximate width of title text area
      12px = gap between title and description */
-}
-
-/* Header row: title left, button right */
-.loginHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.loginLeft {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-#loginButton {
-  padding: 2px 30px;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1.1;
-}
-#userRoleText {
-  margin-left: 8px;
-  font-weight: bold;
-  font-size: 13px;      /* slightly smaller than title */
-  line-height: 1.0;     /* aligns baseline with title */
-  position: relative;
-  top: 2px;               /* reset the manual nudge */
 }
 
 .loginInputs input {

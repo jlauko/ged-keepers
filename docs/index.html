@@ -213,27 +213,8 @@
     </button>
     <div id="mynetwork"> </div>
 
-    <!-- Right-side panel for login, search, and info display -->
+    <!-- Right-side panel for  search, and info, attachments display -->
     <div id="rightPanel">
-
-
-        <!-- Login Section -->
-         <!-- Commenting out login for now, will add back in later with more robust functionality
-        <div class="panelSection">
-            <div class="loginHeader">
-                <div class="loginLeft">
-                    <div class="panelSectionTitle">Login</div>
-                    <span id="userRoleText" class="userRole">viewer</span>
-                </div>
-                <button id="loginButton">Login</button>
-            </div>
-            <div class="loginInputs">
-                <input id="emailpanel" type="text" placeholder="Email">
-                <input id="passwordpanel" type="password" placeholder="Password">
-            </div>
-        </div>
-            -->
-
         <!-- Search Section -->
         <div id="searchSection" class="panelSection">
             <div class="panelHeader">
@@ -249,7 +230,7 @@
         </div>
 
         <!--- Root/Max Generations -->
-        <div id="configureSection" class="configureSection">
+        <div id="configureSection" class="panelSection">
             <div class="configureHeader">        
                 <div class="panelSectionTitle">Configure the Tree</div>
                 <div id="configure-container" class="configureContainer">
@@ -268,51 +249,8 @@
             </div>
         </div>
 
-        <!-- Clusters Section -->
-         <!-- Commenting out clusters for now, will add back in later with more robust functionality
-        <div id="clustersSection" class="panelSection">
-
-            <div class="clusterHeader">
-                <div class="panelSectionTitle">Clusters</div>
-
-                <p class="clusterDescription">
-                    Clusters group people that share a common attribute:
-                    such as Birth location
-                </p>
-            </div>
-
-            <div class="toggleContainer">
-                <div class="toggleItem">
-                <label class="switch">
-                    <input type="checkbox" id="birthToggle" checked>
-                    <span class="slider"></span>
-                </label>
-                <span>Birth</span>
-                </div>
-
-               <div class="toggleItem">  
-                <label class="switch">
-                    <input type="checkbox" id="deathToggle">
-                    <span class="slider"></span>
-                </label>
-                <span>Death</span>
-                </div>
-
-                <div class="toggleItem">
-                <label class="switch">
-                    <input type="checkbox" id="migrationToggle">
-                    <span class="slider"></span>
-                </label>
-                <span>Migration</span>
-                </div>
-
-            </div>
-
-        </div>
-                    -->
-
         <!-- Context Display Section -->
-        <div class="panelSection" style="flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: none;">
+        <div id="infoSection" class="panelSection">
             <div class="panelSectionTitle" id="infoCenterTitle">Information Center
                 <button id="makeRoot" style="float: right; display: none">Make Root</button> 
             </div>
@@ -322,7 +260,7 @@
         </div>
 
         <!-- Attachments Section -->
-        <div class="panelSection" id="attachmentsSection" style="border-top:1px solid #ccc; padding-top:8px;">
+        <div id="attachmentsSection" class="panelSection" >
             <div class="panelSectionTitle">Attachments</div>
             <ul id="attachmentsList" style="list-style:none; padding:0; margin:0;"></ul>
         </div>
@@ -2060,6 +1998,7 @@ async function createTree(userData) {
                     hideMap();
                     HideAttachments();
                     hideNodeOptionsMenu();
+                    suggestionsDiv.style.display = "none";
                 }
             }
         }, 250); // wait to see if doubleClick happens
@@ -2717,6 +2656,8 @@ const spouses_of = {};
 let SpouseTableBuilt = false;
 function BuildSpouseTable()
 {
+    // Build a lookup table of spouses for quick access when adding spouse nodes and edges
+    //
     console.log("******* ***** Building spouse table...");
     if (SpouseTableBuilt) return;
     SpouseTableBuilt = true;
@@ -2733,7 +2674,7 @@ function BuildSpouseTable()
 }
 function addRootSpouse(rootNodeId) 
 {
-    // Add spouse for root node only
+    // Add spouse node for root node only
     console.log(`Update Tree: checking for spouse of root ID:`, rootNodeId);
     const spouses = spouses_of[rootNodeId] || [];
     if (spouses.length > 0) {

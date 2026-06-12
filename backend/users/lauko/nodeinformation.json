@@ -397,7 +397,12 @@
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Robert%20Lauko%20Sr.png",
         "uploadedAt": "2026-05-28T11:54:29.177Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   },
