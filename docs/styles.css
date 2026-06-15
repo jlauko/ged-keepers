@@ -14,6 +14,7 @@
 }
 
 #helpButton {
+    visibility: hidden; /* hidden by default, shown when needed */
     position: fixed;
     top: 15px;
     left: 15px;
@@ -483,7 +484,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 
     background: rgba(255,255,255,0.90);
 
-    display: flex;
+    display: none; /* hidden by default */
     flex-direction: column;
     justify-content: center;
     align-items: center;

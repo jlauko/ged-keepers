@@ -861,8 +861,8 @@ async function InitializeTree(userData) {
     if (dataJSON != null) {
         console.log("Family data loaded:", dataJSON);
         console.log("Post first Message -----------------");
-        //postMessageToInfoCenter("Successful Login...");
-        //postMessageToInfoCenter("Backend Family Data Loaded ")
+        updateLoading("Successful Login...");
+        updateLoading("Backend Family Data Loaded ")
         createTree(userData);
     } else {
         console.log("Failed to load family data for user:", userName);
@@ -1226,11 +1226,14 @@ function InitializeCluster(cluster,locationGroups,groupName) {
     let birthinitialized = false;
 //    let Birth_Cluster = new Clusters();  // create a new cluster class object for birth location groups
     network.once("afterDrawing", ctx => {
-        //postMessageToInfoCenter("Initializing " + groupName + " Clusters...");
+        updateLoading("Initializing " + groupName + " Clusters...");
         if(!birthinitialized) {
             cluster.init(locationGroups, nodes, groupName,userId, network,boxWidth);
             birthinitialized = true;
         }
+        hideLoading();
+        document.getElementById("helpButton")
+                .style.visibility = "visible";
     });   
 }
 function ClearTree() {
@@ -1340,7 +1343,7 @@ function updateTree() {
     addDescendants(rootNodeId, 0, nodeupdates);
     edges.update(edgesupdates);
     nodes.update(nodeupdates);
-    // postMessageToInfoCenter("Tree Loaded...");
+    updateLoading("Tree Loaded...");
 
     //
     // build spouse lookup table
@@ -1445,7 +1448,7 @@ async function createTree(userData) {
     } else {
         console.log("Failed to load historical events");
     }
-    //postMessageToInfoCenter("Historical Events Loaded from Server...");
+    updateLoading("Historical Events Loaded from Server...");
     //-------------------------------------Load Personal Events--------------------------
 
     personalHistoryEvents = await loadBackendData("PersonalHistoryEvents");
@@ -1459,7 +1462,7 @@ async function createTree(userData) {
     } else {
         console.log("Failed to load historical events");
     }  
-    //postMessageToInfoCenter("Personal History Events Loaded from Server...");
+    updateLoading("Personal History Events Loaded from Server...");
 
     // ================================
     // 1️⃣ Load offline historical events
@@ -1478,6 +1481,7 @@ async function createTree(userData) {
 // --------------------------------------------------------------------
     let birthLocationGroups = [];
     //postMessageToInfoCenter("Loading Birth Clusters from Server...");
+    updateLoading("Loading Birth Clusters from Server...");
     console.log("Calling Backend to Load Birth Location Groups:");
     birthLocationGroups = await loadBackendData("BirthLocationGroups");
     if (birthLocationGroups != null) {
@@ -1496,7 +1500,7 @@ async function createTree(userData) {
 //        }
 //    });
     InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
-    //postMessageToInfoCenter("Birth Clusters Loaded...");
+    updateLoading("Birth Clusters Loaded...");
 //----------------------- Death Groups --------------------------------
 // Groups are a series of nodes that share a common attribute, like death location
 // --------------------------------------------------------------------
@@ -1527,6 +1531,7 @@ async function createTree(userData) {
     console.log("Installing Listeners...");
     //postMessageToInfoCenter("Installing Listeners...");
 
+   
     // ------------------------------------ People Search Bar-------------------------
     searchBox.addEventListener("input", () => {
         const query = searchBox.value.trim().toLowerCase();
@@ -4640,9 +4645,8 @@ async function Splashscreen() {
             if (data && data.token) {
                 document.getElementById("splashScreen").style.display = "none";
                 document.getElementById("mainContainer").style.display = "flex";
-                showLoading();
                 onLoginSuccess(data.userData);
-                hideLoading();
+                showLoading();
             } else {
                 showError("splash screen - Login failed: No user found " + (data?.message || "Unknown error"));
             }
