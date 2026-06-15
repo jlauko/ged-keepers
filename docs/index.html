@@ -54,27 +54,9 @@
      style="position:absolute; top:86%; left:300px; display:flex; align-items:center; gap:10px; display:none;">
 </div>
 
-<div id="loadingOverlay"
-     style="
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.35);
-        display: none; 
-        align-items: center;
-        justify-content: center;
-        z-index: 999999999;
-     ">
-    <div style="
-        padding: 20px 30px;
-        background: white;
-        border-radius: 10px;
-        font-size: 18px;
-        font-family: sans-serif;
-        box-shadow: 0px 0px 15px rgba(0,0,0,0.3);
-     ">
-        Processing…
-    </div>
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">🌳 Loading Family Tree...</div>
 </div>
 
 <div id="nodeMenu"
@@ -4599,13 +4581,19 @@ function restoreState() {
 
     console.log("State restored 2:", state);
 }
-function showLoading() {
+function showLoading(message = "🌳 Loading Family Tree...") {
+    document.getElementById("loadingText").textContent = message;
     document.getElementById("loadingOverlay").style.display = "flex";
+}
+
+function updateLoading(message) {
+    document.getElementById("loadingText").textContent = message;
 }
 
 function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
 }
+
 // Utility: add a message to the context display
 function postMessageToInfoCenter(msg) {
     const contextDisplay = document.getElementById("contextDisplay");
@@ -4652,7 +4640,9 @@ async function Splashscreen() {
             if (data && data.token) {
                 document.getElementById("splashScreen").style.display = "none";
                 document.getElementById("mainContainer").style.display = "flex";
+                showLoading();
                 onLoginSuccess(data.userData);
+                hideLoading();
             } else {
                 showError("splash screen - Login failed: No user found " + (data?.message || "Unknown error"));
             }
