@@ -193,6 +193,7 @@
     <button id="helpButton">
         <i class="fas fa-question" color="red"></i>
     </button>
+    <div id="tourBubble" style="display:none;"></div>
     <div id="mynetwork"> </div>
 
     <!-- Right-side panel for  search, and info, attachments display -->
@@ -234,7 +235,7 @@
         <!-- Context Display Section -->
         <div id="infoSection" class="panelSection">
             <div class="panelSectionTitle" id="infoCenterTitle">Information Center
-                <button id="makeRoot" style="float: right; display: none">Make Root</button> 
+                <button id="makeRoot" style="float: right">Make Root</button> 
             </div>
             <div id="contextDisplay" class="contextDisplay">
                 <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
@@ -256,6 +257,7 @@
 //    <script type="text/javascript">
 // import Attachment from './attachments.js';  // attachment class handles individual attachment details
 import Clusters from './clusters.js';  // cluster class handles the creation and display of clusters
+import { TourEngine } from './TourEngine.js';
 
 //--------------------------------------------------------------------------
 // Global Variables --------------------------------------------------------
@@ -819,7 +821,7 @@ function displayPinIndicator(showPin) {
             existingPin.remove();
         }
         // show the make root button if pinning is enabled
-        document.getElementById("makeRoot").style.display = "none";
+        // document.getElementById("makeRoot").style.display = "none";
     }
 }
 
@@ -889,105 +891,61 @@ async function loadBackendData (info) {
         return null;    
     }
 }
-function startGuidedTour()
-{
-    console.log("Starting guided tour...");
-    introJs().setOptions({
+function startGuidedTour(rootNodeId) {
 
-        nextLabel: 'Next →',
-        prevLabel: '← Back',
-        doneLabel: 'Finish',
+    const steps = [
+        {
+            type: "dom",
+            title: "<strong>Welcome</strong>",
+            element: "#mainContainer",
+            text: `Welcome to The Lauko Family Tree<br> This guided tour will help you start exploring`,
+            position: "insideTop"
+        },
+        {
+            type: "dom",
+            title: "<strong>Tree Organization</strong>",
+            element: "#mynetwork",
+            text: `Two key concepts to tree organization:<br>  
+               1. Root Individual<br>  
+               2. Number of Generations<br> `,
+            position: "insideTop"
+        },
+        {
+            type: "node",
+            node: rootNodeId,
+            title: "<strong>Root Individual</strong>",
+            text: `🌳 The Root Individual is the center of the tree <ul> <li> <b>Ancestors</b> to the right</li><li> <b>Descendants</b> to the left</li> </ul>`,
+            position: "outsideright"
+        },
+                {
+            type: "dom",
+            transition: "nonstatic",
+            element: "#configureSection",
+            title: "Configure your tree here",
+            text: `You can change the <b>Root Individual</b> and/or the number of <b>Generations</b> here <br>`,
+            position: "outsideleft"
+        },
+        {
+            type: "dom",
+            element: "#contextDisplay",
+            title: "<strong>Biographical Information</strong>",
+            text: "When you select a node (click or tap), biographical information appears here<br> Try selecting any node!",
+            position: "outsideleft"
+        },
+        {
+            type: "dom",
+            element: "#makeRoot",
+            title: "<strong>Make the selected individual the root</strong>",
+            text: "When you select a node (click or tap), you can make it the new root by clicking the 'Make Root' button!",
+            position: "outsideleft"
+        }
 
-        steps: [
-            {
-                title: 'Welcome to The Lauko Family Tree Explorer',
-                intro:
-                    'Family Tree Explorer preserves family stories, documents, photographs, and relationships.'
-            },
-            
-            {
-                element: document.querySelector('#mainContainer'),
-                title: 'Family Tree',
-                intro:
-                    'The family tree shows ancestors and descendants of the "Root Individual".  You can configure the "Root Individual" and the number of "Generations" to display using the "Configure the Tree" inputs on the right.  To see details of any individual, hover over them and click to explore their biography and attachments.'
-            },
+    ];
 
-            {
-                element: document.querySelector('#rightPanel'),
-                title: 'Information Panel',
-                intro:
-                    'The information panel on the right shows information about each individual.'
-            },
-
-            // Search
-            {
-                element: document.querySelector('#searchSection'),
-                title: 'Search the Tree',
-                intro:
-                    'Search for a family member and explore their story. '
-            },
-            {
-                element: document.querySelector('#searchBox'),
-                title: 'Search by Name',
-                intro:
-                    'Enter a name '
-            },
-                        {
-                element: document.querySelector('#searchBoxLocation'),
-                title: 'Search by Location',
-                intro:
-                    'Enter a location'
-            },
-
-            // Root, Max Gens
-            {
-                element: document.querySelector('#configureSection'),
-                title: 'Configure',
-                intro:
-                    'Define a "root individual" and how many generations to display.'
-            },
-            {
-                element: document.querySelector('#rootBox'),
-                title: 'Root Individual',
-                intro:
-                    'Type the name of any person in the tree to make them the root.'
-            },
-            {
-                element: document.querySelector('#maxGenBox'),
-                title: 'Generations',
-                intro:
-                    'Enter the number of generations to explore more or less of your family tree at once.'
-            },
-            // Clusters
-//            {
-//                element: document.querySelector('#clustersSection'),
-//                title: 'Clustering',
-//                intro:
-//                    'Highlight family members with common characteristics.'
-//            },
-            // Information Center
-            {
-                element: document.querySelector('#contextDisplay'),
-                title: 'Information Center',
-                intro:
-                    'View detailed information about family members here.  Click on a person to make them the root of the tree and/or see their biography, key facts, and attachments. Hover over clusters to learn about shared characteristics and histories.'
-            },
-            // Attachments
-            {
-                element: document.querySelector('#attachmentsSection'),
-                title: 'Attachments',
-                intro:
-                    'Photos, PDFs, certificates, and other records appear here.'
-            },
-            // End Tour
-            {
-                title: 'Ready to Explore',
-                intro:
-                    'Click any person in the tree to begin exploring your family history.'
-            }
-        ]
-    }).start();
+    TourEngine.init(network);
+    TourEngine.start(steps);
 }
+
  // Utility: truncate text
 function truncate(text, maxLength) {
     if (!text) return "";
@@ -1687,7 +1645,12 @@ async function createTree(userData) {
 //    });
 
     // ---------------- Listener for Help button ---------------------------------------------------
-    document.getElementById("helpButton").addEventListener("click", startGuidedTour);
+    document.getElementById("helpButton").addEventListener("click", (e) =>
+    {
+        console.log("Help button clicked, starting guided tour with rootNodeId:", rootNodeId);
+        startGuidedTour(rootNodeId);
+
+    });
 
 
     // ---------------- Listener for login button ---------------------------------------------------
@@ -1708,7 +1671,7 @@ async function createTree(userData) {
 
     function MakeRoot(nodeId) {
         if (nodeId == null) {
-            showError("function MakeRoot: nodeId == null");
+            showError("No person selected, select a person by clicking or tapping on them.  Then click the \"Make Root\" button");
             return;
         } 
         rootNodeId = nodeId;
@@ -2260,6 +2223,7 @@ async function createTree(userData) {
             }
         });
         updateVisibleGroups();
+
         // Not sure what the next two lines are for
 //        if(Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y) != null) {
 //            const info = Birth_Cluster.GetInfo(Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y));
@@ -4599,6 +4563,48 @@ function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
 }
 
+function focusNode(nodeId) {
+
+//    const pos = network.getPositions([nodeId])[nodeId];
+    centerOnPerson(nodeId)
+}
+function highlightNode(nodeId) {
+
+    network.selectNodes([nodeId]);
+
+    // optional: visual emphasis
+//    const update = nodes.get(nodeId);
+
+//    nodes.update({
+//        id: nodeId,
+//        borderWidth: 5,
+//        color: {
+//            border: "#FFD700",
+//            background: update.color?.background || "#97C2FC"
+//        }
+//    });
+}
+function clearGraphHighlight() {
+
+    network.unselectAll();
+
+    // optionally reset styling if you store original values
+}
+function showTourBubble(nodeId, text) {
+
+    const pos = network.getPositions([nodeId])[nodeId];
+    const domPos = network.canvasToDOM(pos);
+
+    const bubble = document.getElementById("tourBubble");
+
+    bubble.innerHTML = text;
+
+    bubble.style.left = (domPos.x + 100) + "px";
+    bubble.style.top = (domPos.y - 30) + "px";
+
+    bubble.style.display = "block";
+}
+
 // Utility: add a message to the context display
 function postMessageToInfoCenter(msg) {
     const contextDisplay = document.getElementById("contextDisplay");
@@ -4666,7 +4672,7 @@ function onLoginSuccess(userData){
     console.log("loading evidence ---------------");
     clearContextMessages();
     console.log("Information Loaded from Server...Starting guided tour...");
-    startGuidedTour();  
+//    startGuidedTour();  
 }
 
 
