@@ -905,38 +905,51 @@ function startGuidedTour(rootNodeId) {
             type: "dom",
             title: "<strong>Tree Organization</strong>",
             element: "#mynetwork",
-            text: `Two key concepts to tree organization:<br>  
-               1. Root Individual<br>  
-               2. Number of Generations<br> `,
+            text: `Two key concepts to tree organization:<br><br>  
+               1. <b>Root Individual</b><br>  
+               2. <b>Number of Generations</b><br> <br>
+               Also Note: <br>
+               Nodes are positioned on the timeline based on birthdate <br>
+               You can zoom in or out using mouse wheel or pinch on a tablet<br>
+               Click and drag on the background to pan around the tree<br>`,
             position: "insideTop"
         },
         {
             type: "node",
             node: rootNodeId,
             title: "<strong>Root Individual</strong>",
-            text: `🌳 The Root Individual is the center of the tree <ul> <li> <b>Ancestors</b> to the right</li><li> <b>Descendants</b> to the left</li> </ul>`,
+            text: `🌳 The Root Individual is the center of the tree 
+                <ul>    
+                    <li> <b>Ancestors</b> to the right</li>
+                    <li> <b>Descendants</b> to the left</li> 
+                </ul> `,
             position: "outsideright"
         },
-                {
+        {
             type: "dom",
             transition: "nonstatic",
             element: "#configureSection",
             title: "Configure your tree here",
-            text: `You can change the <b>Root Individual</b> and/or the number of <b>Generations</b> here <br>`,
+            text: `You can change the <b>Root Individual</b> and/or the number of <b>Generations</b> here <br>
+                Try changing the root to see how the tree reorganizes! <br>
+                Note: The root you select will be saved in your browser's local storage for next time!`,
             position: "outsideleft"
         },
         {
             type: "dom",
-            element: "#contextDisplay",
+            element: "#infoSection",
             title: "<strong>Biographical Information</strong>",
-            text: "When you select a node (click or tap), biographical information appears here<br> Try selecting any node!",
+            text:   `When you select a node (click or tap), biographical information appears here<br><br> 
+                    Try selecting any node! <br>
+                    You will see a pin appear next to the "Information Center" title, <br>
+                    indicating the individual is selected. <br>`,
             position: "outsideleft"
         },
         {
             type: "dom",
             element: "#makeRoot",
             title: "<strong>Make the selected individual the root</strong>",
-            text: "When you select a node (click or tap), you can make it the new root by clicking the 'Make Root' button!",
+            text: `When you select a node (click or tap), you can make it the new root by clicking the 'Make Root' button!<br><br>`,
             position: "outsideleft"
         }
 

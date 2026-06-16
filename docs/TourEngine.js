@@ -141,7 +141,7 @@ export class TourEngine {
         canvas.style.position = "absolute";
         canvas.style.top = "0";
         canvas.style.left = "0";
-        canvas.style.width = "70%";
+        canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.style.pointerEvents = "none";
         canvas.style.zIndex = "9000";
@@ -173,6 +173,8 @@ export class TourEngine {
 
         if (!pos) return;
 
+        console.log("spot lighting node position:", pos);
+
         const dom = this.network.canvasToDOM(pos);
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -183,6 +185,7 @@ export class TourEngine {
 
         // cut hole
         ctx.globalCompositeOperation = "destination-out";
+        ctx.fillStyle = "rgba(255,255,255,1)";
         ctx.beginPath();
         ctx.arc(dom.x, dom.y, radius, 0, Math.PI * 2);
         ctx.fill();
@@ -193,33 +196,34 @@ export class TourEngine {
     
     static showDomSpotlight(element) {
 
+        let padding = 10;
         if (!this.network) return;
-
-        const el = document.querySelector(element);
-
-        if (!el) return;
-
-        const rect = el.getBoundingClientRect();
 
         const canvas = this.spotlightCanvas;
         const ctx = canvas.getContext("2d");
 
         this.resizeCanvas();
 
+        const el = document.querySelector(element);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
         if (!rect) return;
 
-        const dom = this.network.canvasToDOM(rect);
+        console.log("spot lighting dom element rect:", rect);   
 
-    //    ctx.clearRect(0, 0, canvas.width, canvas.height);
+//        const dom = this.network.canvasToDOM(rect);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // dark overlay
-     //   ctx.fillStyle = "rgba(0,0,0,0.65)";
-     //   ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // cut hole
         ctx.globalCompositeOperation = "destination-out";
+        ctx.fillStyle = "rgba(255,255,255,1)";
         ctx.beginPath();
-        ctx.fillRect(dom.left, dom.top, dom.width, dom.height);
+        ctx.fillRect(rect.left - padding, rect.top - padding, rect.width + (2 * padding), rect.height + (2 * padding));
         ctx.fill();
 
         ctx.globalCompositeOperation = "source-over";
@@ -253,7 +257,7 @@ export class TourEngine {
         div.style.border = "1px solid #ccc";
         div.style.borderRadius = "8px";
         div.style.padding = "12px";
-        div.style.maxWidth = "320px";
+        div.style.maxWidth = "900px";
         div.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
 
         div.innerHTML = `
@@ -303,7 +307,7 @@ export class TourEngine {
 
         console.log("Element bounding rect:", rect);
 
-        const bubbleWidth = bubble.offsetWidth || 400;
+        const bubbleWidth = bubble.offsetWidth || 500;
         const bubbleHeight = bubble.offsetHeight || 120;
 
         const padding = 30;
@@ -348,6 +352,7 @@ export class TourEngine {
         bubble.style.left = x + "px";
         bubble.style.top = y + "px";
     }
+
     static hideBubble() {
         if (this.bubbleEl) {
             this.bubbleEl.style.display = "none";
