@@ -462,7 +462,7 @@ export default class Clusters {
             ctx.font = "20px Arial";
             ctx.textAlign = "center";
             ctx.fillStyle = "black";
-            if (highlightedClusterId !== null) {
+            if (highlightedClusterId == id) {
                 ctx.fillStyle = "red";
             }
             ctx.fillText(groupName, sx, sy);
