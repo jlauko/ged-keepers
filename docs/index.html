@@ -1435,7 +1435,10 @@ async function createTree(userData) {
             );
             peopleList.push({ id, name: fullName, birthdate: birthEvent?.startYear || null, deathdate: deathEvent?.startYear || null });
             //console.log("Loading List", fullName);
-            // *** put the locationlist.push here?
+            //
+            // for each person, cycle through all events and capture the location
+            // we will use these locations to for searching
+            //
             for (const event of person.events) {
 
                 if (!event.location) continue;
@@ -3051,6 +3054,9 @@ function AddNodeAttachment(nodeId,attachmentInfo) {
     return;
 }   
 async function getThumbnailUrl(username, filename) {
+
+    console.log(`Fetching thumbnail for ${API_BASE_URL}/thumbnail/${username}/${filename} from backend...`);
+
     const response = await fetch(
         `${API_BASE_URL}/thumbnail/${username}/${filename}`
     );
@@ -4709,7 +4715,8 @@ async function Splashscreen() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         console.log(`splash screen - Logging in with email: ${email} - password: ${password}`);
-
+        showLoading();
+        updateLoading("Checking credentials...");
         try {
             let data = await Login(email, password);  // ✅ await the Promise
 //            console.log("splash screen - after login", data);
@@ -4717,8 +4724,8 @@ async function Splashscreen() {
             if (data && data.token) {
                 document.getElementById("splashScreen").style.display = "none";
                 document.getElementById("mainContainer").style.display = "flex";
+                updateLoading("Valid Credentials Found...");
                 onLoginSuccess(data.userData);
-                showLoading();
             } else {
                 showError("splash screen - Login failed: No user found " + (data?.message || "Unknown error"));
             }
