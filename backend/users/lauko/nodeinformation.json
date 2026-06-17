@@ -2256,6 +2256,9 @@
     ]
   },
   "@I312782096820@": {
+    "summary": "",
+    "biography": "",
+    "facts": [],
     "attachments": [
       {
         "name": "Derek.JPG",
@@ -2264,7 +2267,26 @@
         "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Derek.JPG",
         "uploadedAt": "2026-06-15T11:54:20.439Z",
         "type": "file",
-        "selected": true
+        "selected": false,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Derek_cropped.jpg",
+        "filename": "Derek_cropped.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Derek_cropped.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Derek_cropped.jpg",
+        "uploadedAt": "2026-06-16T18:14:29.791Z",
+        "type": "file",
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   }

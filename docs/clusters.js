@@ -300,7 +300,7 @@ export default class Clusters {
             const { id, groupName, positions } = cluster;
 
             if (!positions || positions.length < 2) continue; // need at least 3 points for a shape
-            if (highlightedClusterId !== null && id !== highlightedClusterId) continue; // only draw the highlighted cluster
+    //        if (highlightedClusterId !== null && id !== highlightedClusterId) continue; // only draw the highlighted cluster
 
             // Draw group name at centroid
 //            let sumX = 0, sumY = 0;
@@ -341,7 +341,7 @@ export default class Clusters {
 //            console.log("Cluster color for ", baseName, "(", color, ")");
             ctx.fillStyle = color;
  
-            if (highlightedClusterId === null) {
+            if (highlightedClusterId != id) {
                 ctx.strokeStyle = color.replace("0.28", "0.45"); // slightly darker outline
                 ctx.lineWidth = 5;
 //                console.log("Drawing unhighlighted cluster:");
@@ -446,7 +446,9 @@ export default class Clusters {
 
         //    console.log("Computing label position for cluster:", id, "centroid:", cx, cy);
             let labelpos = {x: cx, y: cy};
-            labelpos = computeLabelPosition(positions);
+            // computeLabelPosition finds the optimal placement for the cluster label
+            // However, it is computationally expensive, so for now we will just place the label at the centroid of the cluster, but this can be improved in the future by implementing the computeLabelPosition function which checks for points within the cluster polygon and finds the point that is farthest from any node edges while also being reasonably close to the centroid, and places the label there instead of the centroid. This will help avoid cases where the centroid is covered by a node and the label is not visible.
+        //    labelpos = computeLabelPosition(positions);
         //    console.log("Label position for cluster", id, ":", labelpos);
 
             ctx.save();

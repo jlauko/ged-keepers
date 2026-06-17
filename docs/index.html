@@ -1019,14 +1019,14 @@ function addNode(ind,pid,gen = 0,nodeupdate) {
             const cleaned = ind.birthplace.trim().toLowerCase();
 //            console.log(`Processing birthplace for ${ind.name}: raw='${ind.birthplace}' cleaned='${cleaned}'`);
             if (cleaned !== "") {
-                locationList.push({ place: cleaned, personId: pid, date: ind.birthdate || null, raw: ind.birthplace });
+//                locationList.push({ place: cleaned, personId: pid, date: ind.birthdate || null, raw: ind.birthplace });
             }
         }
         if (ind.deathplace) {
             const cleaned = ind.deathplace.trim().toLowerCase();
 //            console.log(`Processing deathplace for ${ind.name}: raw='${ind.deathplace}' cleaned='${cleaned}'`);
             if (cleaned !== "") {
-                locationList.push({ place: cleaned, personId: pid, date: ind.deathdate || null, raw: ind.deathplace });
+//                locationList.push({ place: cleaned, personId: pid, date: ind.deathdate || null, raw: ind.deathplace });
             }
         }
 
@@ -1041,11 +1041,11 @@ function addNode(ind,pid,gen = 0,nodeupdate) {
                             loc => loc.place === cleaned && loc.personId === pid);
                         if (!exists) {
 //                            console.log(`Adding residence to locationList: ${cleaned} for person ID: ${pid}`);
-                            locationList.push({ 
-                                place: cleaned, 
-                                personId: pid, 
-                                date: res.date || null, 
-                                raw: res });
+//                            locationList.push({ 
+//                                place: cleaned, 
+//                                personId: pid, 
+//                                date: res.date || null, 
+//                                raw: res });
                         }
                     }
                 }
@@ -1427,8 +1427,30 @@ async function createTree(userData) {
         console.log("Personal history events loaded:", personalHistoryEvents);
         for (const [id, person] of Object.entries(personalHistoryEvents)) {
             const fullName = Array.isArray(person.name) ? person.name.join(" ") : person.name;
-            peopleList.push({ id, name: fullName });
+            const birthEvent = person.events?.find(
+                event => event.type === "Birth"
+            );
+            const deathEvent = person.events?.find(
+                event => event.type === "Death"
+            );
+            peopleList.push({ id, name: fullName, birthdate: birthEvent?.startYear || null, deathdate: deathEvent?.startYear || null });
             //console.log("Loading List", fullName);
+            // *** put the locationlist.push here?
+            for (const event of person.events) {
+
+                if (!event.location) continue;
+
+                const cleaned = event.location.trim().toLowerCase();
+
+                locationList.push({
+                    place: cleaned,
+                    personId: id,
+                    personName: person.name,
+                    eventType: event.type,
+                    date: event.startYear || null,
+                    raw: event.location
+                });
+            }
         }
     } else {
         console.log("Failed to load historical events");
@@ -1520,7 +1542,7 @@ async function createTree(userData) {
             suggestionsDiv.style.display = "block";
             matches.forEach(match => {
                 const div = document.createElement("div");
-                div.textContent = match.name;
+                div.textContent = match.name + " (b. " + (match.birthdate || "unknown") +  ")";
                 div.style.padding = "8px";
                 div.style.cursor = "pointer";
                 div.style.borderBottom = "1px solid #eee";
@@ -1530,6 +1552,11 @@ async function createTree(userData) {
                     searchBox.value = "";
                     suggestionsDiv.style.display = "none";
                     centerOnPerson(match.id);
+                    Pinned_NodeId = match.id;
+                    MakeRoot(match.id, match.name);
+                    console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    displayNodeInfo(match.id);
+                    displayPinIndicator(true);
                 });
                 suggestionsDiv.appendChild(div);
             });
@@ -1576,6 +1603,11 @@ async function createTree(userData) {
                     searchBoxLocation.value = "";
                     suggestionsDiv.style.display = "none";
                     centerOnPerson(loc.personId);
+                    MakeRoot(loc.personId, person.name);
+                    Pinned_NodeId = loc.personId;
+                    console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    displayNodeInfo(loc.personId);
+                    displayPinIndicator(true);
                 });
 
                 suggestionsDiv.appendChild(div);
@@ -1601,7 +1633,7 @@ async function createTree(userData) {
             suggestionsDiv.style.display = "block";
             matches.forEach(match => {
                 const div = document.createElement("div");
-                div.textContent = match.name;
+                div.textContent = match.name + " (b. " + (match.birthdate || "unknown") +  ")";
                 div.style.padding = "8px";
                 div.style.cursor = "pointer";
                 div.style.borderBottom = "1px solid #eee";
@@ -1616,7 +1648,11 @@ async function createTree(userData) {
                     rootNodeId = Object.keys(dataJSON.individuals).find( 
                         id => dataJSON.individuals[id].name === rootName 
                         );
-                    MakeRoot(rootNodeId);
+                    MakeRoot(rootNodeId, match.name);
+                    Pinned_NodeId = rootNodeId;
+                    console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    displayNodeInfo(rootNodeId);
+                    displayPinIndicator(true);
     //                updateTree();      
     //                InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");              
     //                centerTree(network, nodes, network_container);
@@ -1636,7 +1672,7 @@ async function createTree(userData) {
             if (!isNaN(value) && value >= 0) {
                 maxGenerations = value;
                 maxGenBox.value = value;
-                MakeRoot(rootNodeId);
+                MakeRoot(rootNodeId, rootBox.value);
     //            updateTree();
     //            InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
     //            centerTree(network, nodes, network_container);
@@ -1673,7 +1709,7 @@ async function createTree(userData) {
     document.getElementById("bioSaveBtn").addEventListener("click", saveBioData);
     document.getElementById("bioCancelBtn").addEventListener("click", closeBioEditor);
     document.getElementById("bioAttachmentBtn").addEventListener("click", BioAddAttachment);
-    document.getElementById("bioMakeRootBtn").addEventListener("click", () => MakeRoot(currentEditingNodeId));
+    document.getElementById("bioMakeRootBtn").addEventListener("click", () => MakeRoot(currentEditingNodeId,nodes.get(currentEditingNodeId).Name));
 
     // Close modal when clicking outside the content
     document.getElementById("bioModal").addEventListener("click", (e) => {
@@ -1682,14 +1718,14 @@ async function createTree(userData) {
         }
     });
 
-    function MakeRoot(nodeId) {
+    function MakeRoot(nodeId, name) {
         if (nodeId == null) {
             showError("No person selected, select a person by clicking or tapping on them.  Then click the \"Make Root\" button");
             return;
         } 
         rootNodeId = nodeId;
-        rootName = nodes.get(rootNodeId).Name;
-        rootBox.value = rootName;
+        rootName = name;
+        rootBox.value = name;
 
         updateTree();
         InitializeCluster(Birth_Cluster, birthLocationGroups,"BirthGroup");
@@ -1859,7 +1895,7 @@ async function createTree(userData) {
     const mroot = document.getElementById("makeRoot");
     mroot.addEventListener("click", (e) => {
         console.log("Make Root clicked for node:", Pinned_NodeId);
-        MakeRoot(Pinned_NodeId);
+        MakeRoot(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
     });
 
     const menu = document.getElementById("nodeOptionsMenu");
@@ -1869,7 +1905,7 @@ async function createTree(userData) {
         switch (e.target.dataset.action) {
 
             case "root":
-                MakeRoot(menu.dataset.nodeId);
+                MakeRoot(menu.dataset.nodeId, nodes.get(menu.dataset.nodeId).Name);
                 break;
 
             case "attachment":
@@ -2146,7 +2182,7 @@ async function createTree(userData) {
         //    let activeCluster = null;
             let activeCluster = Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y);
             if (BirthclustersEnabled) {
-                Birth_Cluster.Draw(ctx, groupColors,null);
+//                Birth_Cluster.Draw(ctx, groupColors,null);
                 // ---------------------------------------------------
                 // ------------ Highlight a cluster if the mouse is inside it
                 // ---------------------------------------------------
@@ -2235,7 +2271,7 @@ async function createTree(userData) {
                 }
             }
         });
-        updateVisibleGroups();
+    //    updateVisibleGroups();
 
         // Not sure what the next two lines are for
 //        if(Birth_Cluster.insideClusters(canvasPos.x, canvasPos.y) != null) {
@@ -3492,13 +3528,30 @@ function drawNodeText(ctx) {
 
     if (nodes.length === 0) return;
 
+    const positions = network.getPositions();
+
+    const topLeft = network.DOMtoCanvas({ x: 0, y: 0 });
+    const bottomRight = network.DOMtoCanvas({
+        x: network.canvas.frame.canvas.clientWidth,
+        y: network.canvas.frame.canvas.clientHeight
+    });
+
     console.log("Drawing nodetext, # of nodes:", nodes.length);
 
     nodes.forEach(node => {
 
-        const pos = network.getPositions([node.id])[node.id];
-
+        const pos = positions[node.id];
         if (!pos) return;
+
+        if (
+            pos.x < topLeft.x ||
+            pos.x > bottomRight.x ||
+            pos.y < topLeft.y ||
+            pos.y > bottomRight.y
+        ) {
+            return; // skip off-screen nodes
+        }
+
 
         // draw custom text here
         ctx.font = "bold 24px Arial";
@@ -3529,87 +3582,87 @@ function drawNodeText(ctx) {
     });   
 }
 function drawNodeAttachments(ctx) {
-
-        Object.entries(nodeInformation).forEach(([id,info]) => {
-            if (info && Array.isArray(info.attachments) && info.attachments.length > 0){ // && BirthclustersEnabled) {
-                // -------------------------------------
-                // ---- Get node or cluster position in canvas space
-                // --------------------------------------
-            //    const pos = Birth_Cluster.GetCentroid(id);
-                const Npos = network.getPositions([id])[id];
-                // ------------------------------------------------
-                // ------- cycle through each of the attachments --
-                // ------------------------------------------------
-                let count = 0;
-                info.attachments.forEach(att => {
+    const positions = network.getPositions();
+    Object.entries(nodeInformation).forEach(([id,info]) => {
+        if (info && Array.isArray(info.attachments) && info.attachments.length > 0){ // && BirthclustersEnabled) {
+            // -------------------------------------
+            // ---- Get node or cluster position in canvas space
+            // --------------------------------------
+        //    const pos = Birth_Cluster.GetCentroid(id);
+            const Npos = positions[id];
+            // ------------------------------------------------
+            // ------- cycle through each of the attachments --
+            // ------------------------------------------------
+            let count = 0;
+            info.attachments.forEach(att => {
 //                    console.log("attachment count = ",count);
-                     if (Npos != null && att.selected == true) {
+                    if (Npos != null && att.selected == true) {
 //                        console.log("inside node image drawing", att);
-                        // ----------------------------------------------
-                        // Draw picture in top‑right corner of the node
-                        // ----------------------------------------------
-                        if (att.image instanceof HTMLImageElement && att.image.complete && att.image.naturalWidth > 0) {
+                    // ----------------------------------------------
+                    // Draw picture in top‑right corner of the node
+                    // ----------------------------------------------
+                    if (att.image instanceof HTMLImageElement && att.image.complete && att.image.naturalWidth > 0) {
 //                            console.log("drawing node image for ",att.name, att.selected);
-                            const maxWidth = boxHeight - 10;
-                            const maxHeight = boxHeight - 10;
-                            const { naturalWidth, naturalHeight } = att.image;
+                        const maxWidth = boxHeight - 10;
+                        const maxHeight = boxHeight - 10;
+                        const { naturalWidth, naturalHeight } = att.image;
 
-                            const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
-                            const width = naturalWidth * scale;
-                            const height = naturalHeight * scale;
+                        const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+                        const width = naturalWidth * scale;
+                        const height = naturalHeight * scale;
 
-                            const imgX = Npos.x - (boxWidth/2) + 5; // position to the left of the top-right corner
-                            const imgY = Npos.y - (height / 2); // vertically centered on
-                            const radius = height/2; // rounded corners
+                        const imgX = Npos.x - (boxWidth/2) + 5; // position to the left of the top-right corner
+                        const imgY = Npos.y - (height / 2); // vertically centered on
+                        const radius = height/2; // rounded corners
 
-                            // ---------- SHADOW ----------
-                            ctx.save();
+                        // ---------- SHADOW ----------
+                        ctx.save();
 
-                            ctx.beginPath();
-                            ctx.roundRect(imgX, imgY, width, height, radius);
+                        ctx.beginPath();
+                        ctx.roundRect(imgX, imgY, width, height, radius);
 
-                            ctx.shadowColor = "rgba(0,0,0,0.5)";
-                            ctx.shadowBlur = 12;
-                            ctx.shadowOffsetX = 3;
-                            ctx.shadowOffsetY = 5;
+                        ctx.shadowColor = "rgba(0,0,0,0.5)";
+                        ctx.shadowBlur = 12;
+                        ctx.shadowOffsetX = 3;
+                        ctx.shadowOffsetY = 5;
 
-                            // fill invisible shape to cast shadow
-                            ctx.fillStyle = "white";
-                            ctx.fill();
+                        // fill invisible shape to cast shadow
+                        ctx.fillStyle = "white";
+                        ctx.fill();
 
-                            ctx.restore();
+                        ctx.restore();
 
-                            ctx.save();
+                        ctx.save();
 
-                            ctx.beginPath();
-                            ctx.roundRect(imgX, imgY, width, height, radius);
-                            ctx.clip();
+                        ctx.beginPath();
+                        ctx.roundRect(imgX, imgY, width, height, radius);
+                        ctx.clip();
 
-                            ctx.drawImage(att.image, imgX, imgY, width, height);
+                        ctx.drawImage(att.image, imgX, imgY, width, height);
 
-                            ctx.restore();
-                            ctx.beginPath();
+                        ctx.restore();
+                        ctx.beginPath();
 
-                            ctx.roundRect(imgX, imgY, width, height, radius);
+                        ctx.roundRect(imgX, imgY, width, height, radius);
 
-                            ctx.lineWidth = 1.5;
-                            ctx.strokeStyle = "#666";
-                            ctx.stroke();
-                        //    ctx.drawImage(att.image, imgX, imgY, width, height);
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = "#666";
+                        ctx.stroke();
+                    //    ctx.drawImage(att.image, imgX, imgY, width, height);
 
-                        //    ctx.font = "28px Arial";
-                        //    ctx.textAlign = "center";
-                        //    ctx.fillStyle = "black";
-                        //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
-                        //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
-                            count = count + 1;
-                        } else {
-                            console.log("Node Image not ready or invalid:", count, att);
-                        }
+                    //    ctx.font = "28px Arial";
+                    //    ctx.textAlign = "center";
+                    //    ctx.fillStyle = "black";
+                    //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
+                    //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
+                        count = count + 1;
+                    } else {
+                        console.log("Node Image not ready or invalid:", count, att);
                     }
-                }); // cycle through the attachments
-            }
-        });  // cycle through the biographies
+                }
+            }); // cycle through the attachments
+        }
+    });  // cycle through the biographies
 }
 function drawClusterAttachments(ctx, Birth_Cluster, Death_Cluster) {
 
