@@ -3165,7 +3165,8 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
         <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
         <button class="open-btn" 
             data-url="${att.fileUrl}" 
-            data-tnurl="${att.thumbUrl}"    
+            data-tnurl="${API_BASE_URL}/users/${userName}/tumbnails/${att.filename}"    
+            // this needs to be converted to a non-local host URL that the frontend can access, currently it is a local file path on the backend server which won't work for the frontend, need to add an endpoint in the backend to serve the thumbnail images and update this to point to that endpoint with the correct parameters
             data-type="${ext}" title="Open">
             <i class="fa-solid fa-eye"></i>
         </button>
