@@ -67,7 +67,7 @@ for element in root_elements:
         name = " ".join(element.get_name())
         events = []
         level = 1  # start offset level
-        print(f" {count} - Name: {name}", end="\r")
+        print(f" {count} ", end="\r")
 
         # --- Birth ---
         birth_event = None

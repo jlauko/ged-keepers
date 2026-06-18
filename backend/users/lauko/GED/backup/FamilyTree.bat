@@ -21,10 +21,11 @@ if not exist "%GEDFILE%" (
 
 
 REM ----- Step 1: Convert GED → Family.json -----
-echo Running Family_tree5.py... Creating family.json
-python Family_tree5.py --ged "%GEDFILE%"   
+set /p ROOTID=Enter the root individual ID (e.g. @I310053455724@): 
+echo Running Family_tree4.py... Creating family.json
+python Family_tree4.py --ged "%GEDFILE%"   --root %ROOTID% --max-depth 25
 if %errorlevel% neq 0 (
-    echo ERROR: Family_tree5.py failed!
+    echo ERROR: Family_tree4.py failed!
     pause
     exit /b %errorlevel%
 )

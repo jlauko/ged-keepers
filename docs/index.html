@@ -215,7 +215,9 @@
         <!--- Root/Max Generations -->
         <div id="configureSection" class="panelSection">
             <div class="configureHeader">        
-                <div class="panelSectionTitle">Configure the Tree</div>
+                <div class="panelSectionTitle" style="padding-bottom:10px" >Configure the Tree
+                    <button id="homeRoot" style="float: right">Home</button> 
+                </div>
                 <div id="configure-container" class="configureContainer">
                     <div class="configureGroup">
                         <div class="configRow"> 
@@ -224,7 +226,7 @@
                         </div>
                         <div class="configRow">
                             <label for="maxGenBox">Generations: </label>
-                            <input id="maxGenBox" type="number" min="1" max="10" placeholder="Max generations...">
+                            <input id="maxGenBox" type="number" min="1" max="20" placeholder="Max generations...">
                         </div>
                         <div id="configsuggestions"></div>
                     </div>
@@ -306,8 +308,6 @@ const boxHeight = 100;
 const xSpacing = 2* boxWidth;
 const yUnit = (5/6) * boxHeight;
 
-let maxGenerations = 2; 
-
 let currentNodeId = null;
 let selectedColor = "#ffcccc";
 let clickTimer = null;
@@ -319,9 +319,13 @@ const plotPositionMap = new Map();
 let BirthGroups = {};  // each node is assigned a state/country based on their birth location, BirthGroup: groupName
 let DeathGroups = {};  // each node is assigned a state/country based on their death location
 
-let rootName = "Joseph Thomas Lauko";
-//let rootNodeId = "@I310053455724@";
-let rootNodeId = null;
+let homeRootName = "Joseph Thomas Lauko";
+let homeRootNodeId = "@I310053455769@";
+let homeMaxGenerations = 3;
+let maxGenerations = homeMaxGenerations; 
+
+let rootName = homeRootName;
+let rootNodeId = homeRootNodeId;
 
 // Global variables for timeline
 
@@ -992,69 +996,29 @@ function addNode(ind,pid,gen = 0,nodeupdate) {
 //    console.log(`Adding node ID: ${pid} Name: ${ind.name} Generation: ${gen}`);
     //    nodes.add({
     nodeupdate.push({
-            id: pid,
-            label: "",
-        //    label: `<b>${ind.name}</b>
-        //        <b>Birth:</b> ${ind.birthplace ? truncate(ind.birthplace,25) : "-"}
-        //        ${ind.birthdate || " - "}
-        //        <b>Death:</b> ${ind.deathplace ? truncate(ind.deathplace,25) : "-"}
-        //        ${ind.deathdate || " - "}`,
-            shape: "box",
-            font: { multi: "html" },
-            margin:{top:5, bottom:1,left:1,right:1},
-            widthConstraint: { minimum: boxWidth, maximum: boxWidth },
-            heightConstraint: { minimum: boxHeight, maximum: boxHeight },
-            color : {background : colorBySex(ind.sex),border: "#000000",highlight: { background: colorBySex(ind.sex), border: "#333333" },
-                hover: { background: colorBySex(ind.sex), border: "#555555" }},
-            level: Number(gen),
-            interaction: { hover: true},
-            birthdatestring: ind.birthdate,
-            deathdatestring: ind.deathdate,
-            Name: ind.name,
-            birthPlace: ind.birthplace || "",   
-            deathPlace: ind.deathplace || "",   
-            residences: ind.residences || [],
-        });
-        if (ind.birthplace) {
-            const cleaned = ind.birthplace.trim().toLowerCase();
-//            console.log(`Processing birthplace for ${ind.name}: raw='${ind.birthplace}' cleaned='${cleaned}'`);
-            if (cleaned !== "") {
-//                locationList.push({ place: cleaned, personId: pid, date: ind.birthdate || null, raw: ind.birthplace });
-            }
-        }
-        if (ind.deathplace) {
-            const cleaned = ind.deathplace.trim().toLowerCase();
-//            console.log(`Processing deathplace for ${ind.name}: raw='${ind.deathplace}' cleaned='${cleaned}'`);
-            if (cleaned !== "") {
-//                locationList.push({ place: cleaned, personId: pid, date: ind.deathdate || null, raw: ind.deathplace });
-            }
-        }
-
-        if (ind.residences && Array.isArray(ind.residences)) {
-            ind.residences.forEach(res => {
-                if (res && typeof res.place === "string") {
-                    const cleaned = res.place.trim().toLowerCase();
-//                    console.log(`Processing residence for ${ind.name}: raw='${res.place}' cleaned='${cleaned}'`);
-                    if (cleaned !== "") {
-                        // Check if this person/place combo already exists
-                        const exists = locationList.some(
-                            loc => loc.place === cleaned && loc.personId === pid);
-                        if (!exists) {
-//                            console.log(`Adding residence to locationList: ${cleaned} for person ID: ${pid}`);
-//                            locationList.push({ 
-//                                place: cleaned, 
-//                                personId: pid, 
-//                                date: res.date || null, 
-//                                raw: res });
-                        }
-                    }
-                }
-                else
-                {
-                    console.warn(`Residence entry for ${ind.name} is missing a valid 'place' string:`, res);
-                }
-            });
-        }
+        id: pid,
+        label: "",
+    //    label: `<b>${ind.name}</b>
+    //        <b>Birth:</b> ${ind.birthplace ? truncate(ind.birthplace,25) : "-"}
+    //        ${ind.birthdate || " - "}
+    //        <b>Death:</b> ${ind.deathplace ? truncate(ind.deathplace,25) : "-"}
+    //        ${ind.deathdate || " - "}`,
+        shape: "box",
+        font: { multi: "html" },
+        margin:{top:5, bottom:1,left:1,right:1},
+        widthConstraint: { minimum: boxWidth, maximum: boxWidth },
+        heightConstraint: { minimum: boxHeight, maximum: boxHeight },
+        color : {background : colorBySex(ind.sex),border: "#000000",highlight: { background: colorBySex(ind.sex), border: "#333333" },
+            hover: { background: colorBySex(ind.sex), border: "#555555" }},
+        level: Number(gen),
+        interaction: { hover: true},
+        birthdatestring: ind.birthdate,
+        deathdatestring: ind.deathdate,
+        Name: ind.name,
+        birthPlace: ind.birthplace || "",   
+        deathPlace: ind.deathplace || "",   
+        residences: ind.residences || [],
+    });
 }
 
 
@@ -1899,6 +1863,14 @@ async function createTree(userData) {
     mroot.addEventListener("click", (e) => {
         console.log("Make Root clicked for node:", Pinned_NodeId);
         MakeRoot(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
+    });
+
+    const hroot = document.getElementById("homeRoot");
+    hroot.addEventListener("click", (e) => {
+        console.log("Home Root clicked for node:", homeRootName);
+        maxGenerations = homeMaxGenerations;
+        maxGenBox.value = maxGenerations;
+        MakeRoot(homeRootNodeId, homeRootName);
     });
 
     const menu = document.getElementById("nodeOptionsMenu");
@@ -3576,7 +3548,7 @@ function drawNodeText(ctx) {
         const birth = node.birthdatestring || "";
         const death = node.deathdatestring || "";
         ctx.fillText(`${birth} - ${death}`, textX, textY);
-        if (node.birthplace) {
+        if (node.birthPlace) {
             textY = textY + 22;
             const birthlocation = truncate(node.birthPlace, 25);
             ctx.fillText(`Birth: ${birthlocation}`, textX, textY);
@@ -3606,7 +3578,7 @@ function drawNodeAttachments(ctx) {
                     if (Npos != null && att.selected == true) {
 //                        console.log("inside node image drawing", att);
                     // ----------------------------------------------
-                    // Draw picture in top‑right corner of the node
+                    // Draw picture in top‑left corner of the node
                     // ----------------------------------------------
                     if (att.image instanceof HTMLImageElement && att.image.complete && att.image.naturalWidth > 0) {
 //                            console.log("drawing node image for ",att.name, att.selected);
@@ -3656,11 +3628,22 @@ function drawNodeAttachments(ctx) {
                         ctx.strokeStyle = "#666";
                         ctx.stroke();
                     //    ctx.drawImage(att.image, imgX, imgY, width, height);
+            //            const numdocs = 2;
+            //            const lines = [
+            //                `📖 ${numdocs}`,
+            //                `📷 2`,
+            //                `📄 2`
+            //            ];
 
-                    //    ctx.font = "28px Arial";
-                    //    ctx.textAlign = "center";
-                    //    ctx.fillStyle = "black";
-                    //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
+            //            ctx.font = "28px Arial";
+            //            ctx.fillStyle = "black";
+
+            //            let y = imgY + 20;
+
+            //            lines.forEach(line => {
+            //                ctx.fillText(line, imgX + width, y);
+            //                y += 32; // line spacing
+            //            });
                     //    ctx.fillText(att.name, Npos.x + width/2  - boxWidth, Npos.y + height/4 + 30);
                         count = count + 1;
                     } else {
