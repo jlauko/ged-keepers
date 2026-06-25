@@ -10544,10 +10544,10 @@
         "events": [
             {
                 "type": "Birth",
-                "label": "Born: North Tonawanda, Niagara, New York, USA",
+                "label": "Born: Buffalo, Niagara, New York, USA",
                 "startYear": 1866,
                 "endYear": 1866,
-                "location": "North Tonawanda, Niagara, New York, USA",
+                "location": "Buffalo, Niagara, New York, USA",
                 "level": 2,
                 "color": "lightblue"
             },
@@ -11333,8 +11333,8 @@
             {
                 "type": "ChildBirth",
                 "label": "Child: Joseph Young",
-                "startYear": 1860,
-                "endYear": 1860,
+                "startYear": 1858,
+                "endYear": 1858,
                 "level": 3,
                 "color": "lightyellow"
             },
@@ -11357,17 +11357,17 @@
             {
                 "type": "ChildBirth",
                 "label": "Child: John Jung",
-                "startYear": 1865,
-                "endYear": 1865,
+                "startYear": 1864,
+                "endYear": 1864,
                 "level": 1,
                 "color": "lightyellow"
             },
             {
                 "type": "Residence",
-                "label": "Rochester, Monroe, New York, USA",
+                "label": "Buffalo, Erie, New York, USA",
                 "startYear": 1865,
                 "endYear": 1865,
-                "location": "Rochester, Monroe, New York, USA",
+                "location": "Buffalo, Erie, New York, USA",
                 "level": 2,
                 "color": "gray"
             },
@@ -11381,11 +11381,28 @@
             },
             {
                 "type": "Residence",
+                "label": "Buffalo, New York, USA",
+                "startYear": 1868,
+                "endYear": 1868,
+                "location": "Buffalo, New York, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Frank Jung",
+                "startYear": 1869,
+                "endYear": 1869,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
                 "label": "Buffalo Ward 1, Buffalo, Erie, New York, USA",
                 "startYear": 1870,
                 "endYear": 1870,
                 "location": "Buffalo Ward 1, Buffalo, Erie, New York, USA",
-                "level": 4,
+                "level": 1,
                 "color": "gray"
             },
             {
@@ -11393,15 +11410,24 @@
                 "label": "Child: Catherine Young",
                 "startYear": 1873,
                 "endYear": 1873,
-                "level": 5,
+                "level": 2,
                 "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo, New York, USA",
+                "startYear": 1873,
+                "endYear": 1873,
+                "location": "Buffalo, New York, USA",
+                "level": 3,
+                "color": "gray"
             },
             {
                 "type": "ChildBirth",
                 "label": "Child: Jacob Young",
                 "startYear": 1874,
                 "endYear": 1874,
-                "level": 1,
+                "level": 4,
                 "color": "lightyellow"
             },
             {
@@ -11410,7 +11436,7 @@
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Rochester, Ward 14, Monroe County, New York, USA",
-                "level": 2,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -11418,7 +11444,7 @@
                 "label": "Child: Theresa Young",
                 "startYear": 1876,
                 "endYear": 1876,
-                "level": 3,
+                "level": 1,
                 "color": "lightyellow"
             },
             {
@@ -11427,7 +11453,7 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 4,
+                "level": 2,
                 "color": "gray"
             },
             {
@@ -11436,17 +11462,8 @@
                 "startYear": 1900,
                 "endYear": 1900,
                 "location": "Buffalo Ward 9, Erie, New York, USA",
-                "level": 5,
+                "level": 3,
                 "color": "gray"
-            },
-            {
-                "type": "Death",
-                "label": "Died in Rochester, Monroe, New York",
-                "startYear": 1902,
-                "endYear": 1902,
-                "location": "Rochester, Monroe, New York",
-                "level": 1,
-                "color": "lightcoral"
             }
         ]
     },
@@ -11502,8 +11519,8 @@
             {
                 "type": "ChildBirth",
                 "label": "Child: Joseph Young",
-                "startYear": 1860,
-                "endYear": 1860,
+                "startYear": 1858,
+                "endYear": 1858,
                 "level": 2,
                 "color": "lightyellow"
             },
@@ -11526,8 +11543,8 @@
             {
                 "type": "ChildBirth",
                 "label": "Child: John Jung",
-                "startYear": 1865,
-                "endYear": 1865,
+                "startYear": 1864,
+                "endYear": 1864,
                 "level": 5,
                 "color": "lightyellow"
             },
@@ -11549,12 +11566,20 @@
                 "color": "lightyellow"
             },
             {
+                "type": "ChildBirth",
+                "label": "Child: Frank Jung",
+                "startYear": 1869,
+                "endYear": 1869,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
                 "type": "Residence",
                 "label": "Buffalo Ward 1, Buffalo, Erie, New York, USA",
                 "startYear": 1870,
                 "endYear": 1870,
                 "location": "Buffalo Ward 1, Buffalo, Erie, New York, USA",
-                "level": 3,
+                "level": 4,
                 "color": "gray"
             },
             {
@@ -11562,7 +11587,7 @@
                 "label": "Child: Catherine Young",
                 "startYear": 1873,
                 "endYear": 1873,
-                "level": 4,
+                "level": 5,
                 "color": "lightyellow"
             },
             {
@@ -11570,7 +11595,7 @@
                 "label": "Child: Jacob Young",
                 "startYear": 1874,
                 "endYear": 1874,
-                "level": 5,
+                "level": 1,
                 "color": "lightyellow"
             },
             {
@@ -11579,7 +11604,7 @@
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Rochester, Ward 14, Monroe County, New York, USA",
-                "level": 1,
+                "level": 2,
                 "color": "gray"
             },
             {
@@ -11587,7 +11612,7 @@
                 "label": "Child: Theresa Young",
                 "startYear": 1876,
                 "endYear": 1876,
-                "level": 2,
+                "level": 3,
                 "color": "lightyellow"
             },
             {
@@ -11596,7 +11621,7 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Rochester, Monroe, New York, USA",
-                "level": 3,
+                "level": 4,
                 "color": "gray"
             },
             {
@@ -11605,7 +11630,7 @@
                 "startYear": 1892,
                 "endYear": 1892,
                 "location": "Rochester, Monroe, New York",
-                "level": 4,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -11614,7 +11639,7 @@
                 "startYear": 1900,
                 "endYear": 1900,
                 "location": "Buffalo Ward 9, Erie, New York, USA",
-                "level": 5,
+                "level": 1,
                 "color": "gray"
             },
             {
@@ -11623,7 +11648,7 @@
                 "startYear": 1905,
                 "endYear": 1905,
                 "location": "Rochester, Ward 08, Monroe County, New York, USA",
-                "level": 1,
+                "level": 2,
                 "color": "gray"
             },
             {
@@ -11632,7 +11657,7 @@
                 "startYear": 1906,
                 "endYear": 1906,
                 "location": "Rochester, Monroe County, New York, United States ",
-                "level": 2,
+                "level": 3,
                 "color": "lightcoral"
             }
         ]
@@ -11658,6 +11683,15 @@
                 "location": "Buffalo, Erie, New York, USA",
                 "level": 3,
                 "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Unknown",
+                "startYear": 1962,
+                "endYear": 1962,
+                "location": "",
+                "level": 4,
+                "color": "lightcoral"
             }
         ]
     },
@@ -30574,7 +30608,7 @@
             },
             {
                 "type": "ChildBirth",
-                "label": "Child: Josephine Sissen",
+                "label": "Child: Josephine Srsen",
                 "startYear": 1927,
                 "endYear": 1927,
                 "level": 5,
@@ -48590,11 +48624,20 @@
             },
             {
                 "type": "Residence",
+                "label": "22 Narwood St. , Johnson City",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": "22 Narwood St. , Johnson City",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
                 "label": "Johnson City, NY",
                 "startYear": 1986,
                 "endYear": 1986,
                 "location": "Johnson City, NY",
-                "level": 4,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -48603,7 +48646,7 @@
                 "startYear": 2018,
                 "endYear": 2018,
                 "location": "Syracuse",
-                "level": 5,
+                "level": 1,
                 "color": "lightcoral"
             }
         ]
@@ -48856,6 +48899,22 @@
                 "location": "Albany, NY",
                 "level": 3,
                 "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Elizabeth Marzinsky",
+                "startYear": 2005,
+                "endYear": 2005,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Samantha Marzinsky",
+                "startYear": 2006,
+                "endYear": 2006,
+                "level": 5,
+                "color": "lightyellow"
             }
         ]
     },
@@ -49111,12 +49170,30 @@
                 "color": "lightblue"
             },
             {
+                "type": "Marriage",
+                "label": "Married Doreen De Morat",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": "Endicott, New York, USA",
+                "level": 3,
+                "color": "lightgreen"
+            },
+            {
+                "type": "Residence",
+                "label": "Ithaca",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": "Ithaca",
+                "level": 4,
+                "color": "gray"
+            },
+            {
                 "type": "Residence",
                 "label": "Apalachin, NY",
                 "startYear": 1993,
                 "endYear": 1993,
                 "location": "Apalachin, NY",
-                "level": 3,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -49125,7 +49202,7 @@
                 "startYear": 1995,
                 "endYear": 1995,
                 "location": "Apalachin, New York, USA",
-                "level": 4,
+                "level": 1,
                 "color": "gray"
             }
         ]
@@ -176908,7 +176985,7 @@
             },
             {
                 "type": "ChildBirth",
-                "label": "Child: Josephine Sissen",
+                "label": "Child: Josephine Srsen",
                 "startYear": 1927,
                 "endYear": 1927,
                 "level": 3,
@@ -177282,17 +177359,72 @@
     "@I312109677097@": {
         "personId": "@I312109677097@",
         "name": "Jeff Marzinsky",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Unknown",
+                "startYear": 1970,
+                "endYear": 1970,
+                "location": null,
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Troy, New York, USA",
+                "startYear": 1975,
+                "endYear": 1975,
+                "location": "Troy, New York, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Elizabeth Marzinsky",
+                "startYear": 2005,
+                "endYear": 2005,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Samantha Marzinsky",
+                "startYear": 2006,
+                "endYear": 2006,
+                "level": 5,
+                "color": "lightyellow"
+            }
+        ]
     },
     "@I312109677453@": {
         "personId": "@I312109677453@",
         "name": "Elizabeth Marzinsky",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Albany County, New York, USA",
+                "startYear": 2005,
+                "endYear": 2005,
+                "location": "Albany County, New York, USA",
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
     },
     "@I312109677567@": {
         "personId": "@I312109677567@",
         "name": "Samantha Marzinsky",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Albany County, New York, USA",
+                "startYear": 2006,
+                "endYear": 2006,
+                "location": "Albany County, New York, USA",
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
     },
     "@I312109705333@": {
         "personId": "@I312109705333@",
@@ -234288,7 +234420,7 @@
     },
     "@I312452304090@": {
         "personId": "@I312452304090@",
-        "name": "Josephine Sissen",
+        "name": "Josephine Srsen",
         "events": [
             {
                 "type": "Birth",
@@ -257645,7 +257777,16 @@
     "@I312630245612@": {
         "personId": "@I312630245612@",
         "name": "Julie Ann ",
-        "events": []
+        "events": [
+            {
+                "type": "ChildBirth",
+                "label": "Child: Chelsea Schihl",
+                "startYear": 1994,
+                "endYear": 1994,
+                "level": 2,
+                "color": "lightyellow"
+            }
+        ]
     },
     "@I312630245839@": {
         "personId": "@I312630245839@",
@@ -282574,6 +282715,15 @@
                 "location": "Buffalo, Erie, New York, USA",
                 "level": 4,
                 "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Titusville, Florida",
+                "startYear": 1952,
+                "endYear": 1952,
+                "location": "Titusville, Florida",
+                "level": 5,
+                "color": "lightcoral"
             }
         ]
     },
@@ -282583,12 +282733,21 @@
         "events": [
             {
                 "type": "Birth",
-                "label": "Born: New York",
+                "label": "Born: Buffalo, Erie, New York, USA",
                 "startYear": 1861,
                 "endYear": 1861,
-                "location": "New York",
+                "location": "Buffalo, Erie, New York, USA",
                 "level": 2,
                 "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo, Erie, New York, USA",
+                "startYear": 1865,
+                "endYear": 1865,
+                "location": "Buffalo, Erie, New York, USA",
+                "level": 3,
+                "color": "gray"
             },
             {
                 "type": "Residence",
@@ -282596,7 +282755,7 @@
                 "startYear": 1870,
                 "endYear": 1870,
                 "location": "Buffalo Ward 1, Buffalo, Erie, New York, USA",
-                "level": 3,
+                "level": 4,
                 "color": "gray"
             },
             {
@@ -282605,7 +282764,7 @@
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 4,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -282614,8 +282773,17 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 5,
+                "level": 1,
                 "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Unknown",
+                "startYear": 1933,
+                "endYear": 1933,
+                "location": "",
+                "level": 2,
+                "color": "lightcoral"
             }
         ]
     },
@@ -282802,8 +282970,8 @@
             {
                 "type": "Birth",
                 "label": "Born: Ohio, USA",
-                "startYear": 1860,
-                "endYear": 1860,
+                "startYear": 1858,
+                "endYear": 1858,
                 "location": "Ohio, USA",
                 "level": 2,
                 "color": "lightblue"
@@ -282811,10 +282979,28 @@
             {
                 "type": "Residence",
                 "label": "Buffalo, Erie, New York, USA",
+                "startYear": 1865,
+                "endYear": 1865,
+                "location": "Buffalo, Erie, New York, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo Ward 5, Buffalo, Erie, New York, USA",
+                "startYear": 1870,
+                "endYear": 1870,
+                "location": "Buffalo Ward 5, Buffalo, Erie, New York, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo, Erie, New York, USA",
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 3,
+                "level": 5,
                 "color": "gray"
             },
             {
@@ -282823,7 +283009,101 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Buffalo, Erie, New York, USA",
+                "level": 1,
+                "color": "gray"
+            },
+            {
+                "type": "Marriage",
+                "label": "Married Emma Ann Kline",
+                "startYear": 1891,
+                "endYear": 1891,
+                "location": "Sedgwick, Kansas, USA",
+                "level": 2,
+                "color": "lightgreen"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Maria Nonetta Young",
+                "startYear": 1893,
+                "endYear": 1893,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Elizabeth Young",
+                "startYear": 1893,
+                "endYear": 1893,
                 "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Fred Young",
+                "startYear": 1895,
+                "endYear": 1895,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Frank ",
+                "startYear": 1897,
+                "endYear": 1897,
+                "level": 1,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Minneha, Sedgwick, Kansas, USA",
+                "startYear": 1900,
+                "endYear": 1900,
+                "location": "Minneha, Sedgwick, Kansas, USA",
+                "level": 2,
+                "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: George Young",
+                "startYear": 1903,
+                "endYear": 1903,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita, Sedgwick, Kansas, USA",
+                "startYear": 1905,
+                "endYear": 1905,
+                "location": "Wichita, Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita, Kansas, USA",
+                "level": 5,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita, Sedgwick, Kansas, USA",
+                "startYear": 1915,
+                "endYear": 1915,
+                "location": "Wichita, Sedgwick, Kansas, USA",
+                "level": 1,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 2,
                 "color": "gray"
             },
             {
@@ -282832,7 +283112,7 @@
                 "startYear": 1926,
                 "endYear": 1926,
                 "location": "357 .",
-                "level": 5,
+                "level": 3,
                 "color": "lightcoral"
             }
         ]
@@ -282840,17 +283120,77 @@
     "@I312756706442@": {
         "personId": "@I312756706442@",
         "name": "Frank ",
-        "events": []
-    },
-    "@I312756706443@": {
-        "personId": "@I312756706443@",
-        "name": "Elizabeth ",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wichita, Kansas, USA",
+                "startYear": 1897,
+                "endYear": 1897,
+                "location": "Wichita, Kansas, USA",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "gray"
+            }
+        ]
     },
     "@I312756706444@": {
         "personId": "@I312756706444@",
-        "name": "George ",
-        "events": []
+        "name": "George Young",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wichita, Kansas",
+                "startYear": 1903,
+                "endYear": 1903,
+                "location": "Wichita, Kansas",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Unknown",
+                "startYear": 1965,
+                "endYear": 1965,
+                "location": "",
+                "level": 5,
+                "color": "lightcoral"
+            }
+        ]
     },
     "@I312756706841@": {
         "personId": "@I312756706841@",
@@ -282868,10 +283208,19 @@
             {
                 "type": "Residence",
                 "label": "Buffalo, Erie, New York, USA",
+                "startYear": 1865,
+                "endYear": 1865,
+                "location": "Buffalo, Erie, New York, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo, Erie, New York, USA",
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 3,
+                "level": 4,
                 "color": "gray"
             },
             {
@@ -282880,8 +283229,17 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 4,
+                "level": 5,
                 "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Buffalo, New York, USA",
+                "startYear": 1908,
+                "endYear": 1908,
+                "location": "Buffalo, New York, USA",
+                "level": 1,
+                "color": "lightcoral"
             }
         ]
     },
@@ -282892,8 +283250,8 @@
             {
                 "type": "Birth",
                 "label": "Born: New York",
-                "startYear": 1865,
-                "endYear": 1865,
+                "startYear": 1864,
+                "endYear": 1864,
                 "location": "New York",
                 "level": 2,
                 "color": "lightblue"
@@ -282901,10 +283259,19 @@
             {
                 "type": "Residence",
                 "label": "Buffalo, Erie, New York, USA",
+                "startYear": 1865,
+                "endYear": 1865,
+                "location": "Buffalo, Erie, New York, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo, Erie, New York, USA",
                 "startYear": 1875,
                 "endYear": 1875,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 3,
+                "level": 4,
                 "color": "gray"
             },
             {
@@ -282913,8 +283280,17 @@
                 "startYear": 1880,
                 "endYear": 1880,
                 "location": "Buffalo, Erie, New York, USA",
-                "level": 4,
+                "level": 5,
                 "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in North Tonawanda, New York, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "North Tonawanda, New York, USA",
+                "level": 1,
+                "color": "lightcoral"
             }
         ]
     },
@@ -284861,11 +285237,20 @@
         "name": "Wife ",
         "events": [
             {
+                "type": "Birth",
+                "label": "Born: Unknown",
+                "startYear": 1973,
+                "endYear": 1973,
+                "location": null,
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
                 "type": "ChildBirth",
                 "label": "Child: Ayden Madigan Lauko",
                 "startYear": 2020,
                 "endYear": 2020,
-                "level": 2,
+                "level": 3,
                 "color": "lightyellow"
             }
         ]
@@ -284925,11 +285310,648 @@
     "@I312784224017@": {
         "personId": "@I312784224017@",
         "name": "Doreen De Morat",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Apalachin, New York, USA",
+                "startYear": 1961,
+                "endYear": 1961,
+                "location": "Apalachin, New York, USA",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Marriage",
+                "label": "Married William Lauko",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": "Endicott, New York, USA",
+                "level": 3,
+                "color": "lightgreen"
+            },
+            {
+                "type": "Residence",
+                "label": "Ithaca",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": "Ithaca",
+                "level": 4,
+                "color": "gray"
+            }
+        ]
     },
     "@I312784224483@": {
         "personId": "@I312784224483@",
         "name": "William Lauko",
         "events": []
+    },
+    "@I312789659720@": {
+        "personId": "@I312789659720@",
+        "name": "Joe Ziemba",
+        "events": []
+    },
+    "@I312789852874@": {
+        "personId": "@I312789852874@",
+        "name": "John J. Marzinsky",
+        "events": [
+            {
+                "type": "ChildBirth",
+                "label": "Child: Jeff Marzinsky",
+                "startYear": 1970,
+                "endYear": 1970,
+                "level": 2,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Unknown",
+                "startYear": 1974,
+                "endYear": 1974,
+                "location": "",
+                "level": 3,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312789853050@": {
+        "personId": "@I312789853050@",
+        "name": "Edith Jeanie Marzinsky",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Mechanicville, Saratoga, New York, USA",
+                "startYear": 1930,
+                "endYear": 1930,
+                "location": "Mechanicville, Saratoga, New York, USA",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Jeff Marzinsky",
+                "startYear": 1970,
+                "endYear": 1970,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Troy, New York",
+                "startYear": 2005,
+                "endYear": 2005,
+                "location": "Troy, New York",
+                "level": 4,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312789985128@": {
+        "personId": "@I312789985128@",
+        "name": "Donna ",
+        "events": []
+    },
+    "@I312790053667@": {
+        "personId": "@I312790053667@",
+        "name": "Chelsea Schihl",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Unknown",
+                "startYear": 1994,
+                "endYear": 1994,
+                "location": null,
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
+    },
+    "@I312790267752@": {
+        "personId": "@I312790267752@",
+        "name": "Emma Ann Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: , , Wisconsin, USA",
+                "startYear": 1871,
+                "endYear": 1871,
+                "location": ", , Wisconsin, USA",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Marriage",
+                "label": "Married Joseph Young",
+                "startYear": 1891,
+                "endYear": 1891,
+                "location": "Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "lightgreen"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Maria Nonetta Young",
+                "startYear": 1893,
+                "endYear": 1893,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Elizabeth Young",
+                "startYear": 1893,
+                "endYear": 1893,
+                "level": 1,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Fred Young",
+                "startYear": 1895,
+                "endYear": 1895,
+                "level": 2,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Frank ",
+                "startYear": 1897,
+                "endYear": 1897,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: George Young",
+                "startYear": 1903,
+                "endYear": 1903,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Wichita, Sedgwick County, Kansas, United States of America",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita, Sedgwick County, Kansas, United States of America",
+                "level": 5,
+                "color": "lightcoral"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 1,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790267753@": {
+        "personId": "@I312790267753@",
+        "name": "Frank Jung",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: New York",
+                "startYear": 1869,
+                "endYear": 1869,
+                "location": "New York",
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
+    },
+    "@I312790267754@": {
+        "personId": "@I312790267754@",
+        "name": "Maria Nonetta Young",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wichita, Kansas, USA",
+                "startYear": 1893,
+                "endYear": 1893,
+                "location": "Wichita, Kansas, USA",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Unknown",
+                "startYear": 1901,
+                "endYear": 1901,
+                "location": "",
+                "level": 3,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312790267755@": {
+        "personId": "@I312790267755@",
+        "name": "Fred Young",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wichita, Kansas",
+                "startYear": 1895,
+                "endYear": 1895,
+                "location": "Wichita, Kansas",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Santa Fe, New Mexico",
+                "startYear": 1923,
+                "endYear": 1923,
+                "location": "Santa Fe, New Mexico",
+                "level": 5,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312790289673@": {
+        "personId": "@I312790289673@",
+        "name": "Elizabeth Young",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Kansas, United States of America",
+                "startYear": 1893,
+                "endYear": 1893,
+                "location": "Kansas, United States of America",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1910,
+                "endYear": 1910,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Residence",
+                "label": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "startYear": 1920,
+                "endYear": 1920,
+                "location": "Wichita Ward 4, Sedgwick, Kansas, USA",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: William ALbert Staudacher",
+                "startYear": 1922,
+                "endYear": 1922,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo Ward 14, Erie",
+                "startYear": 1925,
+                "endYear": 1925,
+                "location": "Buffalo Ward 14, Erie",
+                "level": 1,
+                "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Hollywood, Broward County, Florida, United States of America",
+                "startYear": 1969,
+                "endYear": 1969,
+                "location": "Hollywood, Broward County, Florida, United States of America",
+                "level": 2,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312790290029@": {
+        "personId": "@I312790290029@",
+        "name": "William ALbert Staudacher",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Buffalo, Erie County, New York, United States of America",
+                "startYear": 1922,
+                "endYear": 1922,
+                "location": "Buffalo, Erie County, New York, United States of America",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo Ward 14, Erie",
+                "startYear": 1925,
+                "endYear": 1925,
+                "location": "Buffalo Ward 14, Erie",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Stollberg, Erzgebirgskreis, Saxony, Germany",
+                "startYear": 1944,
+                "endYear": 1944,
+                "location": "Stollberg, Erzgebirgskreis, Saxony, Germany",
+                "level": 4,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312790290030@": {
+        "personId": "@I312790290030@",
+        "name": "William Albert Staudacher",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Buffalo, Erie County, New York, United States of America",
+                "startYear": 1892,
+                "endYear": 1892,
+                "location": "Buffalo, Erie County, New York, United States of America",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: William ALbert Staudacher",
+                "startYear": 1922,
+                "endYear": 1922,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Buffalo Ward 14, Erie",
+                "startYear": 1925,
+                "endYear": 1925,
+                "location": "Buffalo Ward 14, Erie",
+                "level": 4,
+                "color": "gray"
+            },
+            {
+                "type": "Death",
+                "label": "Died in Erie County, New York, United States of America",
+                "startYear": 1961,
+                "endYear": 1961,
+                "location": "Erie County, New York, United States of America",
+                "level": 5,
+                "color": "lightcoral"
+            }
+        ]
+    },
+    "@I312790295364@": {
+        "personId": "@I312790295364@",
+        "name": "Lana Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Germany",
+                "startYear": 1863,
+                "endYear": 1863,
+                "location": "Germany",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790295365@": {
+        "personId": "@I312790295365@",
+        "name": "Katie Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Germany",
+                "startYear": 1867,
+                "endYear": 1867,
+                "location": "Germany",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790295366@": {
+        "personId": "@I312790295366@",
+        "name": "Frederick Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wisconsin",
+                "startYear": 1872,
+                "endYear": 1872,
+                "location": "Wisconsin",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790295367@": {
+        "personId": "@I312790295367@",
+        "name": "Mary Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Wisconsin",
+                "startYear": 1876,
+                "endYear": 1876,
+                "location": "Wisconsin",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790295368@": {
+        "personId": "@I312790295368@",
+        "name": "Anton Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Germany",
+                "startYear": 1828,
+                "endYear": 1828,
+                "location": "Germany",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Lana Kline",
+                "startYear": 1863,
+                "endYear": 1863,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Katie Kline",
+                "startYear": 1867,
+                "endYear": 1867,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Emma Ann Kline",
+                "startYear": 1871,
+                "endYear": 1871,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Frederick Kline",
+                "startYear": 1872,
+                "endYear": 1872,
+                "level": 1,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Mary Kline",
+                "startYear": 1876,
+                "endYear": 1876,
+                "level": 2,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
+    },
+    "@I312790295369@": {
+        "personId": "@I312790295369@",
+        "name": "Elizabeth Kline",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Germany",
+                "startYear": 1831,
+                "endYear": 1831,
+                "location": "Germany",
+                "level": 2,
+                "color": "lightblue"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Lana Kline",
+                "startYear": 1863,
+                "endYear": 1863,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Katie Kline",
+                "startYear": 1867,
+                "endYear": 1867,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Emma Ann Kline",
+                "startYear": 1871,
+                "endYear": 1871,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Frederick Kline",
+                "startYear": 1872,
+                "endYear": 1872,
+                "level": 1,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Mary Kline",
+                "startYear": 1876,
+                "endYear": 1876,
+                "level": 2,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Pioneer, Rice, Kansas, USA",
+                "startYear": 1880,
+                "endYear": 1880,
+                "location": "Pioneer, Rice, Kansas, USA",
+                "level": 3,
+                "color": "gray"
+            }
+        ]
     }
 }
