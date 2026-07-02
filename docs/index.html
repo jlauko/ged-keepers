@@ -3020,6 +3020,7 @@ function AddNodeAttachment(nodeId,attachmentInfo) {
     const newAtt = nodeInformation[nodeId].attachments[ nodeInformation[nodeId].attachments.length - 1 ];
     newAtt.selected = false; // default to not selected for display
     RenderNodeAttachments(nodeId);
+    UpdateIndividualNode(nodeId, nodeInformation[nodeId]); // Update the node in the network with the new attachment info
 
     // ------------------------------------------------------
     // Need to add logic here to send to backend server to store attachment metadata
@@ -3130,6 +3131,13 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
             <i class="${att.selected == 1 ? 'fa-solid fa-star' : 'fa-regular fa-star'}" style="${att.selected == 1 ? 'color:gold' : 'color: black'}"></i>
         </button>
         <div>
+            <img class="attachment-thumb"
+            src="${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(att.filename)}"
+            loading="lazy">
+
+            <div class="attachment-info">
+                Attachment info goes here
+            </div>
             <div class="attachment-name" style="font-weight:600; font-size:12px;">${truncate(displayName,30)}</div>
             <div style="font-size:11px; color:#666;">${truncate(att.filename,30)}</div>
         </div>

@@ -494,32 +494,13 @@
         "orientation": 1
       },
       {
-        "name": "Tree",
-        "filename": "Mary Sliacan.jpg",
-        "fileUrl": "http://localhost:4000/users/Lauko/files/Mary%20Sliacan.jpg",
-        "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Mary%20Sliacan.jpg",
-        "uploadedAt": "2026-02-09T18:34:54.801Z",
+        "name": "MarySliacan.jpg",
+        "filename": "MarySliacan.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/MarySliacan.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/MarySliacan.jpg",
+        "uploadedAt": "2026-07-02T13:05:51.515Z",
         "type": "file",
-        "selected": false,
-        "image": {
-          "exifdata": {},
-          "iptcdata": {}
-        },
-        "orientation": 1
-      },
-      {
-        "name": "Mary Sliacan.jpg",
-        "filename": "Mary Sliacan.jpg",
-        "fileUrl": "http://localhost:4000/users/Lauko/files/Mary%20Sliacan.jpg",
-        "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Mary%20Sliacan.jpg",
-        "uploadedAt": "2026-02-10T15:51:42.021Z",
-        "type": "file",
-        "selected": true,
-        "image": {
-          "exifdata": {},
-          "iptcdata": {}
-        },
-        "orientation": 1
+        "selected": true
       }
     ]
   },
@@ -642,7 +623,7 @@
   },
   "@I310053455769@": {
     "summary": "",
-    "biography": "",
+    "biography": "School Teacher",
     "facts": [],
     "image": {
       "exifdata": {},
@@ -677,6 +658,24 @@
           "iptcdata": {}
         },
         "orientation": 1
+      },
+      {
+        "name": "cousins at Steph Wedding.jpg",
+        "filename": "cousins at Steph Wedding.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/cousins%20at%20Steph%20Wedding.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/cousins%20at%20Steph%20Wedding.jpg",
+        "uploadedAt": "2026-07-02T13:00:46.178Z",
+        "type": "file",
+        "selected": false
+      },
+      {
+        "name": "Laukos at Shelly Wedding.jpg",
+        "filename": "Laukos at Shelly Wedding.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Laukos%20at%20Shelly%20Wedding.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Laukos%20at%20Shelly%20Wedding.jpg",
+        "uploadedAt": "2026-07-02T13:01:12.665Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
@@ -1725,7 +1724,21 @@
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Shelly%20Lauko.jpg",
         "uploadedAt": "2026-05-27T13:28:46.368Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Laukos at Shelly Wedding.jpg",
+        "filename": "Laukos at Shelly Wedding.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Laukos%20at%20Shelly%20Wedding.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Laukos%20at%20Shelly%20Wedding.jpg",
+        "uploadedAt": "2026-07-02T13:01:50.139Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
