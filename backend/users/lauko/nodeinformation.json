@@ -312,20 +312,6 @@
     "facts": [],
     "attachments": [
       {
-        "name": "Robert Lauko pgs 1-50.pdf",
-        "filename": "Robert Lauko pgs 1-50.pdf",
-        "fileUrl": "http://localhost:4000/users/Lauko/files/Robert%20Lauko%20pgs%201-50.pdf",
-        "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Robert%20Lauko%20pgs%201-50.jpg",
-        "uploadedAt": "2026-01-31T20:03:39.295Z",
-        "type": "file",
-        "selected": false,
-        "image": {
-          "exifdata": {},
-          "iptcdata": {}
-        },
-        "orientation": 1
-      },
-      {
         "name": "Robert Lauko pgs 51-102.pdf",
         "filename": "Robert Lauko pgs 51-102.pdf",
         "fileUrl": "http://localhost:4000/users/Lauko/files/Robert%20Lauko%20pgs%2051-102.pdf",
@@ -335,7 +321,7 @@
         "selected": false
       },
       {
-        "name": "Robert Lauko Birth Certificate.jpg",
+        "name": "Robert Lauko birth certificate from the Liskova archives",
         "filename": "Robert Lauko Birth Certificate.jpg",
         "fileUrl": "http://localhost:4000/users/Lauko/files/Robert%20Lauko%20Birth%20Certificate.jpg",
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Robert%20Lauko%20Birth%20Certificate.jpg",
@@ -403,6 +389,15 @@
           "iptcdata": {}
         },
         "orientation": 1
+      },
+      {
+        "name": "Robert Lauko and ancestors writeup, first 50 pages",
+        "filename": "Robert Lauko pgs 1-50.pdf",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Robert%20Lauko%20pgs%201-50.pdf",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Robert%20Lauko%20pgs%201-50.png",
+        "uploadedAt": "2026-07-10T17:27:15.971Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
@@ -410,6 +405,11 @@
     "summary": "",
     "biography": "🇸🇰 Slovakia in the 19th Century\n\nPolitical Context\n- Slovakia was part of the Kingdom of Hungary within the Austro-Hungarian Empire.\n- Slovaks faced Magyarization policies—suppression of their language, schools, and cultural identity.\n- Limited political rights and representation fueled frustration.\n\nEconomic Conditions\n- Predominantly agrarian society: most Slovaks were peasants farming small plots.\n- Land shortages and inheritance customs left younger generations with little or no land.\n- Frequent crop failures and famines (especially in the 1840s and 1870s).\n- Cottage industries (weaving, mining) declined as industrialization bypassed rural Slovakia.\n\nSocial & Cultural Life\n- Strong Catholic and Lutheran traditions shaped village life.\n- Folk customs, music, and festivals were central to identity.\n- Education was limited, especially in Slovak language schools, which were often closed by Hungarian authorities.\n\n🌍 Why Slovaks Emigrated\n\nPush Factors (Leaving Slovakia)\n- Poverty and unemployment due to agricultural decline.\n- Political oppression under Hungarian rule.\n- Military conscription in the Austro-Hungarian army.\n- Population pressure: too many people for too little land.\n\nPull Factors (Coming to Binghamton)\n- Industrial jobs: Binghamton was booming with cigar manufacturing, shoe factories, and later other industries.\n- Higher wages compared to subsistence farming in Slovakia.\n- Chain migration: Slovaks followed relatives or neighbors who had already settled.\n- Religious freedom: Ability to worship without state interference.\n- Community support: Ethnic parishes and fraternal organizations provided social safety nets.\n\n🏭 Binghamton as a Destination\nBy the late 19th century, Binghamton was known as the “Valley of Opportunity” because of its factories and industries. Slovaks found work in cigar factories, shoe manufacturing plants, and construction. They established Catholic parishes, fraternal lodges, and ethnic clubs, which became centers of community life. Slovaks often lived in ethnic neighborhoods, preserving traditions while adapting to American society.",
     "facts": [],
+    "image": {
+      "exifdata": {},
+      "iptcdata": {}
+    },
+    "orientation": 1,
     "attachments": [
       {
         "name": "Liskova, Slovakia",
@@ -453,12 +453,7 @@
         },
         "orientation": 1
       }
-    ],
-    "image": {
-      "exifdata": {},
-      "iptcdata": {}
-    },
-    "orientation": 1
+    ]
   },
   "@I310053456215@": {
     "summary": "",
@@ -660,7 +655,7 @@
         "orientation": 1
       },
       {
-        "name": "cousins at Steph Wedding.jpg",
+        "name": "Cousins with Grandma and Grandpa at Stephanie and Matt's rehersal dinner in Destin Florida",
         "filename": "cousins at Steph Wedding.jpg",
         "fileUrl": "http://localhost:4000/users/lauko/files/cousins%20at%20Steph%20Wedding.jpg",
         "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/cousins%20at%20Steph%20Wedding.jpg",
@@ -940,13 +935,27 @@
     "facts": [],
     "attachments": [
       {
-        "name": "Anne Louise Wadley",
+        "name": "Anne Louise Wadley college yearbook picture, circa 1963",
         "filename": "Anne Louise Wadley (1).jpg",
         "fileUrl": "http://localhost:4000/users/Lauko/files/Anne%20Louise%20Wadley%20(1).jpg",
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Anne%20Louise%20Wadley%20(1).jpg",
         "uploadedAt": "2026-03-10T16:35:59.444Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "George O Wadley Jr holding Anne Wadley in the front yard of the Clyde, New York home, circa 1941",
+        "filename": "George O Wadley Jr.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/George%20O%20Wadley%20Jr.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/George%20O%20Wadley%20Jr.png",
+        "uploadedAt": "2026-07-10T15:10:39.001Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
@@ -994,7 +1003,30 @@
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Jolene%20Head.jpg",
         "uploadedAt": "2026-05-14T19:28:11.927Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Jolene Slide, June 22 2026",
+        "filename": "Jolene Slide.MOV",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Jolene%20Slide.MOV",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Jolene%20Slide.png",
+        "uploadedAt": "2026-07-13T20:41:29.931Z",
+        "type": "file",
+        "selected": false
+      },
+      {
+        "name": "Jolene helping empty the dishwasher, July 6 2026",
+        "filename": "Jolene Dishwasher.MP4",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Jolene%20Dishwasher.MP4",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Jolene%20Dishwasher.png",
+        "uploadedAt": "2026-07-13T20:44:32.254Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
@@ -1020,13 +1052,18 @@
     "facts": [],
     "attachments": [
       {
-        "name": "Ellen Head.jpg",
+        "name": "Ellen on the Sandestin Beach",
         "filename": "Ellen Head.jpg",
         "fileUrl": "http://localhost:4000/users/Lauko/files/Ellen%20Head.jpg",
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Ellen%20Head.jpg",
         "uploadedAt": "2026-05-15T13:34:05.915Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   },

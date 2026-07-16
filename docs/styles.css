@@ -168,7 +168,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 }
 .contextDisplay,
   #attachmentsList {
-    flex: 1;
+    flex: 1; /* allows it to grow and fill space */
     min-height: 0;
     overflow-y: auto;
   list-style: none;
@@ -177,7 +177,8 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
 
   #attachmentsList li {
-    flex: 2;
+    display: flex;
+/*    flex: 2;  allows it to grow and fill space */
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
@@ -298,15 +299,31 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   align-items: center;
   gap: 10px; /* space between title and search box */
 }
+#infoCenterTitle {
+  flex: 1; /* takes up remaining space */
+}
 .panelSection {
   border-bottom: 1px solid #ccc;
   padding-bottom: 6px;
   margin-bottom: 6px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 .panelSectionTitle {
+  flex: 0 0 auto; /* prevents it from stretching */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding-top: 5px;
-  font-size: 16px;
-  font-weight: bold;
+  padding-bottom: 5px;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  background: #f2f2f2;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
   white-space: nowrap; /* prevents wrapping */
 }
 
@@ -337,12 +354,12 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .configureSection {
   border-bottom: 1px solid #ccc;
   padding-bottom: 6px;
-  margin-bottom: 6px;
+}
+
+.configureContainer {
+  margin-top: 6px; 
 }
 /*
-.configureContainer {
-  flex: 1; 
-}
 .configureGroup {
   display: flex;
   flex-direction: row; 
@@ -464,14 +481,14 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .configRow {
     display: grid;
     grid-template-columns: 110px 1fr;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     margin-bottom: 6px;
 }
 
 .configRow label {
     width: 100px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -530,3 +547,42 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     max-width: 280px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
+.biobuttons {
+    display: flex;
+    gap: 2px;
+}
+.biobutton {
+
+    min-width: 50px;
+    height: 20px;
+
+    padding: 0 2px;
+
+    border: 1px solid #d6d6d6;
+    border-radius: 4px;
+
+    background: white;
+
+    font-size: 13px;
+    font-weight: 300;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    transition: all .15s ease;
+}
+
+.biobutton:hover {
+    background: #eef6ff;
+    border-color: #5d9cec;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.biobutton:active {
+    transform: translateY(1px);
+}
+

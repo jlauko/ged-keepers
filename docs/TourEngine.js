@@ -365,6 +365,8 @@ export class TourEngine {
     static end() {
         this.hideBubble();
         this.clearSpotlight();
+        document.getElementById("makeRoot").style.display = "none";
+        document.getElementById("addAttachment").style.display = "none";
 
         this.currentStep = 0;
     }

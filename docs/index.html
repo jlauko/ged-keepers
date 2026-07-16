@@ -13,14 +13,12 @@
     <link rel="stylesheet"
       href="https://unpkg.com/intro.js/minified/introjs.min.css">
 
-    <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+    <script src="https://unpkg.com/intro.js/minified/intro.min.js"> </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"> </script>
     <script src="config.js"></script>
-    <!-- Include exif-js -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="evidence.css">
 
@@ -201,7 +199,7 @@
         <!-- Search Section -->
         <div id="searchSection" class="panelSection">
             <div class="panelHeader">
-                <div class="panelSectionTitle">Search the Tree</div>
+                <div class="panelSectionTitle"><span><i class="fa-solid fa-magnifying-glass"></i> Search the Tree </span></div>
                 <div id="search-container" class="searchContainer">
                     <div class="inputGroup">
                         <input id="searchBox" type="text" placeholder="Search person...">
@@ -215,8 +213,10 @@
         <!--- Root/Max Generations -->
         <div id="configureSection" class="panelSection">
             <div class="configureHeader">        
-                <div class="panelSectionTitle" style="padding-bottom:10px" >Configure the Tree
-                    <button id="homeRoot" style="float: right">Home</button> 
+                <div class="panelSectionTitle"> <span><i class="fa-solid fa-tree"></i> Configure the Tree </span>
+                    <button id="homeRoot" class="biobutton" style="float: right">
+                        <i class="fa-solid fa-house"></i> Home
+                    </button> 
                 </div>
                 <div id="configure-container" class="configureContainer">
                     <div class="configureGroup">
@@ -226,7 +226,7 @@
                         </div>
                         <div class="configRow">
                             <label for="maxGenBox">Generations: </label>
-                            <input id="maxGenBox" type="number" min="1" max="20" placeholder="Max generations...">
+                            <input id="maxGenBox" type="number" min="1" max="30" placeholder="Max generations...">
                         </div>
                         <div id="configsuggestions"></div>
                     </div>
@@ -236,17 +236,41 @@
 
         <!-- Context Display Section -->
         <div id="infoSection" class="panelSection">
-            <div class="panelSectionTitle" id="infoCenterTitle">Information Center
-                <button id="makeRoot" style="float: right">Make Root</button> 
+
+            <div class="panelHeader">
+                <div class="panelSectionTitle" id="infoCenterTitle">
+                    <span>
+                        <i class="fa-solid fa-person"></i> Information Center 
+                    </span>
+
+                    <div class="biobuttons">
+                        <button id="editBio" class="biobutton" style="display: none">
+                            <i class="fa-solid fa-pen"></i> Edit Bio</button> 
+                        <button id="makeRoot" class="biobutton" style="display: none">
+                            <i class="fa-solid fa-tree"></i>
+                            <span> Make Root</span>
+                        </button> 
+                    </div>
+                </div>
             </div>
+
             <div id="contextDisplay" class="contextDisplay">
                 <p style="color: #999; font-size: 12px;">Hover over a person or cluster to view information here</p>
             </div>
+
         </div>
 
         <!-- Attachments Section -->
         <div id="attachmentsSection" class="panelSection" >
-            <div class="panelSectionTitle">Attachments</div>
+            <div class="panelSectionTitle">
+                <span>
+                    <i class="fa-solid fa-camera-retro"></i> <i class="fa-solid fa-film"></i> Attachments
+                </span>
+                <button id="addAttachment" class="biobutton" style="display: none">
+                    <i class="fa-solid fa-paperclip"></i>
+                    Add Attachment
+                </button> 
+            </div>
             <ul id="attachmentsList" style="list-style:none; padding:0; margin:0;"></ul>
         </div>
 
@@ -633,9 +657,15 @@ async function loadNodeInformation(userData) {
 }
 async function cacheImage(att) {
 
-    console.log("cacheImage: fetching thumbnail for:", att);
+    // console.log("cacheImage: fetching thumbnail for:", att);
 
-    const url = await getThumbnailUrl("lauko", att.filename);
+    const turl = att.thumbUrl;
+
+    const filename = decodeURIComponent(
+        new URL(turl).pathname.split('/').pop()
+    );
+
+    const url = await getThumbnailUrl("lauko", filename);
 
     const img = new Image();
 
@@ -764,6 +794,8 @@ async function BioAddAttachment() {
     if (currentEditingNodeId != null) {
         console.log("Adding attachment to node:", currentEditingNodeId);
         SelectAttachment();
+    } else {
+        showError("No node selected!  Select a node (by clicking on it) before adding attachment");
     }
 
 }  
@@ -773,16 +805,16 @@ function displayNodeInfo(nodeId) {
     const node = nodes.get(nodeId);
     const bioData = nodeInformation[nodeId];
     
-    let html = `<strong>${node.Name}</strong><br><br>`;
+    let html = `<normal>${node.Name}</normal><br><br>`;
     
     if (bioData && bioData.summary) {
         html += `<em>${bioData.summary}</em><br><br>`;
     }
     
-    html += `<strong>Birthdate:</strong> ${node.birthdatestring || '-'}<br>`;
-    html += `<strong>Birthplace:</strong> ${node.birthPlace || '-'}<br><br>`;
-    html += `<strong>Deathdate:</strong> ${node.deathdatestring || '-'}<br>`;
-    html += `<strong>Deathplace:</strong> ${node.deathPlace || '-'}<br>`;
+    html += `<normal>Birthdate:</normal> ${node.birthdatestring || '-'}<br>`;
+    html += `<normal>Birthplace:</normal> ${node.birthPlace || '-'}<br><br>`;
+    html += `<normal>Deathdate:</normal> ${node.deathdatestring || '-'}<br>`;
+    html += `<normal>Deathplace:</normal> ${node.deathPlace || '-'}<br>`;
     
     if (bioData && bioData.biography) {
         html += `<br><strong>Biography:</strong><br><p style="font-size:15px; line-height:1.5;">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
@@ -817,7 +849,9 @@ function displayPinIndicator(showPin) {
             PinImg.style.width = '20px';
             panelTitle.appendChild(PinImg);
             // show the make root button if pinning is enabled
-            document.getElementById("makeRoot").style.display = "block";
+            document.getElementById("editBio").style.display = "inline-flex";            
+            document.getElementById("makeRoot").style.display = "inline-flex";
+            document.getElementById("addAttachment").style.display = "block";
         }
     } else {
         // If we want to hide/remove the pin
@@ -825,7 +859,9 @@ function displayPinIndicator(showPin) {
             existingPin.remove();
         }
         // show the make root button if pinning is enabled
-        // document.getElementById("makeRoot").style.display = "none";
+        document.getElementById("makeRoot").style.display = "none";
+        document.getElementById("addAttachment").style.display = "none";
+        document.getElementById("editBio").style.display = "none";
     }
 }
 
@@ -837,7 +873,7 @@ function displayClusterInfo(cluster, clusterID) {
     const mindate = cluster.GetClusterMinDate(clusterID);
     const maxdate = cluster.GetClusterMaxDate(clusterID);
 
-    let html = `<strong>${clusterName} from ${mindate} to ${maxdate}</strong><br><br>`;
+    let html = `<normal>${clusterName} from ${mindate} to ${maxdate}</normal><br>`;
     
     if (clusterData && clusterData.summary) {
         html += `<em>${clusterData.summary}</em><br><br>`;
@@ -954,6 +990,13 @@ function startGuidedTour(rootNodeId) {
             element: "#makeRoot",
             title: "<strong>Make the selected individual the root</strong>",
             text: `When you select a node (click or tap), you can make it the new root by clicking the 'Make Root' button!<br><br>`,
+            position: "outsideleft"
+        },
+        {
+            type: "dom",
+            element: "#addAttachment",
+            title: "<strong>Add Attachment</strong>",
+            text: `When you select a node (click or tap), you can add attachments to any individual by clicking the 'Add Attachment' button!<br><br>`,
             position: "outsideleft"
         }
 
@@ -1226,7 +1269,7 @@ function updateTree() {
         });
     }
     function addDescendants(pid, depth, nodeupdates) {
-        console.log(`addDescendants called for ${dataJSON.individuals[pid].name}: at depth: ${depth}`);
+//        console.log(`addDescendants called for ${dataJSON.individuals[pid].name}: at depth: ${depth}`);
 //        if (!pid || visited.has(pid) ) return;
 
         //const ind = dataJSON.individuals[pid];
@@ -1253,9 +1296,9 @@ function updateTree() {
         });
 
         const spouses = spouses_of[pid] || [];
-        console.log(`Found spouses for ${dataJSON.individuals[pid].name}:`, spouses);
+//        console.log(`Found spouses for ${dataJSON.individuals[pid].name}:`, spouses);
         spouses.forEach(spouseId => {
-            console.log(`Adding Node for spouse ID: ${spouseId} for ${dataJSON.individuals[pid].name}`);
+//            console.log(`Adding Node for spouse ID: ${spouseId} for ${dataJSON.individuals[pid].name}`);
             addNode(dataJSON.individuals[spouseId],spouseId,depth, nodeupdates);
             if (!edges.get(`${pid}-${spouseId}`) && !edges.get(`${spouseId}-${pid}`)){
                 // only add edge if it doesn't already exist in either direction, this prevents duplicates when multiple spouses share the same partner
@@ -1484,14 +1527,31 @@ async function createTree(userData) {
     //postMessageToInfoCenter("Death Clusters Loaded...");
 
     // loadEvidencefromBackend(userData);
-
+    try{
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        console.log("PDF.js worker loaded successfully.");
+    }
+    catch(err){
+        console.log("Error loading PDF.js worker:", err);
+    }
 // ----------------------------------------------------------------------------------
 // --------------------------------- LISTENERS --------------------------------------
 // ----------------------------------------------------------------------------------
     console.log("Installing Listeners...");
     //postMessageToInfoCenter("Installing Listeners...");
 
-   
+    // fires once the DOM is fully loaded, this is where we can initialize any libraries that require the DOM to be ready, such as PDF.js for rendering PDFs
+    document.addEventListener("DOMContentLoaded", function () {
+        // Set the workerSrc property to the location of the PDF.js worker script, 
+        // this is necessary for PDF.js to function properly, 
+        // as it offloads heavy processing to a separate thread
+
+
+        // other initialization...
+
+    });  
+
     // ------------------------------------ People Search Bar-------------------------
     searchBox.addEventListener("input", () => {
         const query = searchBox.value.trim().toLowerCase();
@@ -1522,6 +1582,7 @@ async function createTree(userData) {
                     Pinned_NodeId = match.id;
                     MakeRoot(match.id, match.name);
                     console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    HideAttachments();
                     displayNodeInfo(match.id);
                     displayPinIndicator(true);
                 });
@@ -1573,6 +1634,7 @@ async function createTree(userData) {
                     MakeRoot(loc.personId, person.name);
                     Pinned_NodeId = loc.personId;
                     console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    HideAttachments();
                     displayNodeInfo(loc.personId);
                     displayPinIndicator(true);
                 });
@@ -1618,6 +1680,7 @@ async function createTree(userData) {
                     MakeRoot(rootNodeId, match.name);
                     Pinned_NodeId = rootNodeId;
                     console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                    HideAttachments();
                     displayNodeInfo(rootNodeId);
                     displayPinIndicator(true);
     //                updateTree();      
@@ -1664,10 +1727,11 @@ async function createTree(userData) {
     document.getElementById("helpButton").addEventListener("click", (e) =>
     {
         console.log("Help button clicked, starting guided tour with rootNodeId:", rootNodeId);
+        document.getElementById("makeRoot").style.display = "inline-flex";
+        document.getElementById("addAttachment").style.display = "inline-flex";
         startGuidedTour(rootNodeId);
 
     });
-
 
     // ---------------- Listener for login button ---------------------------------------------------
 //    document.getElementById("loginButton").addEventListener("click", loginUser);
@@ -1677,6 +1741,7 @@ async function createTree(userData) {
     document.getElementById("bioCancelBtn").addEventListener("click", closeBioEditor);
     document.getElementById("bioAttachmentBtn").addEventListener("click", BioAddAttachment);
     document.getElementById("bioMakeRootBtn").addEventListener("click", () => MakeRoot(currentEditingNodeId,nodes.get(currentEditingNodeId).Name));
+    document.getElementById("addAttachment").addEventListener("click", () => addAttachmentToNode(currentEditingNodeId, {}));
 
     // Close modal when clicking outside the content
     document.getElementById("bioModal").addEventListener("click", (e) => {
@@ -1684,7 +1749,15 @@ async function createTree(userData) {
             closeBioEditor();
         }
     });
-
+    function addAttachmentToNode() {
+        if (Pinned_NodeId != null) {
+            currentEditingNodeId = Pinned_NodeId;
+            BioAddAttachment();
+        } else {
+            showError("No person selected. Please select a person by clicking on their node in the tree.");
+            return;
+        }
+    }
     function MakeRoot(nodeId, name) {
         if (nodeId == null) {
             showError("No person selected, select a person by clicking or tapping on them.  Then click the \"Make Root\" button");
@@ -1922,10 +1995,11 @@ async function createTree(userData) {
                 const nodeId = params.nodes[0];
                 Pinned_NodeId = nodeId;
                 console.log("Pinned_NodeId set to:", Pinned_NodeId);
+                HideAttachments();
                 displayNodeInfo(nodeId);
                 displayPinIndicator(true);
                 if (isAdmin()) {
-                    showNodeOptionsMenu(nodeId, params.pointer.DOM);
+            //        showNodeOptionsMenu(nodeId, params.pointer.DOM);
                 }
  //               displayMigrationMap(nodeId);
             }
@@ -1968,7 +2042,7 @@ async function createTree(userData) {
                     displayPinIndicator(false);
                     HideAttachments();
                     const contextDisplay = document.getElementById('contextDisplay');
-                    contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+                    contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... Click on a node or cluster to pin the information, Click on open space to release</p>';
                     hideMap();
                     HideAttachments();
                     hideNodeOptionsMenu();
@@ -2062,7 +2136,7 @@ async function createTree(userData) {
                 // and nothing is pinned, so clear the hover state and reset the context display
                 Hover_NodeActive = null;
                 const contextDisplay = document.getElementById("contextDisplay");
-                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... Click on a node or cluster to pin the information, Click on open space to release</p>';
                 hideMap();
                 HideAttachments();
             }
@@ -2080,7 +2154,7 @@ async function createTree(userData) {
         // Reset context display to default message only if no node or cluster is selected/pinned
         if (Pinned_NodeId == null) {
             const contextDisplay = document.getElementById("contextDisplay");
-            contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+            contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... Click on a node or cluster to pin the information, Click on open space to release</p>';
             hideMap();
             HideAttachments();
         }
@@ -2198,7 +2272,7 @@ async function createTree(userData) {
                 // No cluster is active, no node is active (Hover), nothing pinned - clear context display
                 const contextDisplay = document.getElementById('contextDisplay');
                 HideAttachments();
-                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... left click on a node or cluster to pin the information, left click on open space to release</p>';
+                contextDisplay.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view their information here ... Click on a node or cluster to pin the information, Click on open space to release</p>';
             }
         } // end of cluster drawing
 
@@ -2944,7 +3018,7 @@ async function SelectAttachment() {
         // Prompt user for a file to attach
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".pdf,.png,.jpg,.jpeg,.gif";
+        input.accept = ".pdf,.png,.jpg,.jpeg,.gif,.mov,.mp4,.avi,.mkv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"; // Acceptable file types
         input.multiple = true;
 
         input.onchange = async function (event) { 
@@ -2990,6 +3064,7 @@ async function SelectAttachment() {
                     })
                     .catch(err => {
                         showError("Caught error uploading attachment:", err);
+                        console.log("Select Attachment: Error uploading attachment:", err);
                     });   
             }
         };
@@ -3028,7 +3103,7 @@ function AddNodeAttachment(nodeId,attachmentInfo) {
 }   
 async function getThumbnailUrl(username, filename) {
 
-    console.log(`Fetching thumbnail for ${API_BASE_URL}/thumbnail/${username}/${filename} from backend...`);
+    // console.log(`Fetching thumbnail for ${API_BASE_URL}/thumbnail/${username}/${filename} from backend...`);
 
     const response = await fetch(
         `${API_BASE_URL}/thumbnail/${username}/${filename}`
@@ -3043,7 +3118,15 @@ async function getThumbnailUrl(username, filename) {
 }
 async function SendAttachmentToBackend(file) {
     const formData = new FormData();
-    formData.append("attachment", file);
+    formData.append("artifact", file);
+    const thumbnail = await createThumbnail(file); // create thumbnail for display in the attachment list
+    try {
+        console.log("Thumbnail created for file:", file.name, "thumbnail:", thumbnail.name);
+    } catch (error) {
+        console.error("Error creating thumbnail for file:", file.name, "Error:", error);
+    }
+    formData.append("thumbnail", thumbnail);
+    console.log("Sending attachment and thumbnail to backend for user:", userName, "file:", file.name, "thumbnail:", thumbnail.name);
 
     try {
         const response = await fetch(`${API_BASE_URL}/uploadAttachment/${userName}`, {
@@ -3067,13 +3150,215 @@ async function SendAttachmentToBackend(file) {
         return result; // return attachment metadata from backend
     } catch (error) {
         showError("Error uploading attachment:", error);
+        console.log("Error uploading attachment:", error);
         throw error;
     }
 }
+async function createThumbnail(file) {
 
+    if (file.type.startsWith("image/")) {
+        console.log("Creating thumbnail for image file:", file.name);
+        return await generateImageThumbnail(file);
+    }
+
+    if (file.type === "application/pdf") {
+        console.log("Creating thumbnail for PDF file:", file.name);
+        return await generatePdfThumbnail(file);
+        console.log("PDF thumbnail created for file:", file.name);
+    }
+
+    if (file.type.startsWith("video/")) {
+        console.log("Creating thumbnail for video file:", file.name);
+        return await generateVideoThumbnail(file);
+    }
+
+    console.log("Creating generic thumbnail for file:", file.name);
+    return await generateGenericThumbnail(file);
+}
+
+async function generateImageThumbnail(file) {
+    // Create a thumbnail for an image file
+    // Resize the image to a maximum of 200x200 pixels while maintaining aspect ratio
+    // Return a new File object representing the thumbnail
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                const maxSize = 200;
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    }
+                } else {
+                    if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img,0,0,width,height);
+
+                canvas.toBlob(blob => {
+                    resolve(
+                        new File(
+                            [blob],
+                            file.name.replace(/\.[^.]+$/, ".png"),
+                            {
+                                type:"image/png"
+                            }
+                        )
+                    );
+                },"image/png");
+
+            };
+            img.src = e.target.result;
+
+        };
+        reader.readAsDataURL(file);
+
+    });
+
+}
+async function generatePdfThumbnail(file) {
+    // Create a thumbnail for a PDF file
+    // Render the first page of the PDF to a canvas and resize to a maximum of
+    // 200x200 pixels while maintaining aspect ratio
+    // Return a new File object representing the thumbnail
+
+    const buffer = await file.arrayBuffer();
+
+    console.log("inside generatePdfThumbnail for PDF file:", file.name);
+
+    const pdf = await pdfjsLib.getDocument({
+        data: buffer
+    }).promise;
+    
+    console.log("Number of pages:", pdf.numPages);
+
+    const page = await pdf.getPage(1);
+
+    console.log("inside generatePdfThumbnail step 2");
+    
+    // Desired thumbnail size
+    const maxSize = 200;
+
+    const viewport = page.getViewport({ scale: 1 });
+
+    const scale = Math.min(
+        maxSize / viewport.width,
+        maxSize / viewport.height
+    );
+
+    const scaledViewport = page.getViewport({ scale });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+
+
+    await page.render({
+        canvasContext: ctx,
+        viewport: scaledViewport
+    }).promise;
+
+    const blob = await new Promise(resolve =>
+        canvas.toBlob(resolve, "image/png")
+    );
+
+    console.log("generatePdfThumbnail: Generated thumbnail for PDF file:", file.name);
+
+    return new File(
+        [blob],
+        file.name.replace(/\.[^.]+$/, ".png"),
+        { type: "image/png" }
+    );
+}
+async function generateVideoThumbnail(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const video = document.createElement("video");
+
+        video.preload = "metadata";
+        video.src = URL.createObjectURL(file);
+        video.muted = true;
+        video.playsInline = true;
+
+        video.onloadedmetadata = () => {
+
+            // Seek to a frame a little into the video.
+            // If the video is shorter than 1 second, use 0.
+            video.currentTime = Math.min(1, video.duration / 2);
+
+        };
+
+        video.onseeked = () => {
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const maxSize = 200;
+
+            let width = video.videoWidth;
+            let height = video.videoHeight;
+
+            if (width > height) {
+                if (width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                }
+            } else {
+                if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(video, 0, 0, width, height);
+
+            canvas.toBlob(blob => {
+
+                URL.revokeObjectURL(video.src);
+
+                resolve(new File(
+                    [blob],
+                    file.name.replace(/\.[^.]+$/, ".png"),
+                    { type: "image/png" }
+                ));
+
+            }, "image/png");
+        };
+
+        video.onerror = reject;
+    });
+
+}
+async function generateGenericThumbnail(file) {
+    // Create a generic thumbnail for other file types
+    // Return a new File object representing the thumbnail
+}
 function HideAttachments() {
     const list = document.getElementById("attachmentsList");
-    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attached files here ... left click on a node or cluster to pin the information, left click on open space to release</p>'; // clear old entries
+    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attachments here ... Click on a node or cluster to pin the information, Click on open space to release</p>'; // clear old entries
 }   
 function RenderNodeAttachments(nodeId) {
 
@@ -3092,7 +3377,7 @@ function RenderNodeAttachments(nodeId) {
 // --- Create a row for each attachment (Name, Open, Download, Delete) --------
 // ----------------------------------------------------------------------------
     const list = document.getElementById("attachmentsList");
-    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attached files here ... left click on a node or cluster to pin the information, left click on open space to release</p>'; // clear old entries
+    list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attachments here ... Click on a node or cluster to pin the information, Click on open space to release</p>'; // clear old entries
     let html = '';
     nodeInformation[nodeId].attachments.forEach(att => {
         const displayName = att.name || att.filename;
@@ -3109,6 +3394,12 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
 
 //    console.log(" Building attachment row for:", att, ID);
     // Build edit and delete buttons only if user is admin
+    // extract the thumbnail filename from the thumbnail URL 
+    const turl = att.thumbUrl;
+    const tnfilename = decodeURIComponent(
+        new URL(turl).pathname.split('/').pop()
+    );
+
     const adminButtons = userRole === "admin" ? `
                 <button class="edit-btn" 
                     data-name="${att.name || att.filename}" 
@@ -3124,38 +3415,63 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
             ` : '';
     
     html = `
-    <div class="attachment-row" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px dashed rgba(0,0,0,0.05);">
-        <div style="flex:1; display:flex; align-items:center; gap:6px;">
-        <button class="star-btn ${att.selected == 1 ? 'active' : ''}" title="Select for display"
-            data-id="${att.uploadedAt}" >
-            <i class="${att.selected == 1 ? 'fa-solid fa-star' : 'fa-regular fa-star'}" style="${att.selected == 1 ? 'color:gold' : 'color: black'}"></i>
-        </button>
-        <div>
-            <img class="attachment-thumb"
-            src="${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(att.filename)}"
-            loading="lazy">
+    <div class="attachment-row" style="display:flex; align-items:center; justify-content:space-between; gap:2px; padding:6px 0; ">
 
-            <div class="attachment-info">
-                Attachment info goes here
+        <div style="flex:1; display:flex; align-items:center; min-width:0; gap:6px;">
+
+            <button class="star-btn ${att.selected == 1 ? 'active' : ''}" 
+                title="Select for display"
+                data-id="${att.uploadedAt}" >
+                <i class="${att.selected == 1 ? 'fa-solid fa-star' : 'fa-regular fa-star'}" 
+                style="${att.selected == 1 ? 'color:gold' : 'color: black'}"></i>
+            </button>
+
+            <img class="attachment-thumb"
+                src="${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(tnfilename)}"
+                loading="lazy"
+                style = "max-width: 200px; max-height:200px; ">
+
+            <div class="attachment-name" 
+                style="font-weight:600;                
+                font-size:12px; white-space:normal; overflow-wrap:break-word;
+                word-break:break-word;">
+                ${truncate(displayName,200)}
             </div>
-            <div class="attachment-name" style="font-weight:600; font-size:12px;">${truncate(displayName,30)}</div>
-            <div style="font-size:11px; color:#666;">${truncate(att.filename,30)}</div>
+
         </div>
+        
+
+    </div>
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        margin-top:4px;
+        border-bottom:1px dashed rgba(0,0,0,0.5);padding-bottom:2px; margin-bottom:4px;
+    ">
+
+        <div style="font-size:11px; margin-left:35px; color:#666;">
+            ${truncate(att.filename,30)}
         </div>
+
         <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
-        <button class="open-btn" 
-            data-url="${att.fileUrl}" 
-            data-tnurl="${API_BASE_URL}/users/${userName}/thumbnails/${att.filename}"    
-            // this needs to be converted to a non-local host URL that the frontend can access, currently it is a local file path on the backend server which won't work for the frontend, need to add an endpoint in the backend to serve the thumbnail images and update this to point to that endpoint with the correct parameters
-            data-type="${ext}" title="Open">
-            <i class="fa-solid fa-eye"></i>
-        </button>
-        <button class="download-btn" 
-            data-url="${att.fileUrl}" 
-            data-filename="${att.filename}" title="Download">
-            <i class="fa-solid fa-download"></i>
-        </button>
-        ${adminButtons}
+            <button class="open-btn" 
+                data-url="${att.fileUrl}" 
+                data-tnurl="${API_BASE_URL}/users/${userName}/thumbnails/${att.filename}"    
+                // this needs to be converted to a non-local host URL that the frontend can access, 
+                // currently it is a local file path on the backend server which won't work for the frontend, 
+                // need to add an endpoint in the backend to serve the thumbnail images 
+                // and update this to point to that endpoint with the correct parameters
+                data-type="${ext}" title="Open">
+                <i class="fa-solid fa-eye"></i>
+            </button>
+            <button class="download-btn" 
+                data-url="${att.fileUrl}" 
+                data-filename="${att.filename}" title="Download">
+                <i class="fa-solid fa-download"></i>
+            </button>
+            ${adminButtons}
         </div>
     </div>
     `;
@@ -3179,12 +3495,12 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
         });
 
         // hover preview (replace previous handlers to avoid duplicate bindings)
-        btn.onmouseenter = (e) => {
-            const url = btn.dataset.tnurl;
-            const type = 'jpg';
-            console.log("Calling attachment preview - Hover event: ", url, type);
-            showAttachmentPreview(url, type, btn);
-        };
+//        btn.onmouseenter = (e) => {
+//            const url = btn.dataset.tnurl;
+//            const type = 'jpg';
+//            console.log("Calling attachment preview - Hover event: ", url, type);
+//            showAttachmentPreview(url, type, btn);
+//        };
         btn.onmouseleave = (e) => {
             // small timeout to allow moving into the preview element without it disappearing immediately
             setTimeout(() => {
@@ -3371,6 +3687,9 @@ function OpenAttachmentInNewTab(url, type) {
         window.open(url,"_blank");
     } else if (type.includes("pdf")) {
         window.open(url, "_blank");
+    } else if (type.includes("mov") || type.includes("mp4") || type.includes("avi") || type.includes("wmv")) {
+        console.log("Opening video attachment in new tab:", url);
+        window.open(url,"_blank");
     }
 
 }
@@ -3523,7 +3842,7 @@ function drawNodeText(ctx) {
         y: network.canvas.frame.canvas.clientHeight
     });
 
-    console.log("Drawing nodetext, # of nodes:", nodes.length);
+    // console.log("Drawing nodetext, # of nodes:", nodes.length);
 
     nodes.forEach(node => {
 
@@ -3918,7 +4237,7 @@ function arrangeAncestors(nodeId,depth) {
     //console.log(`Finished arranging ancestors for ${name}`);
 }
 function offsetDescendants(nodeId, dy) {
-    console.log(`offsetDescendants for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with dy: ${dy} `);
+    // console.log(`offsetDescendants for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with dy: ${dy} `);
     const children = dataJSON.children_of[nodeId] || [];
     children.forEach(childId => {
         const ChildPos = plotPositionMap.get(childId);
@@ -3941,11 +4260,11 @@ function offsetDescendants(nodeId, dy) {
 
     function offsetSpouses(nodeId, dy) {
         const spouses = spouses_of[nodeId] || [];
-        console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with ${spouses.length} spouses `);
+        // console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} with ${spouses.length} spouses `);
         spouses.forEach(spouseId => {
             const SpousePos = plotPositionMap.get(spouseId);
-             console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} spouse ${truncate(nodes.get(spouseId)?.Name || spouseId,15)} `);
-             console.log('SpousePos: ', SpousePos, ' dy: ', dy  );
+            // console.log(`offsetSpouses for ${truncate(nodes.get(nodeId)?.Name || nodeId,15)} spouse ${truncate(nodes.get(spouseId)?.Name || spouseId,15)} `);
+            // console.log('SpousePos: ', SpousePos, ' dy: ', dy  );
             if (SpousePos) {
                 const update = {
                     id: spouseId,
@@ -4020,7 +4339,7 @@ function PlotDescendant(node, leaf)
 
     let ploty;
 
-    console.log(`PlotDescendant for ${node.Name} leaf: ${leaf} Nexty: ${Nexty}  `);
+    // console.log(`PlotDescendant for ${node.Name} leaf: ${leaf} Nexty: ${Nexty}  `);
 
     if (leaf) {
         ploty = Nexty;

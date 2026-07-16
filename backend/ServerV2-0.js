@@ -65,7 +65,7 @@ app.get("/download/:username/:filename", (req, res) => {
     });
 });
 // ---------------------------------------------
-// --------- Download thumbnail (.jpg) to client --------------
+// --------- Download thumbnail to client --------------
 // ---------------------------------------------
 app.get("/thumbnail/:username/:filename", (req, res) => {
     const { username, filename } = req.params;
@@ -253,13 +253,28 @@ function saveClusterInformation() {
 // ------ Upload Attachments -------------
 // ---------------------------------------
 
-// Multer storage config
+// Multer storage configuration
+// Use diskStorage to control the destination and filename
+// Store files in a user-specific directory
+// Store thumbnails in a separate subdirectory
+// Ensure directories exist before saving files
+// Use original filename for both artifact and thumbnail
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const userDir = path.join(__dirname, 'users', req.params.username || 'default', 'files');
-        fs.mkdirSync(userDir, { recursive: true });
-        cb(null, userDir);
+        const username = req.params.username || "default";
+
+        const folder =
+            file.fieldname === "thumbnail"
+                ? "thumbnails"
+                : "files";
+
+        const dir = path.join(__dirname, "users", username, folder);
+
+        fs.mkdirSync(dir, { recursive: true });
+
+        cb(null, dir);
     },
+
     filename: (req, file, cb) => {
         cb(null, file.originalname);
     }
@@ -267,103 +282,55 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// ------------------------------------------------------------------
 // Upload route
-app.post('/uploadAttachment/:username', upload.single('attachment'), async (req, res) => {
-    try {
-        const username = req.params.username;
-        const userDir = path.join(__dirname, 'users', username || 'default', 'files');
-        const filePath = req.file.path;
-        const fileName = req.file.originalname;
-        const mimeType = req.file.mimetype;
-        const fullFilePath = path.join(userDir, fileName);
-        let thumbFileName = fileName;
+// reads the username from the URL parameter and saves the uploaded files in the corresponding user directory
+// It returns the URLs for the uploaded artifact and thumbnail
+// It also handles errors and returns appropriate status codes and messages
+app.post(
+    '/uploadAttachment/:username',
+    upload.fields([
+        { name: 'artifact', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 }
+    ]),
+    async (req, res) => {
 
-        console.log("File uploaded:", filePath,fileName);
+        try {
+            const username = req.params.username;
+            const artifact = req.files.artifact?.[0];
+            const thumbnail = req.files.thumbnail?.[0];
 
-        // -------------------------------
-        // Create thumbnail directory
-        // -------------------------------
-        const thumbDir = path.join(__dirname, 'users', username || 'default', 'thumbnails');
-        fs.mkdirSync(thumbDir, { recursive: true });
+            if (!artifact) {
+                return res.status(400).json({
+                    error: "No artifact uploaded."
+                });
+            }
 
-        console.log("Thumbnail directory ensured:", thumbDir);
-
-        // -------Create Thumbnail ----------------
-        let thumbPath = null;
-        if (mimeType.startsWith('image/')) {
-            // create from an image file --------------
-            thumbPath = path.join(thumbDir, fileName);
-
-            const fileBuffer = await fsp.readFile(filePath);
-            const thumbBuffer = await sharp(fileBuffer)
-                .resize(200, 200, { fit: 'inside' })
-                .toBuffer();
-            await fsp.writeFile(thumbPath, thumbBuffer);
-            
-        } else if (mimeType === 'application/pdf') { 
-            // create from a pdf file ------------------
-            thumbFileName = await createPdfThumbnail(filePath, thumbDir, fileName); 
-            console.log("created pdf preview: ",thumbDir);
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+            res.json({
+                filename: artifact.originalname,
+                mimeType: artifact.mimetype,
+                fileUrl:
+                    `${baseUrl}/users/${username}/files/${encodeURIComponent(artifact.originalname)}`,
+                thumbUrl:
+                    thumbnail
+                        ? `${baseUrl}/users/${username}/thumbnails/${encodeURIComponent(thumbnail.originalname)}`
+                        : null
+            });
         }
-        
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-
-        // Build metadata response
-        const result = {
-        fileUrl: `${baseUrl}/users/${username}/files/${encodeURIComponent(fileName)}`,
-        thumbUrl: `${baseUrl}/users/${username}/thumbnails/${encodeURIComponent(thumbFileName)}`,
-        mimeType,
-        filename: req.file.originalname
-        };
-
-        res.json(result);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Upload failed' });
+        catch(err){
+            console.error(err);
+            res.status(500).json({
+                error:"Upload failed"
+            });
+        }
     }
-});
+);
 
 //temp because render does not support pdf-poppler     const pdf = require('pdf-poppler');
 
-async function createPdfThumbnail(filePath, thumbDir, fileName) {
-    const baseName = path.basename(fileName, path.extname(fileName));
-    const desiredName = baseName + '.jpg';
+// Need to move the creation of pdf thumbnails to the frontend.
 
-    const options = {
-        format: 'jpeg',
-        out_dir: thumbDir,
-        out_prefix: baseName,
-        page: 1
-    };
-
-    try {
-// temp because render does not support pdf-poppler        await pdf.convert(filePath, options);
-
-        // Find the generated file (could be -01.jpg, -001.jpg, etc.)
-        const files = await fsp.readdir(thumbDir);
-        const generated = files.find(f => f.startsWith(baseName) && f.endsWith('.jpg'));
-
-        if (!generated) {
-            throw new Error("No thumbnail generated");
-        }
-
-        const oldPath = path.join(thumbDir, generated);
-        const newPath = path.join(thumbDir, desiredName);
-
-        await fsp.rename(oldPath, newPath);
-
-        return desiredName; // return the clean thumbnail filename
-    } catch (err) {
-        console.error("Error creating PDF thumbnail:", err);
-        return null;
-    }
-}
-
-
-function normalizePdfThumbnailName(generatedName) {
-  // Replace "-<digits>.jpg" at the end with ".jpg"
-  return generatedName.replace(/-\d+\.jpg$/i, '.jpg');
-}
 
 app.use('/users', express.static(path.join(__dirname, 'users'), {
   setHeaders: (res, path) => {
