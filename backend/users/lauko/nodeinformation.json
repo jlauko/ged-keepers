@@ -1553,7 +1553,26 @@
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Rita%20Brodfuehrer.jpg",
         "uploadedAt": "2026-05-27T13:19:51.575Z",
         "type": "file",
-        "selected": true
+        "selected": false,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Rita B.png",
+        "filename": "Rita B.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Rita%20B.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Rita%20B.png",
+        "uploadedAt": "2026-07-17T16:56:41.433Z",
+        "type": "file",
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   },
@@ -1563,13 +1582,18 @@
     "facts": [],
     "attachments": [
       {
-        "name": "Micheal Wiese.jpg",
-        "filename": "Micheal Wiese.jpg",
-        "fileUrl": "http://localhost:4000/users/Lauko/files/Micheal%20Wiese.jpg",
-        "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Micheal%20Wiese.jpg",
-        "uploadedAt": "2026-05-27T13:20:08.630Z",
+        "name": "Micheal.png",
+        "filename": "Micheal.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Micheal.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Micheal.png",
+        "uploadedAt": "2026-07-17T16:22:43.482Z",
         "type": "file",
-        "selected": true
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   },
@@ -1585,7 +1609,26 @@
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Jason%20Weise.jpg",
         "uploadedAt": "2026-05-27T13:20:23.683Z",
         "type": "file",
-        "selected": true
+        "selected": false,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Jason.png",
+        "filename": "Jason.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Jason.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Jason.png",
+        "uploadedAt": "2026-07-17T16:34:03.334Z",
+        "type": "file",
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
       }
     ]
   },
@@ -1600,6 +1643,20 @@
         "fileUrl": "http://localhost:4000/users/Lauko/files/Kristin%20Weise.jpg",
         "thumbUrl": "http://localhost:4000/users/Lauko/thumbnails/Kristin%20Weise.jpg",
         "uploadedAt": "2026-05-27T13:20:45.595Z",
+        "type": "file",
+        "selected": true,
+        "image": {
+          "exifdata": {},
+          "iptcdata": {}
+        },
+        "orientation": 1
+      },
+      {
+        "name": "Kristin.png",
+        "filename": "Kristin.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Kristin.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Kristin.png",
+        "uploadedAt": "2026-07-17T16:33:09.285Z",
         "type": "file",
         "selected": true
       }
@@ -2413,6 +2470,155 @@
         "fileUrl": "http://localhost:4000/users/lauko/files/BillyLauko.png",
         "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/BillyLauko.png",
         "uploadedAt": "2026-06-25T20:39:27.429Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784014233@": {
+    "attachments": [
+      {
+        "name": "TIm F headshot.jpg",
+        "filename": "TIm F headshot.jpg",
+        "fileUrl": "http://localhost:4000/users/lauko/files/TIm%20F%20headshot.jpg",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/TIm%20F%20headshot.png",
+        "uploadedAt": "2026-07-17T14:47:51.333Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082166@": {
+    "attachments": [
+      {
+        "name": "C Scobey.png",
+        "filename": "C Scobey.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/C%20Scobey.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/C%20Scobey.png",
+        "uploadedAt": "2026-07-17T16:32:03.617Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082192@": {
+    "summary": "",
+    "biography": "",
+    "facts": [],
+    "attachments": [
+      {
+        "name": "Ally.png",
+        "filename": "Ally.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Ally.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Ally.png",
+        "uploadedAt": "2026-07-17T16:20:42.865Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082086@": {
+    "attachments": [
+      {
+        "name": "Ashley.png",
+        "filename": "Ashley.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Ashley.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Ashley.png",
+        "uploadedAt": "2026-07-17T16:21:47.931Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082102@": {
+    "attachments": [
+      {
+        "name": "WIlliam W.png",
+        "filename": "WIlliam W.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/WIlliam%20W.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/WIlliam%20W.png",
+        "uploadedAt": "2026-07-17T16:35:50.504Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082150@": {
+    "attachments": [
+      {
+        "name": "Kimberly W.png",
+        "filename": "Kimberly W.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Kimberly%20W.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Kimberly%20W.png",
+        "uploadedAt": "2026-07-17T16:36:03.031Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082178@": {
+    "attachments": [
+      {
+        "name": "Miles W.png",
+        "filename": "Miles W.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Miles%20W.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Miles%20W.png",
+        "uploadedAt": "2026-07-17T16:39:38.853Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784082186@": {
+    "attachments": [
+      {
+        "name": "Mason.png",
+        "filename": "Mason.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Mason.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Mason.png",
+        "uploadedAt": "2026-07-17T16:39:59.268Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784014044@": {
+    "attachments": [
+      {
+        "name": "otto.3GP",
+        "filename": "otto.3GP",
+        "fileUrl": "http://localhost:4000/users/lauko/files/otto.3GP",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/otto.png",
+        "uploadedAt": "2026-07-17T16:51:55.994Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312784013980@": {
+    "attachments": [
+      {
+        "name": "John Kutner.png",
+        "filename": "John Kutner.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/John%20Kutner.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/John%20Kutner.png",
+        "uploadedAt": "2026-07-17T16:56:58.414Z",
+        "type": "file",
+        "selected": true
+      }
+    ]
+  },
+  "@I312782100290@": {
+    "summary": "",
+    "biography": "",
+    "facts": [],
+    "attachments": [
+      {
+        "name": "Andrea B.png",
+        "filename": "Andrea B.png",
+        "fileUrl": "http://localhost:4000/users/lauko/files/Andrea%20B.png",
+        "thumbUrl": "http://localhost:4000/users/lauko/thumbnails/Andrea%20B.png",
+        "uploadedAt": "2026-07-17T17:00:01.831Z",
         "type": "file",
         "selected": true
       }
