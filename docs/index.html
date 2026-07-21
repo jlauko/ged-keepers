@@ -2059,6 +2059,14 @@ async function createTree(userData) {
             clearTimeout(clickTimer); // cancel single-click
             clickTimer = null;
         }
+        if (params.nodes.length === 1 ) {
+            const nodeId = params.nodes[0];
+            const node = nodes.get(nodeId);
+            MakeRoot(nodeId, node.Name);
+            HideAttachments();
+            displayNodeInfo(nodeId);
+            displayPinIndicator(true);
+        }
 
     });
 // ----------------------------------------- Drag End-----------------------

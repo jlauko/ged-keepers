@@ -48573,20 +48573,12 @@
                 "color": "gray"
             },
             {
-                "type": "ChildBirth",
-                "label": "Child: Gerald Jerry Lauko",
-                "startYear": 1955,
-                "endYear": 1955,
-                "level": 3,
-                "color": "lightyellow"
-            },
-            {
                 "type": "Marriage",
                 "label": "Married Helen Marie Bale",
                 "startYear": 1956,
                 "endYear": 1956,
                 "location": "Johnson City, New York, USA",
-                "level": 4,
+                "level": 3,
                 "color": "lightgreen"
             },
             {
@@ -48595,8 +48587,16 @@
                 "startYear": 1956,
                 "endYear": 1956,
                 "location": "115 New York Avenue , Johnson City",
-                "level": 5,
+                "level": 4,
                 "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Gerald Jerry Lauko",
+                "startYear": 1958,
+                "endYear": 1958,
+                "level": 5,
+                "color": "lightyellow"
             },
             {
                 "type": "ChildBirth",
@@ -48760,20 +48760,12 @@
                 "color": "gray"
             },
             {
-                "type": "ChildBirth",
-                "label": "Child: Ryan Lauko",
-                "startYear": 1973,
-                "endYear": 1973,
-                "level": 5,
-                "color": "lightyellow"
-            },
-            {
                 "type": "Marriage",
                 "label": "Married Sharon Ann Madigan",
                 "startYear": 1974,
                 "endYear": 1974,
                 "location": "Albany, New York, USA",
-                "level": 1,
+                "level": 5,
                 "color": "lightgreen"
             },
             {
@@ -48782,14 +48774,22 @@
                 "startYear": 1974,
                 "endYear": 1974,
                 "location": "Guilderland",
-                "level": 2,
+                "level": 1,
                 "color": "gray"
             },
             {
                 "type": "ChildBirth",
+                "label": "Child: Ryan Lauko",
+                "startYear": 1981,
+                "endYear": 1981,
+                "level": 2,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
                 "label": "Child: Colleen Lauko",
-                "startYear": 1975,
-                "endYear": 1975,
+                "startYear": 1984,
+                "endYear": 1984,
                 "level": 3,
                 "color": "lightyellow"
             }
@@ -48959,20 +48959,12 @@
                 "color": "gray"
             },
             {
-                "type": "ChildBirth",
-                "label": "Child: Ryan Lauko",
-                "startYear": 1973,
-                "endYear": 1973,
-                "level": 1,
-                "color": "lightyellow"
-            },
-            {
                 "type": "Marriage",
                 "label": "Married Stephen Lauko",
                 "startYear": 1974,
                 "endYear": 1974,
                 "location": "Albany, New York, USA",
-                "level": 2,
+                "level": 1,
                 "color": "lightgreen"
             },
             {
@@ -48981,14 +48973,22 @@
                 "startYear": 1974,
                 "endYear": 1974,
                 "location": "Guilderland",
-                "level": 3,
+                "level": 2,
                 "color": "gray"
             },
             {
                 "type": "ChildBirth",
+                "label": "Child: Ryan Lauko",
+                "startYear": 1981,
+                "endYear": 1981,
+                "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
                 "label": "Child: Colleen Lauko",
-                "startYear": 1975,
-                "endYear": 1975,
+                "startYear": 1984,
+                "endYear": 1984,
                 "level": 4,
                 "color": "lightyellow"
             },
@@ -49028,8 +49028,8 @@
             {
                 "type": "Birth",
                 "label": "Born: Albany, Albany, New York, USA",
-                "startYear": 1975,
-                "endYear": 1975,
+                "startYear": 1984,
+                "endYear": 1984,
                 "location": "Albany, Albany, New York, USA",
                 "level": 2,
                 "color": "lightblue"
@@ -49051,8 +49051,8 @@
             {
                 "type": "Birth",
                 "label": "Born: Albany, Albany, New York, USA",
-                "startYear": 1973,
-                "endYear": 1973,
+                "startYear": 1981,
+                "endYear": 1981,
                 "location": "Albany, Albany, New York, USA",
                 "level": 2,
                 "color": "lightblue"
@@ -49063,6 +49063,14 @@
                 "startYear": 2020,
                 "endYear": 2020,
                 "level": 3,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Nolan Lauko",
+                "startYear": 2022,
+                "endYear": 2022,
+                "level": 4,
                 "color": "lightyellow"
             }
         ]
@@ -49081,20 +49089,12 @@
                 "color": "lightblue"
             },
             {
-                "type": "ChildBirth",
-                "label": "Child: Gerald Jerry Lauko",
-                "startYear": 1955,
-                "endYear": 1955,
-                "level": 3,
-                "color": "lightyellow"
-            },
-            {
                 "type": "Marriage",
                 "label": "Married Robert A. Lauko",
                 "startYear": 1956,
                 "endYear": 1956,
                 "location": "Johnson City, New York, USA",
-                "level": 4,
+                "level": 3,
                 "color": "lightgreen"
             },
             {
@@ -49103,8 +49103,16 @@
                 "startYear": 1956,
                 "endYear": 1956,
                 "location": "115 New York Avenue , Johnson City",
-                "level": 5,
+                "level": 4,
                 "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Gerald Jerry Lauko",
+                "startYear": 1958,
+                "endYear": 1958,
+                "level": 5,
+                "color": "lightyellow"
             },
             {
                 "type": "ChildBirth",
@@ -49139,11 +49147,37 @@
             {
                 "type": "Birth",
                 "label": "Born: Binghamton, Broome, New York, USA",
-                "startYear": 1955,
-                "endYear": 1955,
+                "startYear": 1958,
+                "endYear": 1958,
                 "location": "Binghamton, Broome, New York, USA",
                 "level": 2,
                 "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Binghamton, New York, USA",
+                "startYear": 1977,
+                "endYear": 1977,
+                "location": "Binghamton, New York, USA",
+                "level": 3,
+                "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Lauren Lauko",
+                "startYear": 1983,
+                "endYear": 1983,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "Residence",
+                "label": "Binghamton, NY",
+                "startYear": 1994,
+                "endYear": 1994,
+                "location": "Binghamton, NY",
+                "level": 5,
+                "color": "gray"
             },
             {
                 "type": "Death",
@@ -49151,7 +49185,7 @@
                 "startYear": 2020,
                 "endYear": 2020,
                 "location": ", Binghamton, Broome, New York, USA",
-                "level": 3,
+                "level": 1,
                 "color": "lightcoral"
             }
         ]
@@ -49188,12 +49222,20 @@
                 "color": "gray"
             },
             {
+                "type": "ChildBirth",
+                "label": "Child: William Lauko",
+                "startYear": 1990,
+                "endYear": 1990,
+                "level": 5,
+                "color": "lightyellow"
+            },
+            {
                 "type": "Residence",
                 "label": "Apalachin, NY",
                 "startYear": 1993,
                 "endYear": 1993,
                 "location": "Apalachin, NY",
-                "level": 5,
+                "level": 1,
                 "color": "gray"
             },
             {
@@ -49202,7 +49244,7 @@
                 "startYear": 1995,
                 "endYear": 1995,
                 "location": "Apalachin, New York, USA",
-                "level": 1,
+                "level": 2,
                 "color": "gray"
             }
         ]
@@ -284611,8 +284653,8 @@
             {
                 "type": "Birth",
                 "label": "Born: Unknown",
-                "startYear": 1975,
-                "endYear": 1975,
+                "startYear": 1984,
+                "endYear": 1984,
                 "location": null,
                 "level": 2,
                 "color": "lightblue"
@@ -285234,31 +285276,58 @@
     },
     "@I312784218771@": {
         "personId": "@I312784218771@",
-        "name": "Wife ",
+        "name": "Stefanie Bachman",
         "events": [
             {
                 "type": "Birth",
                 "label": "Born: Unknown",
-                "startYear": 1973,
-                "endYear": 1973,
+                "startYear": 1981,
+                "endYear": 1981,
                 "location": null,
                 "level": 2,
                 "color": "lightblue"
+            },
+            {
+                "type": "Residence",
+                "label": "Pittsburgh, Pennsylvania, USA",
+                "startYear": 2011,
+                "endYear": 2011,
+                "location": "Pittsburgh, Pennsylvania, USA",
+                "level": 3,
+                "color": "gray"
             },
             {
                 "type": "ChildBirth",
                 "label": "Child: Ayden Madigan Lauko",
                 "startYear": 2020,
                 "endYear": 2020,
-                "level": 3,
+                "level": 4,
+                "color": "lightyellow"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: Nolan Lauko",
+                "startYear": 2022,
+                "endYear": 2022,
+                "level": 5,
                 "color": "lightyellow"
             }
         ]
     },
     "@I312784218777@": {
         "personId": "@I312784218777@",
-        "name": "Son 1 Lauko",
-        "events": []
+        "name": "Nolan Lauko",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Unknown",
+                "startYear": 2022,
+                "endYear": 2022,
+                "location": null,
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
     },
     "@I312784218792@": {
         "personId": "@I312784218792@",
@@ -285337,13 +285406,31 @@
                 "location": "Ithaca",
                 "level": 4,
                 "color": "gray"
+            },
+            {
+                "type": "ChildBirth",
+                "label": "Child: William Lauko",
+                "startYear": 1990,
+                "endYear": 1990,
+                "level": 5,
+                "color": "lightyellow"
             }
         ]
     },
     "@I312784224483@": {
         "personId": "@I312784224483@",
         "name": "William Lauko",
-        "events": []
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Apalachin, Tioga, New York, USA",
+                "startYear": 1990,
+                "endYear": 1990,
+                "location": "Apalachin, Tioga, New York, USA",
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
     },
     "@I312789659720@": {
         "personId": "@I312789659720@",
@@ -285408,7 +285495,16 @@
     "@I312789985128@": {
         "personId": "@I312789985128@",
         "name": "Donna ",
-        "events": []
+        "events": [
+            {
+                "type": "ChildBirth",
+                "label": "Child: Lauren Lauko",
+                "startYear": 1983,
+                "endYear": 1983,
+                "level": 2,
+                "color": "lightyellow"
+            }
+        ]
     },
     "@I312790053667@": {
         "personId": "@I312790053667@",
@@ -285953,5 +286049,25 @@
                 "color": "gray"
             }
         ]
+    },
+    "@I312790308355@": {
+        "personId": "@I312790308355@",
+        "name": "Lauren Lauko",
+        "events": [
+            {
+                "type": "Birth",
+                "label": "Born: Unknown",
+                "startYear": 1983,
+                "endYear": 1983,
+                "location": null,
+                "level": 2,
+                "color": "lightblue"
+            }
+        ]
+    },
+    "@I312790308588@": {
+        "personId": "@I312790308588@",
+        "name": "Dan Briggs",
+        "events": []
     }
 }
