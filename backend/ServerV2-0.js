@@ -15,13 +15,15 @@ const jwt = require('jsonwebtoken');
 const CACHE_FILE = "./geoCache.json";
 
 // ---------------- AUTH CONFIG ----------------
-// JWT_SECRET   - required. Signs/verifies admin session tokens.
-// ADMIN_PASSWORD - required for login. The single editor password.
-// ADMIN_USERNAME - optional, defaults to "lauko" (the data owner / folder name).
+// JWT_SECRET   - required. Signs/verifies editor session tokens.
+// ADMIN_PASSWORD - required for login. The editor password.
+// ADMIN_USERNAME - which tree (users/<name>/ folder) the password unlocks.
+//                  Defaults to "lauko". Multi-tenant later: replace the single
+//                  pair below with a per-tree lookup keyed by username.
 // Set these in Render's Environment tab (never commit them).
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "lauko";
+const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || "lauko").toLowerCase();
 const TOKEN_TTL = "30d";
 
 if (!JWT_SECRET) {
@@ -53,6 +55,10 @@ function requireAdmin(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
+    }
+    // A token only grants write access to its own tree.
+    if (req.params.username && decoded.username !== req.params.username.toLowerCase()) {
+      return res.status(403).json({ error: "Token does not match this tree" });
     }
     req.user = decoded;
     next();
@@ -90,23 +96,25 @@ app.use((req, res, next) => {
 // ---------------------------------------------
 // ------ AUTH ROUTES -------------------------
 // ---------------------------------------------
-// Reads are public (the data is already public on GitHub). Only the single
-// editor password unlocks writes, via a signed JWT.
+// Reads are public (the data is already public on GitHub). Editing a tree
+// needs its password, exchanged here for a signed JWT scoped to that tree.
 app.post("/auth/login", (req, res) => {
-    const { password } = req.body || {};
+    const { username, password } = req.body || {};
     if (!ADMIN_PASSWORD) {
-        return res.status(503).json({ error: "Admin login is not configured" });
+        return res.status(503).json({ error: "Editor login is not configured" });
     }
-    if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
+    const tree = (username || ADMIN_USERNAME).toLowerCase();
+    // Single tenant for now: only ADMIN_USERNAME / ADMIN_PASSWORD is valid.
+    if (tree !== ADMIN_USERNAME || !password || !safeEqual(password, ADMIN_PASSWORD)) {
         return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = jwt.sign(
-        { role: "admin", username: ADMIN_USERNAME },
+        { role: "admin", username: tree },
         JWT_SECRET,
         { expiresIn: TOKEN_TTL }
     );
-    console.log("Backend: admin logged in:", ADMIN_USERNAME);
-    res.json({ token, role: "admin", username: ADMIN_USERNAME });
+    console.log("Backend: editor logged in for tree:", tree);
+    res.json({ token, role: "admin", username: tree });
 });
 
 // Lets the frontend check whether a stored token is still valid on load.

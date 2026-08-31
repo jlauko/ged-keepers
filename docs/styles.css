@@ -586,3 +586,101 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     transform: translateY(1px);
 }
 
+/* ---------------- Splash / tree picker ---------------- */
+#splashScreen {
+    position: fixed;
+    inset: 0;
+    display: none;            /* startApp() shows it */
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f8;
+    z-index: 100001;          /* above the loading overlay */
+}
+
+#splashCard {
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+    max-width: 90vw;
+    padding: 28px 26px 22px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.12);
+    font-family: Arial, sans-serif;
+}
+
+#splashLogo {
+    width: 200px;
+    max-width: 100%;
+    align-self: center;
+    margin-bottom: 18px;
+}
+
+#splashCard label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #444;
+    margin: 10px 0 4px;
+}
+
+#splashCard .splashHint {
+    font-weight: normal;
+    color: #999;
+}
+
+#splashCard input {
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#splashCard input:focus {
+    outline: none;
+    border-color: #5d9cec;
+    box-shadow: 0 0 0 2px rgba(93,156,236,.25);
+}
+
+#splashOpenButton {
+    margin-top: 18px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: #5d9cec;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#splashOpenButton:hover { background: #4a8bdb; }
+#splashOpenButton:active { transform: translateY(1px); }
+
+#splashMsg {
+    min-height: 16px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #c0392b;
+    text-align: center;
+}
+
+/* ---------------- Corner log in / log out ---------------- */
+#authButton {
+    position: fixed;
+    top: 18px;
+    left: 78px;              /* clear of the round help button at left:15 */
+    z-index: 9999;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+#authButton:hover { background: #f0f6ff; border-color: #5d9cec; }
+

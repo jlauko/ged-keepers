@@ -28,11 +28,21 @@
 </head>
 <body>
 
-<!-- Editing is gated by the backend; viewing is open to everyone. -->
-<button id="authButton"
-        style="position:fixed; top:10px; right:12px; z-index:2000;
-               padding:4px 10px; font-size:12px; cursor:pointer;
-               border:1px solid #ccc; border-radius:4px; background:#fff;">Log in</button>
+<!-- Tree picker / editor login. Viewing any tree is open; editing needs its password. -->
+<div id="splashScreen">
+    <div id="splashCard">
+        <img src="logo.png" alt="Family Tree" id="splashLogo">
+        <label for="treeNameInput">Family tree</label>
+        <input id="treeNameInput" type="text" placeholder="e.g. lauko" autocomplete="off" spellcheck="false">
+        <label for="splashPassword">Password <span class="splashHint">&mdash; only to edit</span></label>
+        <input id="splashPassword" type="password" placeholder="Leave blank to just view" autocomplete="current-password">
+        <button id="splashOpenButton">Open</button>
+        <div id="splashMsg"></div>
+    </div>
+</div>
+
+<!-- Corner control: log in to edit / log out. Sits over the canvas, clear of the panel. -->
+<button id="authButton">Log in</button>
 
 <div id="nodeOptionsMenu" class="nodeOptionsMenu" 
     style="display:none;">
@@ -422,11 +432,13 @@ const suggestionsDiv = document.getElementById("suggestions");
 //-----------------------------------------------------------------------------
 let authToken = null;
 let userRole = "viewer";
-// Single-tenant app: all data lives under users/lauko/. This is the data
-// owner used as the URL path segment, not a per-visitor identity.
-const DATA_OWNER = "lauko";
-let userName = DATA_OWNER;
+// Which tree's data to load - the users/<name>/ folder on the backend.
+// Chosen on the splash screen and remembered between visits. Defaults to
+// the last-opened tree, or "lauko" on a first visit.
+const DEFAULT_TREE = "lauko";
+let userName = DEFAULT_TREE;
 const AUTH_STORAGE_KEY = "ft_auth";
+const TREE_STORAGE_KEY = "ft_tree";
 
 const network_container = document.getElementById("mynetwork");
 const network_options = {
@@ -442,32 +454,31 @@ const network_options = {
 //    const password = document.getElementById("passwordpanel").value;
 //    Login(email, password);
 //}
-async function Login(password) {
-    if (!password) {
-        showError("Enter the admin password");
+// Authenticate as the editor of `tree`. Returns the login payload or null.
+async function Login(tree, password) {
+    if (!tree || !password) {
+        showError("Enter the family tree name and password");
         return null;
     }
     try {
         const res = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ username: tree, password })
         });
 
-        if (!res.ok) {
-            showError("Login failed - check the password.");
-            return null;
-        }
+        if (!res.ok) return null;
+
         const data = await res.json();
         authToken = data.token;
         userRole = data.role || "admin";
-        userName = data.username || DATA_OWNER;
+        userName = data.username || tree;
         try {
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
                 token: authToken, role: userRole, username: userName
             }));
         } catch (e) { /* private mode - session stays in memory only */ }
-        console.log("Logged in as:", userName, "role:", userRole);
+        console.log("Logged in as editor of", userName);
         return data;
     } catch (err) {
         console.error("Login error:", err);
@@ -483,28 +494,33 @@ function logout() {
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
 }
 
-// On load, reuse a stored admin token only if the server still accepts it.
-async function restoreSession() {
+// On load, reuse a stored admin token if the server still accepts it AND it
+// belongs to the tree we're opening. Returns true if an admin session is live.
+async function restoreSession(tree) {
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null"); }
     catch (e) { stored = null; }
-    if (!stored || !stored.token) return;
+    if (!stored || !stored.token) return false;
     try {
         const res = await fetch(`${API_BASE_URL}/auth/verify`, {
             headers: { Authorization: "Bearer " + stored.token }
         });
-        if (res.ok) {
-            const data = await res.json();
-            authToken = stored.token;
-            userRole = data.role || "admin";
-            userName = data.username || DATA_OWNER;
-            console.log("Restored admin session for", userName);
-        } else {
+        if (!res.ok) { logout(); return false; }
+        const data = await res.json();
+        if (tree && data.username && data.username !== tree) {
+            // Token is for a different tree than the one being opened.
             logout();
+            return false;
         }
+        authToken = stored.token;
+        userRole = data.role || "admin";
+        userName = data.username || tree || DEFAULT_TREE;
+        console.log("Restored editor session for", userName);
+        return true;
     } catch (e) {
         // Network error - stay read-only rather than trust an unverified token.
         logout();
+        return false;
     }
 }
 
@@ -512,22 +528,31 @@ async function restoreSession() {
 function handleAuthExpired() {
     logout();
     renderAuthUI();
-    showError("Your admin session expired. Please log in again.");
+    showError("Your editing session expired. Log in again to make changes.");
 }
 
 function renderAuthUI() {
     const btn = document.getElementById("authButton");
     if (!btn) return;
     btn.textContent = isAdmin() ? "Log out" : "Log in";
-    btn.title = isAdmin() ? "Logged in as editor" : "Log in to edit";
+    btn.title = isAdmin()
+        ? `Editing ${userName} - click to log out`
+        : `Viewing ${userName} - click to log in or switch tree`;
 }
 
-async function openLoginPrompt() {
-    if (isAdmin()) { logout(); location.reload(); return; }
-    const pw = window.prompt("Admin password:");
-    if (!pw) return;
-    const data = await Login(pw);
-    if (data && data.token) location.reload();
+// Corner button: log out (if editor) or reopen the splash to log in / switch tree.
+function onAuthButton() {
+    if (isAdmin()) {
+        logout();
+        location.reload();
+        return;
+    }
+    const treeInput = document.getElementById("treeNameInput");
+    const pwInput = document.getElementById("splashPassword");
+    if (treeInput) treeInput.value = userName;
+    if (pwInput) pwInput.value = "";
+    showSplash();
+    if (pwInput) pwInput.focus();
 }
 function isAdmin() { return userRole === "admin"; }
 function authHeaders() {
@@ -5080,17 +5105,74 @@ function clearContextMessages() {
     contextDisplay.innerHTML = "";
 }
 
-async function startApp() {
-    showLoading();
-    updateLoading("Checking session...");
-    await restoreSession();
-    renderAuthUI();
-    const authBtn = document.getElementById("authButton");
-    if (authBtn) authBtn.addEventListener("click", openLoginPrompt);
+function showSplash() {
+    const el = document.getElementById("splashScreen");
+    if (el) el.style.display = "flex";
+}
 
+// Load the chosen tree and start the app. Called once the tree is known.
+function enterApp() {
+    const el = document.getElementById("splashScreen");
+    if (el) el.style.display = "none";
+    renderAuthUI();
+    showLoading();
     loadNodeInformation();
     InitializeTree();
     clearContextMessages();
+}
+
+// Splash "Open": set the tree, optionally authenticate, then enter.
+async function submitSplash() {
+    const tree = (document.getElementById("treeNameInput").value || "").trim().toLowerCase();
+    const pw = document.getElementById("splashPassword").value;
+    const msg = document.getElementById("splashMsg");
+    msg.textContent = "";
+    if (!tree) { msg.textContent = "Enter a family tree name."; return; }
+
+    userName = tree;
+    try { localStorage.setItem(TREE_STORAGE_KEY, tree); } catch (e) {}
+
+    if (pw) {
+        msg.textContent = "Checking password...";
+        const data = await Login(tree, pw);
+        if (!data || !data.token) {
+            logout();
+            msg.textContent = "Wrong password. Leave it blank to view without editing.";
+            return;
+        }
+    }
+    enterApp();
+}
+
+async function startApp() {
+    let savedTree = null;
+    try { savedTree = localStorage.getItem(TREE_STORAGE_KEY); } catch (e) {}
+    const tree = savedTree || "";
+    if (tree) userName = tree;
+
+    document.getElementById("treeNameInput").value = tree;
+    document.getElementById("splashOpenButton").addEventListener("click", submitSplash);
+    document.getElementById("splashPassword").addEventListener("keydown", e => {
+        if (e.key === "Enter") submitSplash();
+    });
+    document.getElementById("treeNameInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") submitSplash();
+    });
+    const authBtn = document.getElementById("authButton");
+    if (authBtn) authBtn.addEventListener("click", onAuthButton);
+
+    const haveEditor = tree ? await restoreSession(tree) : false;
+
+    if (haveEditor) {
+        // Still signed in as an editor for this tree - skip straight in.
+        enterApp();
+    } else {
+        // Show the splash so the visitor confirms/chooses the tree (and can
+        // enter a password to edit). The last-used tree is pre-filled.
+        renderAuthUI();
+        showSplash();
+        document.getElementById(tree ? "splashPassword" : "treeNameInput").focus();
+    }
 }
 
 // Update tree on root change
