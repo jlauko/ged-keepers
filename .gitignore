@@ -1,2 +1,5 @@
-docs/node_modules
-docx/_pycache_/
+backend/users/*/files/
+backend/users/*/thumbnails/
+node_modules/
+__pycache__/
+.env
