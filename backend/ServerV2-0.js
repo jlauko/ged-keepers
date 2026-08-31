@@ -15,14 +15,17 @@ const jwt = require('jsonwebtoken');
 const CACHE_FILE = "./geoCache.json";
 
 // ---------------- AUTH CONFIG ----------------
-// JWT_SECRET   - required. Signs/verifies editor session tokens.
-// ADMIN_PASSWORD - required for login. The editor password.
-// ADMIN_USERNAME - which tree (users/<name>/ folder) the password unlocks.
+// JWT_SECRET     - required. Signs/verifies session tokens.
+// VIEW_PASSWORD  - password to view the tree (read-only). If unset, only the
+//                  admin password works and everyone who logs in can edit.
+// ADMIN_PASSWORD - password to view AND edit the tree.
+// ADMIN_USERNAME - which tree (users/<name>/ folder) the passwords unlock.
 //                  Defaults to "lauko". Multi-tenant later: replace the single
-//                  pair below with a per-tree lookup keyed by username.
+//                  set below with a per-tree lookup keyed by username.
 // Set these in Render's Environment tab (never commit them).
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const VIEW_PASSWORD = process.env.VIEW_PASSWORD;
 const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || "lauko").toLowerCase();
 const TOKEN_TTL = "30d";
 
@@ -30,8 +33,8 @@ if (!JWT_SECRET) {
   console.error("FATAL: JWT_SECRET is not set. Refusing to start.");
   process.exit(1);
 }
-if (!ADMIN_PASSWORD) {
-  console.warn("WARNING: ADMIN_PASSWORD is not set - admin login is disabled until it is.");
+if (!ADMIN_PASSWORD && !VIEW_PASSWORD) {
+  console.warn("WARNING: neither ADMIN_PASSWORD nor VIEW_PASSWORD is set - nobody can log in.");
 }
 
 // Constant-time string compare that does not leak length via early return.
@@ -46,25 +49,45 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(ab, bb);
 }
 
-// Middleware: require a valid admin JWT on mutating routes.
-function requireAdmin(req, res, next) {
+// Pull a JWT from the Authorization header, or a ?token= query param (needed
+// for <img src> / download links that can't set headers). Returns the decoded
+// payload or null.
+function decodeToken(req) {
   const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: "Authentication required" });
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-    // A token only grants write access to its own tree.
-    if (req.params.username && decoded.username !== req.params.username.toLowerCase()) {
-      return res.status(403).json({ error: "Token does not match this tree" });
-    }
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired session" });
+  let token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token && req.query && req.query.token) token = String(req.query.token);
+  if (!token) return null;
+  try { return jwt.verify(token, JWT_SECRET); } catch (e) { return null; }
+}
+
+// A token is only valid for its own tree (the :username in the route).
+function tokenMatchesTree(decoded, treeName) {
+  return !treeName || decoded.username === String(treeName).toLowerCase();
+}
+
+// Middleware: any valid session (viewer or admin) for this tree.
+function requireView(req, res, next) {
+  const decoded = decodeToken(req);
+  if (!decoded) return res.status(401).json({ error: "Authentication required" });
+  if (!tokenMatchesTree(decoded, req.params.username)) {
+    return res.status(403).json({ error: "Token does not match this tree" });
   }
+  req.user = decoded;
+  next();
+}
+
+// Middleware: an admin session for this tree (mutating routes).
+function requireAdmin(req, res, next) {
+  const decoded = decodeToken(req);
+  if (!decoded) return res.status(401).json({ error: "Authentication required" });
+  if (decoded.role !== "admin") {
+    return res.status(403).json({ error: "Editor access required" });
+  }
+  if (!tokenMatchesTree(decoded, req.params.username)) {
+    return res.status(403).json({ error: "Token does not match this tree" });
+  }
+  req.user = decoded;
+  next();
 }
 let geoCache = {}; // in-memory cache for geocoding results
 
@@ -96,35 +119,39 @@ app.use((req, res, next) => {
 // ---------------------------------------------
 // ------ AUTH ROUTES -------------------------
 // ---------------------------------------------
-// Reads are public (the data is already public on GitHub). Editing a tree
-// needs its password, exchanged here for a signed JWT scoped to that tree.
+// Viewing a tree needs its view password; editing needs the admin password.
+// Either exchanges here for a signed JWT scoped to that tree.
+// NOTE: while family.json etc. remain in the public GitHub repo, this only
+// gates access *through the app* - the raw files are still fetchable from
+// GitHub. Real read-restriction needs the data moved off the public repo.
 app.post("/auth/login", (req, res) => {
     const { username, password } = req.body || {};
-    if (!ADMIN_PASSWORD) {
-        return res.status(503).json({ error: "Editor login is not configured" });
+    if (!ADMIN_PASSWORD && !VIEW_PASSWORD) {
+        return res.status(503).json({ error: "Login is not configured" });
     }
     const tree = (username || ADMIN_USERNAME).toLowerCase();
-    // Single tenant for now: only ADMIN_USERNAME / ADMIN_PASSWORD is valid.
-    if (tree !== ADMIN_USERNAME || !password || !safeEqual(password, ADMIN_PASSWORD)) {
+    // Single tenant for now: only ADMIN_USERNAME is a known tree.
+    let role = null;
+    if (tree === ADMIN_USERNAME && password) {
+        if (ADMIN_PASSWORD && safeEqual(password, ADMIN_PASSWORD)) role = "admin";
+        else if (VIEW_PASSWORD && safeEqual(password, VIEW_PASSWORD)) role = "viewer";
+    }
+    if (!role) {
         return res.status(401).json({ error: "Invalid credentials" });
     }
-    const token = jwt.sign(
-        { role: "admin", username: tree },
-        JWT_SECRET,
-        { expiresIn: TOKEN_TTL }
-    );
-    console.log("Backend: editor logged in for tree:", tree);
-    res.json({ token, role: "admin", username: tree });
+    const token = jwt.sign({ role, username: tree }, JWT_SECRET, { expiresIn: TOKEN_TTL });
+    console.log(`Backend: ${role} logged in for tree:`, tree);
+    res.json({ token, role, username: tree });
 });
 
 // Lets the frontend check whether a stored token is still valid on load.
-app.get("/auth/verify", requireAdmin, (req, res) => {
+app.get("/auth/verify", requireView, (req, res) => {
     res.json({ ok: true, role: req.user.role, username: req.user.username });
 });
 // ---------------------------------------------
 // --------- Download file to client --------------
 // ---------------------------------------------
-app.get("/download/:username/:filename", (req, res) => {
+app.get("/download/:username/:filename", requireView, (req, res) => {
     const { username, filename } = req.params;
     const userDir = path.join(__dirname, 'users', username, 'files');
     const file = path.join(userDir, filename);
@@ -139,7 +166,7 @@ app.get("/download/:username/:filename", (req, res) => {
 // ---------------------------------------------
 // --------- Download thumbnail to client --------------
 // ---------------------------------------------
-app.get("/thumbnail/:username/:filename", (req, res) => {
+app.get("/thumbnail/:username/:filename", requireView, (req, res) => {
     const { username, filename } = req.params;
     const userDir = path.join(__dirname, 'users', username, 'thumbnails');
     const file = path.join(userDir, filename);
@@ -232,7 +259,7 @@ app.put("/edgeInfo/:username", requireAdmin, (req, res) => {
 // ------------------------------------------
 // ------- Get Evidence info from file -----------
 // ------------------------------------------
-app.get("/edgeInfo/:username", (req, res) => {
+app.get("/edgeInfo/:username", requireView, (req, res) => {
   const username = req.params.username;
   try {
     const info = nodeRepo.getEdgeInfo(username);
@@ -249,7 +276,7 @@ app.get("/edgeInfo/:username", (req, res) => {
 // ------------------------------------------
 // ------- Get Nodeinfo from file -----------
 // ------------------------------------------
-app.get("/nodeInfo/:username", (req, res) => {
+app.get("/nodeInfo/:username", requireView, (req, res) => {
   const username = req.params.username;
   try {
     const info = nodeRepo.getNodeInfo(username);
@@ -405,7 +432,18 @@ app.post(
 // Need to move the creation of pdf thumbnails to the frontend.
 
 
-app.use('/users', express.static(path.join(__dirname, 'users'), {
+// Attachment files/thumbnails. Requires a valid session for the tree named
+// in the first path segment (/users/<tree>/files/...). Token comes from the
+// Authorization header or ?token= (for <img src>).
+app.use('/users', (req, res, next) => {
+  const decoded = decodeToken(req);
+  if (!decoded) return res.status(401).json({ error: "Authentication required" });
+  const treeSeg = req.url.split('/').filter(Boolean)[0];
+  if (treeSeg && decoded.username !== decodeURIComponent(treeSeg).toLowerCase()) {
+    return res.status(403).json({ error: "Token does not match this tree" });
+  }
+  next();
+}, express.static(path.join(__dirname, 'users'), {
   setHeaders: (res, path) => {
     if (path.endsWith('.png')) res.set('Content-Type', 'image/png');
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) res.set('Content-Type', 'image/jpeg');
@@ -415,7 +453,7 @@ app.use('/users', express.static(path.join(__dirname, 'users'), {
 // ---------------------------------------
 // ---------- get all cluster info -------
 // ---------------------------------------
-app.get("/clusterInfo/:username", (req, res) => {
+app.get("/clusterInfo/:username", requireView, (req, res) => {
     const username = req.params.username;
     clusterInfoPath = path.join(__dirname, "users", username, "clusterinformation.json");
 
@@ -446,7 +484,7 @@ app.post('/clusterInfo', requireAdmin, (req, res) => {
 // -------------------------------------------------
 // ---------- Get Family Tree Settings -------------
 // -------------------------------------------------
-app.get("/FamilyInfo/:username", (req, res) => {
+app.get("/FamilyInfo/:username", requireView, (req, res) => {
     const username = req.params.username;
     const FamilyInfoPath = path.join(__dirname, "users", username, "GED", "family.json");
 
@@ -462,7 +500,7 @@ app.get("/FamilyInfo/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Load Color Group Settings -------------
 // -------------------------------------------------
-app.get("/ColorInfo/:username", (req, res) => {
+app.get("/ColorInfo/:username", requireView, (req, res) => {
     const username = req.params.username;
     const ColorInfoPath = path.join(__dirname, "users", username, "GED", "birthLocationColors.json");
 
@@ -477,7 +515,7 @@ app.get("/ColorInfo/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Historical Events -------------
 // -------------------------------------------------
-app.get("/HistoricalEvents/:username", (req, res) => {
+app.get("/HistoricalEvents/:username", requireView, (req, res) => {
     const username = req.params.username;
     const Path = path.join(__dirname, "users", username, "GED", "HistoricalEvents.json");
 
@@ -492,7 +530,7 @@ app.get("/HistoricalEvents/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Personal History Events -------------
 // -------------------------------------------------
-app.get("/PersonalHistoryEvents/:username", (req, res) => {
+app.get("/PersonalHistoryEvents/:username", requireView, (req, res) => {
     const username = req.params.username;
     const Path = path.join(__dirname, "users", username, "GED", "personalHistoryEvents.json");
 
@@ -507,7 +545,7 @@ app.get("/PersonalHistoryEvents/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Off Line Events -------------
 // -------------------------------------------------
-app.get("/OffLineEvents/:username", (req, res) => {
+app.get("/OffLineEvents/:username", requireView, (req, res) => {
     const username = req.params.username;
     const Path = path.join(__dirname, "users", username, "GED", "offlineHistoricalEvents.json");
 
@@ -522,7 +560,7 @@ app.get("/OffLineEvents/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Birth Location Groups -------------
 // -------------------------------------------------
-app.get("/BirthLocationGroups/:username", (req, res) => {
+app.get("/BirthLocationGroups/:username", requireView, (req, res) => {
     const username = req.params.username;
     const Path = path.join(__dirname, "users", username, "GED", "birthLocationGroups.json");
 
@@ -537,7 +575,7 @@ app.get("/BirthLocationGroups/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- Death Location Groups -------------
 // -------------------------------------------------
-app.get("/DeathLocationGroups/:username", (req, res) => {
+app.get("/DeathLocationGroups/:username", requireView, (req, res) => {
     const username = req.params.username;
     const Path = path.join(__dirname, "users", username, "GED", "DeathLocationGroups.json");
 
@@ -552,7 +590,7 @@ app.get("/DeathLocationGroups/:username", (req, res) => {
 // -------------------------------------------------
 // ---------- GeoCode Calls -------------
 // -------------------------------------------------
-app.post("/api/geocode", async (req, res) => {
+app.post("/api/geocode", requireView, async (req, res) => {
 
     const attempts = req.body.attempts;
     console.log("Geocoding attempts:", attempts);

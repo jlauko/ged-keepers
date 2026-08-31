@@ -35,8 +35,9 @@
         <img src="logo.png" alt="Family Tree" id="splashLogo">
         <label for="treeNameInput">Family tree</label>
         <input id="treeNameInput" type="text" placeholder="e.g. lauko" autocomplete="off" spellcheck="false">
-        <label for="splashPassword">Password <span class="splashHint">&mdash; only to edit</span></label>
-        <input id="splashPassword" type="password" placeholder="Leave blank to just view" autocomplete="current-password">
+        <label for="splashPassword">Password</label>
+        <input id="splashPassword" type="password" placeholder="Family password" autocomplete="current-password">
+        <div class="splashHint">The view password lets you browse; the editor password also lets you make changes.</div>
         <button id="splashOpenButton">Open</button>
         <div id="splashMsg"></div>
     </div>
@@ -525,39 +526,38 @@ async function restoreSession(tree) {
     }
 }
 
-// Called by write paths when the server rejects the token (expired / revoked).
+// Called when the server rejects the token (expired / revoked). A session is
+// now required just to view, so send the visitor back to the splash.
 function handleAuthExpired() {
     logout();
     renderAuthUI();
-    showError("Your editing session expired. Log in again to make changes.");
+    showError("Your session expired. Please log in again.");
+    showSplash();
 }
 
 function renderAuthUI() {
     const btn = document.getElementById("authButton");
     if (!btn) return;
-    btn.textContent = isAdmin() ? "Log out" : "Log in";
+    btn.textContent = authToken ? "Log out" : "Log in";
     btn.title = isAdmin()
         ? `Editing ${userName} - click to log out`
-        : `Viewing ${userName} - click to log in or switch tree`;
+        : `Viewing ${userName} - click to log out / switch tree`;
 }
 
-// Corner button: log out (if editor) or reopen the splash to log in / switch tree.
+// Corner button: log out and return to the splash.
 function onAuthButton() {
-    if (isAdmin()) {
-        logout();
-        location.reload();
-        return;
-    }
-    const treeInput = document.getElementById("treeNameInput");
-    const pwInput = document.getElementById("splashPassword");
-    if (treeInput) treeInput.value = userName;
-    if (pwInput) pwInput.value = "";
-    showSplash();
-    if (pwInput) pwInput.focus();
+    logout();
+    location.reload();
 }
 function isAdmin() { return userRole === "admin"; }
 function authHeaders() {
     return authToken ? { Authorization: "Bearer " + authToken } : {};
+}
+// Append the session token to a URL used somewhere a header can't be set
+// (<img src>, download links, window.open). The backend also accepts ?token=.
+function withToken(url) {
+    if (!url || !authToken) return url;
+    return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(authToken);
 }
 //-----------------------------------------------------------------------------
 // Node Information / Biography Management
@@ -730,7 +730,7 @@ async function cacheImage(att) {
         new URL(turl).pathname.split('/').pop()
     );
 
-    const url = await getThumbnailUrl("lauko", filename);
+    const url = await getThumbnailUrl(userName, filename);
 
     const img = new Image();
 
@@ -983,8 +983,12 @@ async function loadBackendData (info) {
     let data = null;
     try {
         const response = await fetch(`${API_BASE_URL}/${info}/${userName}`, {
-            headers: { "Authorization": "Bearer " + authToken }
+            headers: { ...authHeaders() }
         });
+        if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            return null;
+        }
         if (response.ok) {
             data = await response.json();
             console.log("Loaded data for :", info);
@@ -1191,7 +1195,8 @@ async function geocodeWithFallback(birthPlace) {
         const response = await fetch(`${API_BASE_URL}/api/geocode`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                ...authHeaders()
             },
             body: JSON.stringify({ attempts })
         });
@@ -3182,7 +3187,8 @@ async function getThumbnailUrl(username, filename) {
     // console.log(`Fetching thumbnail for ${API_BASE_URL}/thumbnail/${username}/${filename} from backend...`);
 
     const response = await fetch(
-        `${API_BASE_URL}/thumbnail/${username}/${filename}`
+        `${API_BASE_URL}/thumbnail/${username}/${filename}`,
+        { headers: { ...authHeaders() } }
     );
 
     if (!response.ok) {
@@ -3508,7 +3514,7 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
             </button>
 
             <img class="attachment-thumb"
-                src="${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(tnfilename)}"
+                src="${withToken(`${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(tnfilename)}`)}"
                 loading="lazy"
                 style = "max-width: 200px; max-height:200px; ">
 
@@ -3537,9 +3543,9 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
         </div>
 
         <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
-            <button class="open-btn" 
-                data-url="${att.fileUrl}" 
-                data-tnurl="${API_BASE_URL}/users/${userName}/thumbnails/${att.filename}"    
+            <button class="open-btn"
+                data-url="${withToken(att.fileUrl)}"
+                data-tnurl="${withToken(`${API_BASE_URL}/users/${userName}/thumbnails/${att.filename}`)}"
                 // this needs to be converted to a non-local host URL that the frontend can access, 
                 // currently it is a local file path on the backend server which won't work for the frontend, 
                 // need to add an endpoint in the backend to serve the thumbnail images 
@@ -3601,7 +3607,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
 //          Download attachment
             console.log("Downloading attachment :", url);
             const link = document.createElement("a");
-            link.href = `${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`;
+            link.href = withToken(`${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`);
             link.download = filename;
             document.body.appendChild(link);
             link.click();
@@ -5122,26 +5128,25 @@ function enterApp() {
     clearContextMessages();
 }
 
-// Splash "Open": set the tree, optionally authenticate, then enter.
+// Splash "Open": authenticate for the chosen tree, then enter. A password is
+// required now - viewing as well as editing needs a valid session.
 async function submitSplash() {
     const tree = (document.getElementById("treeNameInput").value || "").trim().toLowerCase();
     const pw = document.getElementById("splashPassword").value;
     const msg = document.getElementById("splashMsg");
     msg.textContent = "";
     if (!tree) { msg.textContent = "Enter a family tree name."; return; }
+    if (!pw) { msg.textContent = "Enter the password for this tree."; return; }
 
-    userName = tree;
-    try { localStorage.setItem(TREE_STORAGE_KEY, tree); } catch (e) {}
-
-    if (pw) {
-        msg.textContent = "Checking password...";
-        const data = await Login(tree, pw);
-        if (!data || !data.token) {
-            logout();
-            msg.textContent = "Wrong password. Leave it blank to view without editing.";
-            return;
-        }
+    msg.textContent = "Checking password...";
+    const data = await Login(tree, pw);
+    if (!data || !data.token) {
+        logout();
+        msg.textContent = "Wrong password for this tree.";
+        return;
     }
+    userName = data.username || tree;
+    try { localStorage.setItem(TREE_STORAGE_KEY, userName); } catch (e) {}
     enterApp();
 }
 
@@ -5162,14 +5167,13 @@ async function startApp() {
     const authBtn = document.getElementById("authButton");
     if (authBtn) authBtn.addEventListener("click", onAuthButton);
 
-    const haveEditor = tree ? await restoreSession(tree) : false;
+    const haveSession = tree ? await restoreSession(tree) : false;
 
-    if (haveEditor) {
-        // Still signed in as an editor for this tree - skip straight in.
+    if (haveSession) {
+        // Still signed in (viewer or editor) for this tree - skip straight in.
         enterApp();
     } else {
-        // Show the splash so the visitor confirms/chooses the tree (and can
-        // enter a password to edit). The last-used tree is pre-filled.
+        // Need a password to view or edit. Show the splash; last tree is pre-filled.
         renderAuthUI();
         showSplash();
         document.getElementById(tree ? "splashPassword" : "treeNameInput").focus();
