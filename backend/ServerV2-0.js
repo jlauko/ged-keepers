@@ -1,12 +1,65 @@
 
+// Load backend/.env for local dev if the file and package are present.
+// On Render, env vars are injected directly and dotenv is not required.
+try { require('dotenv').config(); } catch (_) { /* dotenv optional */ }
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const sharp = require('sharp');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const CACHE_FILE = "./geoCache.json";
+
+// ---------------- AUTH CONFIG ----------------
+// JWT_SECRET   - required. Signs/verifies admin session tokens.
+// ADMIN_PASSWORD - required for login. The single editor password.
+// ADMIN_USERNAME - optional, defaults to "lauko" (the data owner / folder name).
+// Set these in Render's Environment tab (never commit them).
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "lauko";
+const TOKEN_TTL = "30d";
+
+if (!JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET is not set. Refusing to start.");
+  process.exit(1);
+}
+if (!ADMIN_PASSWORD) {
+  console.warn("WARNING: ADMIN_PASSWORD is not set - admin login is disabled until it is.");
+}
+
+// Constant-time string compare that does not leak length via early return.
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  if (ab.length !== bb.length) {
+    // still burn a comparison to keep timing roughly constant
+    crypto.timingSafeEqual(ab, ab);
+    return false;
+  }
+  return crypto.timingSafeEqual(ab, bb);
+}
+
+// Middleware: require a valid admin JWT on mutating routes.
+function requireAdmin(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Authentication required" });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired session" });
+  }
+}
 let geoCache = {}; // in-memory cache for geocoding results
 
 const app = express();
@@ -34,20 +87,31 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---------------- MOCK DATA ----------------
-let users = [
-  { id: 1, username: "lauko", email: "Lauko", password: "Lauko", role: "admin" },
-  { id: 2, username: "lauko", email: "Guest", password: "Guest", role: "viewer" }
-];
 // ---------------------------------------------
-// ------ AUTH ROUTES - Login  -----------------
-// ---------------------------------------------    
+// ------ AUTH ROUTES -------------------------
+// ---------------------------------------------
+// Reads are public (the data is already public on GitHub). Only the single
+// editor password unlocks writes, via a signed JWT.
 app.post("/auth/login", (req, res) => {
-    const { email, password } = req.body;
-    const user = users.find(u => u.email === email && u.password === password);
-    if (!user) return res.status(401).json({ error: "Invalid credentials" });
-    console.log("Backend: User logged in:", user.username, user.role, user.email);
-    res.json({ token: "mock-token", role: user.role, username: user.username });
+    const { password } = req.body || {};
+    if (!ADMIN_PASSWORD) {
+        return res.status(503).json({ error: "Admin login is not configured" });
+    }
+    if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const token = jwt.sign(
+        { role: "admin", username: ADMIN_USERNAME },
+        JWT_SECRET,
+        { expiresIn: TOKEN_TTL }
+    );
+    console.log("Backend: admin logged in:", ADMIN_USERNAME);
+    res.json({ token, role: "admin", username: ADMIN_USERNAME });
+});
+
+// Lets the frontend check whether a stored token is still valid on load.
+app.get("/auth/verify", requireAdmin, (req, res) => {
+    res.json({ ok: true, role: req.user.role, username: req.user.username });
 });
 // ---------------------------------------------
 // --------- Download file to client --------------
@@ -83,7 +147,7 @@ app.get("/thumbnail/:username/:filename", (req, res) => {
 // ---------------- Delete Files ---------------------------
 // ---------------------------------------------------------
 // DELETE route
-app.delete("/delete/:username/:filename", async (req, res) => {
+app.delete("/delete/:username/:filename", requireAdmin, async (req, res) => {
     const { username, filename } = req.params;
 
     // Build paths for file and thumbnail
@@ -144,7 +208,7 @@ const nodeRepo = require("./nodeRepo");
 // ------------------------------------------
 // ------- Save Evidence info (whole file) to file -----------
 // ------------------------------------------
-app.put("/edgeInfo/:username", (req, res) => {
+app.put("/edgeInfo/:username", requireAdmin, (req, res) => {
     const username = req.params.username;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
@@ -189,7 +253,7 @@ app.get("/nodeInfo/:username", (req, res) => {
 // ------------------------------------------
 // ------- Save Nodeinfo to file -----------
 // ------------------------------------------
-app.put("/nodeInfo/:username/nodes/:nodeId", (req, res) => {
+app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, (req, res) => {
     const { username, nodeId } = req.params;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
@@ -205,7 +269,7 @@ app.put("/nodeInfo/:username/nodes/:nodeId", (req, res) => {
 // ------------------------------------------
 // ------- Save Nodeinfo (whole file) to file -----------
 // ------------------------------------------
-app.put("/nodeInfo/:username", (req, res) => {
+app.put("/nodeInfo/:username", requireAdmin, (req, res) => {
     const username = req.params.username;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
@@ -221,7 +285,7 @@ app.put("/nodeInfo/:username", (req, res) => {
 // ------------------------------------------
 // ------- Delete Nodeinfo from file -----------
 // ------------------------------------------
-app.delete("/nodeInfo/:username/:nodeId", (req, res) => {
+app.delete("/nodeInfo/:username/:nodeId", requireAdmin, (req, res) => {
     const { username, nodeId } = req.params;
     try {
         nodeRepo.deleteNode(username, nodeId);
@@ -289,6 +353,7 @@ const upload = multer({ storage });
 // It also handles errors and returns appropriate status codes and messages
 app.post(
     '/uploadAttachment/:username',
+    requireAdmin,
     upload.fields([
         { name: 'artifact', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 }
@@ -358,7 +423,7 @@ app.get("/clusterInfo/:username", (req, res) => {
 // ---------------------------------------
 // ---- save new cluster info ------------
 // ---------------------------------------
-app.post('/clusterInfo', (req, res) => {
+app.post('/clusterInfo', requireAdmin, (req, res) => {
     const { clusterID, data } = req.body;
     if (!clusterID || !data) {
         return res.status(400).json({ error: 'Missing clusterID or data' });

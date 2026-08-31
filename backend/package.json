@@ -1,12 +1,14 @@
 {
   "name": "ged-keepers-backend",
   "version": "1.0.0",
-  "main": "serverV2-0.js",
+  "main": "ServerV2-0.js",
   "scripts": {
     "start": "node ServerV2-0.js"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "sharp": "^0.34.3",
     "pdf-poppler": "^0.2.1"

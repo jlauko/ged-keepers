@@ -28,16 +28,11 @@
 </head>
 <body>
 
-<div id="splashScreen" style="display:flex; align-items:center; justify-content:center; height:100vh;">
-    <div>
-        <img src="logo.png" alt="Logo" style="width:450px; margin-bottom:20px;">
-        <div>
-        <input id="email" type="text" placeholder="Email">
-        <input id="password" type="password" placeholder="Password">
-        <button id="ss_loginButton">Login</button>
-        </div>
-    </div>
-</div>
+<!-- Editing is gated by the backend; viewing is open to everyone. -->
+<button id="authButton"
+        style="position:fixed; top:10px; right:12px; z-index:2000;
+               padding:4px 10px; font-size:12px; cursor:pointer;
+               border:1px solid #ccc; border-radius:4px; background:#fff;">Log in</button>
 
 <div id="nodeOptionsMenu" class="nodeOptionsMenu" 
     style="display:none;">
@@ -427,7 +422,11 @@ const suggestionsDiv = document.getElementById("suggestions");
 //-----------------------------------------------------------------------------
 let authToken = null;
 let userRole = "viewer";
-let userName = "Guest";
+// Single-tenant app: all data lives under users/lauko/. This is the data
+// owner used as the URL path segment, not a per-visitor identity.
+const DATA_OWNER = "lauko";
+let userName = DATA_OWNER;
+const AUTH_STORAGE_KEY = "ft_auth";
 
 const network_container = document.getElementById("mynetwork");
 const network_options = {
@@ -443,59 +442,92 @@ const network_options = {
 //    const password = document.getElementById("passwordpanel").value;
 //    Login(email, password);
 //}
-async function Login(email, password) {
-    let data = null;
-    
-    console.log("Attempting login with email:", email, "and password:", password ? "******" : "(empty)" );
-
-    if (!email || !password) {
-        showError("Please enter both email and password");
+async function Login(password) {
+    if (!password) {
+        showError("Enter the admin password");
         return null;
     }
-
     try {
         const res = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ password })
         });
-        
-        if (!res.ok) {
-            showError("Login failed. Please check your credentials.");
-            authToken = null;
-            userRole = "viewer";
-            userName = "Guest";
-        } else {
-            console.log("Login response status:", res.status);
-            data = await res.json();
-            authToken = data.token;
-            userRole = data.role;
-            userName = data.username;
-            console.log("Logged in as:", userName, "with role:", userRole);
-        }
-        
-        // Update the userRole display
- //       const roleText = document.getElementById("userRoleText");
- //       roleText.textContent = userRole;
 
-        // Update network interaction based on role
-//        if (network) {
-//            network.setOptions(network_options); // reapply options to update dragNodes based on new role
-//        }
-        
-        console.log("Login - User role:", userRole);
-        if (data && data.token) {
-            console.log("Login successful:", data);
-            return data;
-        } else {
-            console.log("Login failed - return null");
+        if (!res.ok) {
+            showError("Login failed - check the password.");
             return null;
         }
+        const data = await res.json();
+        authToken = data.token;
+        userRole = data.role || "admin";
+        userName = data.username || DATA_OWNER;
+        try {
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+                token: authToken, role: userRole, username: userName
+            }));
+        } catch (e) { /* private mode - session stays in memory only */ }
+        console.log("Logged in as:", userName, "role:", userRole);
+        return data;
     } catch (err) {
         console.error("Login error:", err);
         showError("Login error: " + err.message);
         return null;
     }
+}
+
+// Drop any stored admin session and return to read-only.
+function logout() {
+    authToken = null;
+    userRole = "viewer";
+    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+}
+
+// On load, reuse a stored admin token only if the server still accepts it.
+async function restoreSession() {
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null"); }
+    catch (e) { stored = null; }
+    if (!stored || !stored.token) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/auth/verify`, {
+            headers: { Authorization: "Bearer " + stored.token }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            authToken = stored.token;
+            userRole = data.role || "admin";
+            userName = data.username || DATA_OWNER;
+            console.log("Restored admin session for", userName);
+        } else {
+            logout();
+        }
+    } catch (e) {
+        // Network error - stay read-only rather than trust an unverified token.
+        logout();
+    }
+}
+
+// Called by write paths when the server rejects the token (expired / revoked).
+function handleAuthExpired() {
+    logout();
+    renderAuthUI();
+    showError("Your admin session expired. Please log in again.");
+}
+
+function renderAuthUI() {
+    const btn = document.getElementById("authButton");
+    if (!btn) return;
+    btn.textContent = isAdmin() ? "Log out" : "Log in";
+    btn.title = isAdmin() ? "Logged in as editor" : "Log in to edit";
+}
+
+async function openLoginPrompt() {
+    if (isAdmin()) { logout(); location.reload(); return; }
+    const pw = window.prompt("Admin password:");
+    if (!pw) return;
+    const data = await Login(pw);
+    if (data && data.token) location.reload();
 }
 function isAdmin() { return userRole === "admin"; }
 function authHeaders() {
@@ -548,9 +580,12 @@ async function saveEvidenceToBackend() {
         if (response.ok) {
             console.log("Success saving Edge Information");
             return response;
+        } else if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            return null;
         } else {
-            const errorData = await response.json(); 
-            showError(`Failed to save Edge Information: ${errorData.message}`); 
+            const errorData = await response.json();
+            showError(`Failed to save Edge Information: ${errorData.message}`);
             return null;
         }
     } catch (err) {
@@ -629,7 +664,8 @@ async function loadNodeInformation(userData) {
     // -------- If there were undefined parameters in nodeinformation ------
     // ----------  Then upload updated nodeinformation to backend ----------
     // ---------------------------------------------------------------------
-    if (needsupdate){
+    // Only an editor can persist the normalized data; viewers just use it in memory.
+    if (needsupdate && isAdmin()){
         try {
             const response = await fetch(`${API_BASE_URL}/nodeInfo/${userName}`, {
                 method: 'PUT',
@@ -644,9 +680,12 @@ async function loadNodeInformation(userData) {
             if (response.ok) {
                 console.log("Success saving Node Information");
                 return response;
+            } else if (response.status === 401 || response.status === 403) {
+                handleAuthExpired();
+                return null;
             } else {
-                const errorData = await response.json(); 
-                showError(`Failed to save Node Information: ${errorData.message}`); 
+                const errorData = await response.json();
+                showError(`Failed to save Node Information: ${errorData.message}`);
                 return null;
             }
         } catch (err) {
@@ -775,9 +814,12 @@ async function UpdateIndividualNode(nodeId, bioData) {
         if (response.ok) {
             console.log("Success saving Node Information");
             return response;
+        } else if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            return null;
         } else {
-            const errorData = await response.json(); 
-            showError(`Failed to save Node Information: ${errorData.message}`); 
+            const errorData = await response.json();
+            showError(`Failed to save Node Information: ${errorData.message}`);
             return null;
         }
     } catch (err) {
@@ -3139,10 +3181,15 @@ async function SendAttachmentToBackend(file) {
     try {
         const response = await fetch(`${API_BASE_URL}/uploadAttachment/${userName}`, {
             method: "POST",
+            headers: { ...authHeaders() },
             body: formData
         });
         let result = null;
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleAuthExpired();
+                throw new Error("Not authorized to upload attachments");
+            }
             if (response.status === 409) {
                 console.log("Duplicate attachment detected, File not downloaded but attachment metadata saved.");
                 result = await response.json();
@@ -3560,8 +3607,12 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
             try {
                 const response = await fetch(
                     `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`,
-                    { method: "DELETE" }
+                    { method: "DELETE", headers: { ...authHeaders() } }
                 );
+                if (response.status === 401 || response.status === 403) {
+                    handleAuthExpired();
+                    return;
+                }
                 if (response.ok) {
                     if (Pinned_NodeId != null) {
                         console.log("Deleting attachment and Re-rendering node attachments for node:", Pinned_NodeId);
@@ -5029,50 +5080,24 @@ function clearContextMessages() {
     contextDisplay.innerHTML = "";
 }
 
-async function Splashscreen() {
-    document.getElementById("ss_loginButton").addEventListener("click", async () => {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        console.log(`splash screen - Logging in with email: ${email} - password: ${password}`);
-        showLoading();
-        updateLoading("Checking credentials...");
-        try {
-            let data = await Login(email, password);  // ✅ await the Promise
-//            console.log("splash screen - after login", data);
+async function startApp() {
+    showLoading();
+    updateLoading("Checking session...");
+    await restoreSession();
+    renderAuthUI();
+    const authBtn = document.getElementById("authButton");
+    if (authBtn) authBtn.addEventListener("click", openLoginPrompt);
 
-            if (data && data.token) {
-                document.getElementById("splashScreen").style.display = "none";
-                document.getElementById("mainContainer").style.display = "flex";
-                updateLoading("Valid Credentials Found...");
-                onLoginSuccess(data.userData);
-            } else {
-                showError("splash screen - Login failed: No user found " + (data?.message || "Unknown error"));
-            }
-        } catch (err) {
-            showError("Login error:", err);
-            showError("splash screen - Login failed due to error");
-        }
-    });
-}
-
-
-function onLoginSuccess(userData){
-    loadNodeInformation(userData);
-    console.log("Post second message ---------------");
-    //postMessageToInfoCenter("Node Information Loaded from Server...");
-    InitializeTree(userData);
-    console.log("loading evidence ---------------");
+    loadNodeInformation();
+    InitializeTree();
     clearContextMessages();
-    console.log("Information Loaded from Server...Starting guided tour...");
-//    startGuidedTour();  
 }
-
 
 // Update tree on root change
 //document.getElementById("rootSelect").addEventListener("change", updateTree);
 console.log("Family Tree V2.5 Loaded");
 // Load JSON and initialize
-Splashscreen();
+startApp();
 
 </script>
 
