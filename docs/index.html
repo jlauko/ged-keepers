@@ -810,11 +810,11 @@ async function saveBioData() {
         attachments: nodeInformation[currentEditingNodeId].attachments || []
     };
 
-    // store data in backend for the specific node
-    res = UpdateIndividualNode(currentEditingNodeId, bioData);
+    // store data in backend for the specific node - wait for the real result
+    res = await UpdateIndividualNode(currentEditingNodeId, bioData);
 
     if (res != null) {
-        // Update local cache with new bio data after successful backend update
+        // Update local cache only after the backend confirmed the write
         nodeInformation[currentEditingNodeId] = bioData;
         console.log("Biography saved for node:", currentEditingNodeId);
         closeBioEditor();
