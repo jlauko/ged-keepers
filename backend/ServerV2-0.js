@@ -95,7 +95,10 @@ async function streamR2ToResponse(res, key, { disposition, downloadName } = {}) 
   const obj = await r2.getObject(key);
   if (obj.ContentType) res.set("Content-Type", obj.ContentType);
   if (obj.ContentLength != null) res.set("Content-Length", String(obj.ContentLength));
-  res.set("Cache-Control", "private, max-age=3600");
+  // Short cache: attachments are keyed by name, so a delete + re-upload of the
+  // same name is an edit - don't let a stale copy linger for long.
+  res.set("Cache-Control", "private, max-age=300");
+  if (obj.ETag) res.set("ETag", obj.ETag);
   if (disposition === "attachment") {
     res.set("Content-Disposition",
       `attachment; filename="${(downloadName || "download").replace(/"/g, "")}"`);
