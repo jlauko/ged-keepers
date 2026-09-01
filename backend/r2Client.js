@@ -38,8 +38,11 @@ if (configured) {
       secretAccessKey: R2_SECRET_ACCESS_KEY,
     },
   });
+  console.log(`R2 configured: bucket "${R2_BUCKET}", account ${R2_ACCOUNT_ID.slice(0, 6)}…, ` +
+    `key ${R2_ACCESS_KEY_ID.slice(0, 4)}… (${R2_SECRET_ACCESS_KEY.length}-char secret)`);
 } else {
-  console.warn("WARNING: R2 is not configured - attachment upload/serve/delete will 503.");
+  console.warn("WARNING: R2 is not configured - attachment upload/serve/delete will 503. " +
+    `present: ${["R2_ACCOUNT_ID","R2_ACCESS_KEY_ID","R2_SECRET_ACCESS_KEY","R2_BUCKET"].filter(k => process.env[k]).join(",") || "none"}`);
 }
 
 function isNotFound(err) {
@@ -47,6 +50,7 @@ function isNotFound(err) {
     err &&
     (err.name === "NoSuchKey" ||
       err.name === "NotFound" ||
+      err.Code === "NoSuchKey" ||
       err.$metadata?.httpStatusCode === 404)
   );
 }

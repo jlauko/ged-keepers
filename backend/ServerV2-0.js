@@ -93,8 +93,11 @@ function r2Key(tree, sub, filename) {
 // download; anything else serves inline.
 async function streamR2ToResponse(res, key, { disposition, downloadName } = {}) {
   const obj = await r2.getObject(key);
+  // Buffer it (attachments are <=25 MB) - avoids depending on the exact stream
+  // type the SDK returns, which varies by runtime.
+  const bytes = Buffer.from(await obj.Body.transformToByteArray());
   if (obj.ContentType) res.set("Content-Type", obj.ContentType);
-  if (obj.ContentLength != null) res.set("Content-Length", String(obj.ContentLength));
+  res.set("Content-Length", String(bytes.length));
   // Short cache: attachments are keyed by name, so a delete + re-upload of the
   // same name is an edit - don't let a stale copy linger for long.
   res.set("Cache-Control", "private, max-age=300");
@@ -103,7 +106,7 @@ async function streamR2ToResponse(res, key, { disposition, downloadName } = {}) 
     res.set("Content-Disposition",
       `attachment; filename="${(downloadName || "download").replace(/"/g, "")}"`);
   }
-  obj.Body.pipe(res);
+  res.end(bytes);
 }
 
 // Middleware: any valid session (viewer or admin) for this tree.
@@ -213,7 +216,8 @@ app.get("/download/:username/:filename", requireView, requireR2, async (req, res
         });
     } catch (err) {
         if (r2.isNotFound(err)) return res.status(404).send("File not found");
-        console.error("download error:", err.message);
+        console.error(`R2 download error for ${key}:`, err.name, "-", err.message,
+            err.$metadata ? JSON.stringify(err.$metadata) : "");
         res.status(500).send("Error");
     }
 });
@@ -225,7 +229,8 @@ app.get("/thumbnail/:username/:filename", requireView, requireR2, async (req, re
         await streamR2ToResponse(res, key);
     } catch (err) {
         if (r2.isNotFound(err)) return res.status(404).send("Thumbnail not found");
-        console.error("thumbnail error:", err.message);
+        console.error(`R2 thumbnail error for ${key}:`, err.name, "-", err.message,
+            err.$metadata ? JSON.stringify(err.$metadata) : "");
         res.status(500).send("Error");
     }
 });
