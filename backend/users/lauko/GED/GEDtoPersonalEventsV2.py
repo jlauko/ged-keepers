@@ -1,3 +1,4 @@
+import argparse
 import json
 from gedcom.parser import Parser
 from gedcom.element.individual import IndividualElement
@@ -6,8 +7,11 @@ from gedcom.element.family import FamilyElement
 # ------------------------------------------------------
 # CONFIGURATION
 # ------------------------------------------------------
-input_file = "LaukoFamilyTree.ged"
-output_file = "PersonalHistoryEvents.json"
+_args = argparse.ArgumentParser(description="GEDCOM -> personalHistoryEvents.json")
+_args.add_argument("--ged", default="LaukoFamilyTree.ged", help="Path to GEDCOM file")
+input_file = _args.parse_args().ged
+# lowercase name so it matches what the backend reads on a case-sensitive FS
+output_file = "personalHistoryEvents.json"
 
 color_map = {
     "Birth": "lightblue",
@@ -285,7 +289,7 @@ for person in people_events:
     personal_events_dict[pid] = person
 
 # Write dictionary to JSON
-with open(output_file, "w") as f:
-    json.dump(personal_events_dict, f, indent=4)
+with open(output_file, "w", encoding="utf-8") as f:
+    json.dump(personal_events_dict, f, indent=4, ensure_ascii=False)
 
-print(f"✅ Created {output_file} with {len(people_events)} people.")
+print(f"Created {output_file} with {len(people_events)} people.")

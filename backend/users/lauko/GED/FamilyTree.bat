@@ -1,72 +1,54 @@
 @echo off
+setlocal
+cd /d "%~dp0"
+
 echo ===============================================
 echo Updating Family Tree Data...
 echo ===============================================
+echo.
 
-
-:: --- Ask for GED Filename ---
-set /p GEDFILE=Enter the name of the GED file (e.g. Family.ged): 
-
+:: --- Ask for GED filename ---
+set /p GEDFILE=Enter the name of the GED file (e.g. LaukoFamilyTree.ged):
 echo.
 echo You entered: %GEDFILE%
 echo.
 
-:: --- Verify File Exists ---
 if not exist "%GEDFILE%" (
-    echo ERROR: The file "%GEDFILE%" was not found.
-    echo Make sure the file is in this folder.
+    echo ERROR: "%GEDFILE%" not found in this folder.
     pause
-    exit /b
+    exit /b 1
 )
 
-
-REM ----- Step 1: Convert GED → Family.json -----
-echo Running Family_tree5.py... Creating family.json
-python Family_tree5.py --ged "%GEDFILE%"   
-if %errorlevel% neq 0 (
-    echo ERROR: Family_tree5.py failed!
+:: birthLocationColors.json is a hand-maintained palette the frontend needs;
+:: no script generates it, so just check it's present.
+if not exist "birthLocationColors.json" (
+    echo ERROR: birthLocationColors.json is missing ^(hand-maintained config^).
     pause
-    exit /b %errorlevel%
+    exit /b 1
 )
 
-REM ----- Step 2: Create PersonalEventsHistory.json -----
-echo Running GEDtoPersonalEventsV2.py... Creating personalHistoryEvents.json
-python GEDtoPersonalEventsV2.py
-if %errorlevel% neq 0 (
-    echo ERROR: GEDtoPersonalEventsV2.py failed!
-    pause
-    exit /b %errorlevel%
-)
+echo [1/4] family_tree5.py  -^> family.json
+python family_tree5.py --ged "%GEDFILE%"
+if %errorlevel% neq 0 ( echo ERROR: family_tree5.py failed & pause & exit /b %errorlevel% )
 
-REM ----- Step 3: Create BirthLocationGroups.json -----
-echo Running birthLocationGroups.py... Creating birthlocationGroups.json
+echo [2/4] GEDtoPersonalEventsV2.py  -^> personalHistoryEvents.json
+python GEDtoPersonalEventsV2.py --ged "%GEDFILE%"
+if %errorlevel% neq 0 ( echo ERROR: GEDtoPersonalEventsV2.py failed & pause & exit /b %errorlevel% )
+
+echo [3/4] birthLocationGroups.py  -^> birthLocationGroups.json
 python birthLocationGroups.py
-if %errorlevel% neq 0 (
-    echo ERROR: birthLocationGroups.py failed!
-    pause
-    exit /b %errorlevel%
+if %errorlevel% neq 0 ( echo ERROR: birthLocationGroups.py failed & pause & exit /b %errorlevel% )
+
+echo [4/4] DeathLocationGroups.py  -^> DeathLocationGroups.json
+python DeathLocationGroups.py
+if %errorlevel% neq 0 ( echo ERROR: DeathLocationGroups.py failed & pause & exit /b %errorlevel% )
+
+for %%F in (family.json personalHistoryEvents.json birthLocationGroups.json DeathLocationGroups.json) do (
+    if not exist "%%F" ( echo ERROR: expected output %%F was not created & pause & exit /b 1 )
 )
 
-:: --- Verify File Exists ---
-if not exist birthlocationcolors.json (
-    echo ERROR: The file birthlocationcolors.json was not found.
-    echo Make sure the file is in this folder.
-    pause
-    exit /b
-)
-echo birthlocationcolors.json Exists
-
-:: --- Verify File Exists ---
-if not exist birthlocationgroups.json (
-    echo ERROR: The file birthlocationgroups.json was not found.
-    echo Make sure the file is in this folder.
-    pause
-    exit /b
-)
-echo birthlocationgroups.json Exists
-
-
+echo.
 echo ===============================================
-echo All files successfully generated!
+echo All files generated. Commit the updated *.json and push.
 echo ===============================================
 pause

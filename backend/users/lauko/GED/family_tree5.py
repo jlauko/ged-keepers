@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """
-family_tree.py
-Read a GEDCOM (.ged) file and generate an interactive HTML family tree.
-Works offline (the HTML is self-contained).
+family_tree5.py
+Read a GEDCOM (.ged) file and write family.json (individuals, families, and
+the parents_of / children_of / spouses_of lookup maps).
 
-Usage examples:
-  python family_tree.py --ged family.ged --out direct_tree.html
-  python family_tree.py --ged family.ged --out extended_tree.html
+Usage:
+  python family_tree5.py --ged LaukoFamilyTree.ged [--out family.json]
 """
-from doctest import debug
 import json
 import argparse
-from xml.etree.ElementTree import indent
 from ged4py.parser import GedcomReader
-from pyvis.network import Network
 
 def load_ged_indexes(ged_file):
     """
@@ -73,18 +69,23 @@ def load_ged_indexes(ged_file):
 
         families[fid] = {"id": fid, "husb": husb_id, "wife": wife_id, "children": child_ids}
 
-        # Populate parents_of and children_of
+        # Populate parents_of and children_of. A child can appear in more than
+        # one family (adoption / step-family) - merge, don't overwrite.
         for c in child_ids:
-            parents_of[c] = [p for p in [husb_id, wife_id] if p]
-            if husb_id:
-                children_of.setdefault(husb_id, []).append(c)
-            if wife_id:
-                children_of.setdefault(wife_id, []).append(c)
+            known = parents_of.setdefault(c, [])
+            for p in (husb_id, wife_id):
+                if p and p not in known:
+                    known.append(p)
+            for p in (husb_id, wife_id):
+                if p and c not in children_of.setdefault(p, []):
+                    children_of[p].append(c)
 
-        # Populate spouses_of
+        # Populate spouses_of (a person can have more than one spouse)
         if husb_id and wife_id:
-            spouses_of.setdefault(husb_id, []).append(wife_id)
-            spouses_of.setdefault(wife_id, []).append(husb_id)
+            if wife_id not in spouses_of.setdefault(husb_id, []):
+                spouses_of[husb_id].append(wife_id)
+            if husb_id not in spouses_of.setdefault(wife_id, []):
+                spouses_of[wife_id].append(husb_id)
 
     return individuals, families, parents_of, children_of, spouses_of
 
@@ -131,8 +132,8 @@ def siblings_of(person_id, parents_of, children_of):
     sibs.discard(person_id)
     return sibs
 
-def build_tree(individuals, parents_of, children_of, spouses_of, families):
-    
+def build_tree(individuals, parents_of, children_of, spouses_of, families, out_path="family.json"):
+
     count = 0
     json_individuals = {}
     for pid, ind in individuals.items():
@@ -166,12 +167,10 @@ def build_tree(individuals, parents_of, children_of, spouses_of, families):
 
     safe_data = make_json_safe(data)
 
-    with open("family.json", "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(safe_data, f, indent=2, ensure_ascii=False)
 
-    print(f"Json file written")
-
-    return
+    print(f"Wrote {out_path} ({len(json_individuals)} individuals, {len(families)} families)")
 
 def make_json_safe(obj):
     """Convert objects into something JSON serializable."""
@@ -204,23 +203,20 @@ def format_label(ind):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ged", required=True, help="Path to GEDCOM file")
+    parser.add_argument("--out", default="family.json", help="Output JSON path")
     args = parser.parse_args()
 
-    # ✅ Load GEDCOM indexes first
     individuals, families, parents_of, children_of, spouses_of = load_ged_indexes(args.ged)
 
-
-    print("Individuals keys sample:", list(individuals.keys())[:10])  # just first 10 IDs
-
-        # ✅ Build HTML with indexes
     build_tree(
         individuals=individuals,
         parents_of=parents_of,
-        children_of = children_of,
-        spouses_of = spouses_of,
-        families = families
+        children_of=children_of,
+        spouses_of=spouses_of,
+        families=families,
+        out_path=args.out,
     )
-   
+
 
 if __name__ == "__main__":
     main()

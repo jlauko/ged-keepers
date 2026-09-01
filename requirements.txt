@@ -1,2 +1,6 @@
-ged4py
-pyvis
+# Python deps for the .ged -> JSON pipeline (backend/users/<user>/GED/*.py).
+# Install:  pip install -r requirements.txt
+
+ged4py>=0.5.2          # family_tree5.py
+python-gedcom>=1.0.0   # GEDtoPersonalEventsV2.py
+requests>=2.31.0       # generatehistoricalevents.py (Wikidata fetch)

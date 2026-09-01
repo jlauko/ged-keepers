@@ -55,26 +55,30 @@ Bump the `?v=` on the `styles.css` / `config.js` links in `index.html` when
 those files change, or browsers serve stale copies.
 
 ## Pipeline: .ged → JSON
-Run via `backend/users/<username>/GED/FamilyTree.bat`. Intended order:
-1. `family_tree5.py --ged <file>.ged` → `family.json` (core people/families)
-2. `GEDtoPersonalEventsV2.py` → `personalHistoryEvents.json`
-3. `birthLocationGroups.py` → `birthLocationGroups.json` (+ colors)
+`pip install -r requirements.txt` (root), then run
+`backend/users/<username>/GED/FamilyTree.bat` (it `cd`s to its own folder,
+prompts for the `.ged` name, and runs all four steps):
+1. `family_tree5.py --ged <file>.ged [--out family.json]` → `family.json`
+   (`ged4py`)
+2. `GEDtoPersonalEventsV2.py --ged <file>.ged` → `personalHistoryEvents.json`
+   (`python-gedcom`)
+3. `birthLocationGroups.py` → `birthLocationGroups.json`
 4. `DeathLocationGroups.py` → `DeathLocationGroups.json`
+Steps 3–4 read `personalHistoryEvents.json` and share `location_groups.py`
+(the state/country lists + `normalize_location`). All output names are
+lowercase-first to match what the backend reads on Linux.
 
-⚠️ **The pipeline has known rough edges (not yet fixed):**
-- `family_tree5.py` uses `ged4py`; `GEDtoPersonalEventsV2.py` uses
-  `python-gedcom`; `generatehistoricalevents.py` uses `requests`.
-  `requirements.txt` only lists `ged4py` + `pyvis` — the others must be
-  installed manually, and `pyvis` is imported but unused.
-- Filename casing is inconsistent (`PersonalHistoryEvents.json` written vs
-  `personalHistoryEvents.json` read; `birthlocationcolors.json` vs
-  `birthLocationColors.json`). Works on Windows, breaks on a case-sensitive
-  FS. Scripts write to the CWD and rely on the `.bat` `cd`.
-- `FamilyTree.bat` only runs steps 1–3 (no `DeathLocationGroups.py`) and
-  checks for a `birthlocationcolors.json` that the visible script doesn't
-  produce.
-- `family_tree5.py`'s `build_tree` hardcodes the output to `family.json` and
-  overwrites `parents_of[child]` (loses parents for a child in two families).
+`birthLocationColors.json` is a **hand-maintained** palette (no script
+produces it); the `.bat` just checks it exists. `HistoricalEvents.json` and
+`offlineHistoricalEvents.json` are also hand-curated — `generatehistoricalevents.py`
+writes `events_by_period.json`, which nothing currently consumes.
+
+⚠️ Still rough: the two GEDCOM libraries aren't unified; `GEDtoPersonalEventsV2.py`
+runs all its work at module top-level (no `main()`); `family_tree5.py` still
+carries dead `set_color`/`format_label`/`dump_tree` helpers from when it
+emitted HTML. Regenerating the JSON from the current `.ged` produces real
+diffs (the committed data lags the `.ged`), so regen + review + commit the
+JSON as its own change, not bundled with code.
 
 ## Data model (backend/users/<username>/GED/family.json)
 - `individuals`: dict keyed by GEDCOM id (e.g. `@I310053455724@`) →
