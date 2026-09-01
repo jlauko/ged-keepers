@@ -42,9 +42,10 @@ Real auth as of the Aug 2026 security pass. **Not a mock any more.**
 
 ### Deploying to Render
 Set in the Environment tab (never commit): `JWT_SECRET` (long random),
-`ADMIN_PASSWORD`, `VIEW_PASSWORD`. Optional `ADMIN_USERNAME` (default `lauko`).
-Missing `JWT_SECRET` → the process exits on boot. Missing `VIEW_PASSWORD` →
-only the admin password works.
+`ADMIN_PASSWORD`, `VIEW_PASSWORD`, and the four `R2_*` vars (see Attachments).
+Optional `ADMIN_USERNAME` (default `lauko`). Missing `JWT_SECRET` → the process
+exits on boot. Missing `VIEW_PASSWORD` → only the admin password works. Missing
+`R2_*` → the app runs but attachment routes return 503.
 
 ### Local dev
 `backend/.env` (gitignored) holds the same vars — see `backend/.env.example`.
@@ -114,22 +115,29 @@ JSON as its own change, not bundled with code.
   already there** (see sensitivity note). Longer-term: move to Render Secret
   Files or a small DB.
 
-## Attachments (local disk — no R2)
+## Attachments — Cloudflare R2
 Photos/documents (including historical 1920s Austro-Hungarian family papers)
-live in `backend/users/<username>/files/` and `.../thumbnails/`. These
-directories are **gitignored** (`.gitignore`: `backend/users/*/files/`,
-`.../thumbnails/`) — they exist on the Render disk and locally, not in git.
-(Older history still contains ~182 MB of them; a `git filter-repo` purge was
-discussed but not done.)
-- Upload: `POST /uploadAttachment/:username` — multer disk storage, key shape
-  `users/<username>/{files,thumbnails}/<sanitized-original-name>`. Restricted
-  to image / pdf / mp4 / mov, 25 MB, 2 files.
-- Serve: `GET /download/:username/:filename`, `GET /thumbnail/:username/:filename`,
-  and `express.static('/users', …)` — all require a valid session token.
-- Delete: `DELETE /delete/:username/:filename` — `fs.unlink` (with retry).
-- A Cloudflare R2 migration was *planned* (an earlier CLAUDE.md described
-  `backend/r2Client.js`, `scripts/migrate-to-r2.js`, presigned-URL serving) —
-  **none of that was ever built.** Ignore any reference to R2.
+live in a Cloudflare R2 bucket, key shape
+`users/<tree>/{files,thumbnails}/<sanitized-name>`. `backend/r2Client.js` wraps
+`@aws-sdk/client-s3` pointed at the R2 endpoint; env: `R2_ACCOUNT_ID`,
+`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`. If unset, `r2.configured`
+is false and the attachment routes 503 (rest of the app still runs).
+- Upload: `POST /uploadAttachment/:username` — multer **memory** storage →
+  `PutObjectCommand`. image / pdf / mp4 / mov only, 25 MB, 2 files.
+- Serve: `GET /download/:username/:filename` (Content-Disposition: attachment)
+  and `GET /thumbnail/:username/:filename` — both `GetObjectCommand` streamed
+  through the backend (not presigned URLs). `requireView` + a token (header or
+  `?token=` for `<img src>`). No static file mount.
+- Delete: `DELETE /delete/:username/:filename` — `DeleteObjectCommand` for the
+  file + its thumbnail.
+- The thumbnail's stored name isn't derivable from the artifact name (mix of
+  `.png` and matching-extension), so the frontend reads it off `att.thumbUrl`
+  (`lastPathSegment`), not by transforming `att.filename`.
+- `backend/scripts/migrate-to-r2.js` — one-time upload of the local files.
+- The `backend/users/<tree>/{files,thumbnails}/` dirs on your disk are the
+  backup; they're gitignored but ~165 files + 170 thumbnails are still tracked
+  from before the ignore rule (and ~182 MB more sit in history — the
+  `git filter-repo` purge happens after R2 is verified in production).
 
 ## Conventions for adding researched data
 - Add new people/relationships to `individuals` / `families` (keeping

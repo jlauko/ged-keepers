@@ -557,6 +557,16 @@ function withToken(url) {
     if (!url || !authToken) return url;
     return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(authToken);
 }
+// The decoded last path segment of a URL (an attachment's stored filename),
+// or null. Tolerates absolute URLs and bare paths.
+function lastPathSegment(u) {
+    if (!u) return null;
+    try {
+        const path = u.includes("://") ? new URL(u).pathname : u.split("?")[0];
+        const seg = path.split("/").filter(Boolean).pop();
+        return seg ? decodeURIComponent(seg) : null;
+    } catch (e) { return null; }
+}
 //-----------------------------------------------------------------------------
 // Node Information / Biography Management
 //-----------------------------------------------------------------------------
@@ -722,13 +732,10 @@ async function cacheImage(att) {
 
     // console.log("cacheImage: fetching thumbnail for:", att);
 
-    const turl = att.thumbUrl;
+    const name = lastPathSegment(att.thumbUrl) || att.filename;
+    if (!name) throw new Error("attachment has no thumbnail name");
 
-    const filename = decodeURIComponent(
-        new URL(turl).pathname.split('/').pop()
-    );
-
-    const url = await getThumbnailUrl(userName, filename);
+    const url = await getThumbnailUrl(userName, name);
 
     const img = new Image();
 
@@ -3117,11 +3124,6 @@ async function SelectAttachment() {
                     continue;
                 }
                 attName = attName.trim() || file.name;
-                let attPath = "";
-                let attPathTN = "";
-
-                attPath = `users/${userName}/files/${file.name}`;  
-                attPathTN = `users/${userName}/thumbnails/${file.name}`;  
 
                 SendAttachmentToBackend(file)
                     .then(result => {
@@ -3129,10 +3131,10 @@ async function SelectAttachment() {
                         // -- Successfully uploaded file to backend ----
                         // ---------------------------------------
                         console.log("Success Uploading File to Backend:", result);
-                        const attachmentInfo = { 
+                        const attachmentInfo = {
                             name: attName,
-                            filename: file.name, 
-                            fileUrl: result.fileUrl, 
+                            filename: result.filename || file.name,
+                            fileUrl: result.fileUrl,
                             thumbUrl: result.thumbUrl,
                             uploadedAt: new Date().toISOString(), 
                             type: input.type, 
@@ -3480,12 +3482,16 @@ function RenderNodeAttachments(nodeId) {
 function BuildAttachmentRow(att, ID, displayName,ext,html) {
 
 //    console.log(" Building attachment row for:", att, ID);
-    // Build edit and delete buttons only if user is admin
-    // extract the thumbnail filename from the thumbnail URL 
-    const turl = att.thumbUrl;
-    const tnfilename = decodeURIComponent(
-        new URL(turl).pathname.split('/').pop()
-    );
+    // Attachment bytes always go through the token-gated /download + /thumbnail
+    // routes (backed by R2). The artifact name is att.filename; the thumbnail
+    // name is whatever was actually stored (its extension isn't predictable -
+    // some are .png, some match the artifact), so read it off att.thumbUrl.
+    const attName = att.filename || lastPathSegment(att.fileUrl) || lastPathSegment(att.thumbUrl);
+    const thumbName = lastPathSegment(att.thumbUrl) || attName;
+    const fileHref = attName
+        ? withToken(`${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(attName)}`) : "";
+    const thumbHref = thumbName
+        ? withToken(`${API_BASE_URL}/thumbnail/${encodeURIComponent(userName)}/${encodeURIComponent(thumbName)}`) : "";
 
     const adminButtons = userRole === "admin" ? `
                 <button class="edit-btn" 
@@ -3493,9 +3499,10 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
                     data-id="${att.uploadedAt}" title="Edit name">
                     <i class="fa-solid fa-pen"></i>
                 </button>
-                <button class="delete-btn" 
-                    data-id="${att.uploadedAt}" 
-                    data-filename="${att.filename}" 
+                <button class="delete-btn"
+                    data-id="${att.uploadedAt}"
+                    data-filename="${attName || ''}"
+                    data-thumb="${thumbName || ''}"
                     data-node="${ID}" title="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -3514,7 +3521,7 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
             </button>
 
             <img class="attachment-thumb"
-                src="${withToken(`${API_BASE_URL}/users/${userName}/thumbnails/${encodeURIComponent(tnfilename)}`)}"
+                src="${thumbHref}"
                 loading="lazy"
                 style = "max-width: 200px; max-height:200px; ">
 
@@ -3539,23 +3546,18 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
     ">
 
         <div style="font-size:11px; margin-left:35px; color:#666;">
-            ${truncate(att.filename,30)}
+            ${truncate(attName || "",30)}
         </div>
 
         <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
             <button class="open-btn"
-                data-url="${withToken(att.fileUrl)}"
-                data-tnurl="${withToken(`${API_BASE_URL}/users/${userName}/thumbnails/${att.filename}`)}"
-                // this needs to be converted to a non-local host URL that the frontend can access, 
-                // currently it is a local file path on the backend server which won't work for the frontend, 
-                // need to add an endpoint in the backend to serve the thumbnail images 
-                // and update this to point to that endpoint with the correct parameters
+                data-url="${fileHref}"
+                data-tnurl="${thumbHref}"
                 data-type="${ext}" title="Open">
                 <i class="fa-solid fa-eye"></i>
             </button>
-            <button class="download-btn" 
-                data-url="${att.fileUrl}" 
-                data-filename="${att.filename}" title="Download">
+            <button class="download-btn"
+                data-filename="${attName || ''}" title="Download">
                 <i class="fa-solid fa-download"></i>
             </button>
             ${adminButtons}
@@ -3602,10 +3604,9 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     // Download buttons
     document.querySelectorAll(".download-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            const url = btn.dataset.url;
             const filename = btn.dataset.filename;
-//          Download attachment
-            console.log("Downloading attachment :", url);
+            if (!filename) return;
+            console.log("Downloading attachment:", filename);
             const link = document.createElement("a");
             link.href = withToken(`${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`);
             link.download = filename;
@@ -3621,6 +3622,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
         btn.addEventListener("click", async () => {
             const ID = btn.dataset.id;
             const filename = btn.dataset.filename;
+            const thumbName = btn.dataset.thumb;
 
             if (findAttachment(nodeInformation, filename, Pinned_NodeId) != null) {
                 showError("This file is shared by another node or cluster, It will be removed from this entity but the file will remain on the server");
@@ -3637,10 +3639,9 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
             if (!confirm(`Delete ${filename}?`)) return;
 
             try {
-                const response = await fetch(
-                    `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`,
-                    { method: "DELETE", headers: { ...authHeaders() } }
-                );
+                const delUrl = `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`
+                    + (thumbName ? `?thumb=${encodeURIComponent(thumbName)}` : "");
+                const response = await fetch(delUrl, { method: "DELETE", headers: { ...authHeaders() } });
                 if (response.status === 401 || response.status === 403) {
                     handleAuthExpired();
                     return;

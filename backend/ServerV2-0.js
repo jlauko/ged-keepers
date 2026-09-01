@@ -7,10 +7,9 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const fsp = require('fs/promises');
-const sharp = require('sharp');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const r2 = require('./r2Client');
 
 const CACHE_FILE = "./geoCache.json";
 
@@ -81,13 +80,27 @@ function safeFilename(name) {
   return base;
 }
 
-// Build <__dirname>/users/<tree>/<sub>/<file>, or null if any part is unsafe.
-// safeFilename() guarantees no separators, so path.join can't escape the dir.
-function resolveUserFile(tree, sub, filename) {
+// R2 object key for an attachment: users/<tree>/<sub>/<file>.
+// Returns null if the tree or filename is unsafe.  sub is "files" or "thumbnails".
+function r2Key(tree, sub, filename) {
   if (!isKnownTree(tree)) return null;
   const clean = safeFilename(filename);
   if (!clean) return null;
-  return path.join(__dirname, "users", tree.toLowerCase(), sub, clean);
+  return `users/${tree.toLowerCase()}/${sub}/${clean}`;
+}
+
+// Stream an R2 object to the response. `disposition` = "attachment" forces a
+// download; anything else serves inline.
+async function streamR2ToResponse(res, key, { disposition, downloadName } = {}) {
+  const obj = await r2.getObject(key);
+  if (obj.ContentType) res.set("Content-Type", obj.ContentType);
+  if (obj.ContentLength != null) res.set("Content-Length", String(obj.ContentLength));
+  res.set("Cache-Control", "private, max-age=3600");
+  if (disposition === "attachment") {
+    res.set("Content-Disposition",
+      `attachment; filename="${(downloadName || "download").replace(/"/g, "")}"`);
+  }
+  obj.Body.pipe(res);
 }
 
 // Middleware: any valid session (viewer or admin) for this tree.
@@ -173,84 +186,68 @@ app.post("/auth/login", (req, res) => {
 app.get("/auth/verify", requireView, (req, res) => {
     res.json({ ok: true, role: req.user.role, username: req.user.username });
 });
-// ---------------------------------------------
-// --------- Download file to client --------------
-// ---------------------------------------------
-app.get("/download/:username/:filename", requireView, (req, res) => {
-    const file = resolveUserFile(req.params.username, "files", req.params.filename);
-    if (!file) return res.status(400).json({ error: "Bad request" });
-    res.download(file, (err) => {
-        if (err) {
-            console.error("Error downloading file:", err.message);
-            res.status(404).send("File not found");
-        }
-    });
-});
-// ---------------------------------------------
-// --------- Download thumbnail to client --------------
-// ---------------------------------------------
-app.get("/thumbnail/:username/:filename", requireView, (req, res) => {
-    const file = resolveUserFile(req.params.username, "thumbnails", req.params.filename);
-    if (!file) return res.status(400).json({ error: "Bad request" });
-    res.download(file, (err) => {
-        if (err) {
-            console.error("Error downloading thumbnail:", err.message);
-            res.status(404).send("File not found");
-        }
-    });
-});
-// ---------------------------------------------------------
-// ---------------- Delete Files ---------------------------
-// ---------------------------------------------------------
-// DELETE route
-app.delete("/delete/:username/:filename", requireAdmin, async (req, res) => {
-    const clean = safeFilename(req.params.filename);
-    const filePath = resolveUserFile(req.params.username, "files", req.params.filename);
-    if (!clean || !filePath) return res.status(400).json({ error: "Bad request" });
-    const thumbPath = resolveUserFile(req.params.username, "thumbnails", getThumbnailFilename(clean));
+function requireR2(req, res, next) {
+    if (!r2.configured) return res.status(503).json({ error: "Attachment storage is not configured" });
+    next();
+}
 
-    console.log("Attempting to delete:", filePath, "and", thumbPath);
-
-    try {
-        await deleteFileRobust(filePath);
-        if (thumbPath) await deleteFileRobust(thumbPath);
-        console.log("files deleted");
-        res.json({ success: true, message: "File and thumbnail deleted" });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Error deleting file", error: err.message });
-    }
-});
-
-function getThumbnailFilename(fileName) {
+// PDFs get a .jpg thumbnail; everything else shares one name.
+function thumbFilenameFor(fileName) {
     if (path.extname(fileName).toLowerCase() === '.pdf') {
         return path.basename(fileName, path.extname(fileName)) + '.jpg';
     }
     return fileName;
 }
 
-async function deleteFileRobust(filePath, retries = 5, delay = 2000) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
+// --------- Serve an attachment (from R2, streamed through here) ----------
+app.get("/download/:username/:filename", requireView, requireR2, async (req, res) => {
+    const key = r2Key(req.params.username, "files", req.params.filename);
+    if (!key) return res.status(400).json({ error: "Bad request" });
     try {
-      await fsp.unlink(filePath);
-      console.log(`✅ Deleted ${filePath} on attempt ${attempt}`);
-      return { success: true, attempts: attempt };
+        await streamR2ToResponse(res, key, {
+            disposition: "attachment",
+            downloadName: safeFilename(req.params.filename),
+        });
     } catch (err) {
-      if (err.code === "EPERM") {
-        console.warn(`⚠️ EPERM on attempt ${attempt} for ${filePath}`);
-        if (attempt < retries) {
-          await new Promise(res => setTimeout(res, delay));
-          continue; // retry
-        }
-      } else if (err.code === "ENOENT") {
-        console.warn(`ℹ️ File not found: ${filePath}`);
-        return { success: false, attempts: attempt, reason: "not found" };
-      }
-      console.error(`❌ Error deleting ${filePath} on attempt ${attempt}`, err);
-      throw err;
+        if (r2.isNotFound(err)) return res.status(404).send("File not found");
+        console.error("download error:", err.message);
+        res.status(500).send("Error");
     }
-  }
-  throw new Error(`Failed to delete ${filePath} after ${retries} attempts`);
-}
+});
+
+app.get("/thumbnail/:username/:filename", requireView, requireR2, async (req, res) => {
+    const key = r2Key(req.params.username, "thumbnails", req.params.filename);
+    if (!key) return res.status(400).json({ error: "Bad request" });
+    try {
+        await streamR2ToResponse(res, key);
+    } catch (err) {
+        if (r2.isNotFound(err)) return res.status(404).send("Thumbnail not found");
+        console.error("thumbnail error:", err.message);
+        res.status(500).send("Error");
+    }
+});
+
+// --------- Delete an attachment (file + thumbnail) from R2 ----------
+app.delete("/delete/:username/:filename", requireAdmin, requireR2, async (req, res) => {
+    const clean = safeFilename(req.params.filename);
+    const fileKey = r2Key(req.params.username, "files", req.params.filename);
+    if (!clean || !fileKey) return res.status(400).json({ error: "Bad request" });
+    // The frontend knows the real thumbnail name (its extension varies); fall
+    // back to a guess if it didn't send one.
+    const thumbName = req.query.thumb || thumbFilenameFor(clean);
+    const thumbKey = r2Key(req.params.username, "thumbnails", thumbName);
+    try {
+        await r2.deleteObject(fileKey);
+        if (thumbKey) await r2.deleteObject(thumbKey).catch(e => {
+            if (!r2.isNotFound(e)) throw e;   // missing thumb is fine
+        });
+        res.json({ success: true, message: "File and thumbnail deleted" });
+    } catch (err) {
+        console.error("delete error:", err.message);
+        res.status(500).json({ success: false, message: "Error deleting file", error: err.message });
+    }
+});
+
 const nodeRepo = require("./nodeRepo");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
@@ -376,25 +373,9 @@ const ALLOWED_UPLOAD_MIME = new Set([
 ]);
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const tree = String(req.params.username || "").toLowerCase();
-        if (!isKnownTree(tree)) return cb(new Error("Unknown tree"));
-        const folder = file.fieldname === "thumbnail" ? "thumbnails" : "files";
-        const dir = path.join(__dirname, "users", tree, folder);
-        fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    // Keep the original name for display, but strip any path components.
-    filename: (req, file, cb) => {
-        const clean = safeFilename(file.originalname);
-        if (!clean) return cb(new Error("Bad filename"));
-        cb(null, clean);
-    }
-});
-
+// Files are held in memory and pushed straight to R2 (no local disk).
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 },
     fileFilter: (req, file, cb) => {
         if (!ALLOWED_UPLOAD_MIME.has(file.mimetype)) {
@@ -417,74 +398,50 @@ function uploadAttachmentFields(req, res, next) {
     });
 }
 
-// ------------------------------------------------------------------
-// Upload route
-// reads the username from the URL parameter and saves the uploaded files in the corresponding user directory
-// It returns the URLs for the uploaded artifact and thumbnail
-// It also handles errors and returns appropriate status codes and messages
+// Upload route: puts the artifact (and optional thumbnail) into R2 and returns
+// the /download + /thumbnail URLs the frontend should store.
 app.post(
     '/uploadAttachment/:username',
     requireAdmin,
+    requireR2,
     uploadAttachmentFields,
     async (req, res) => {
-
         try {
-            const username = req.params.username;
+            const tree = req.params.username.toLowerCase();
             const artifact = req.files?.artifact?.[0];
             const thumbnail = req.files?.thumbnail?.[0];
 
-            if (!artifact) {
-                return res.status(400).json({
-                    error: "No artifact uploaded."
-                });
+            if (!artifact) return res.status(400).json({ error: "No artifact uploaded." });
+
+            const artifactName = safeFilename(artifact.originalname);
+            if (!artifactName) return res.status(400).json({ error: "Bad filename" });
+            await r2.putObject(`users/${tree}/files/${artifactName}`, artifact.buffer, artifact.mimetype);
+
+            let thumbName = null;
+            if (thumbnail) {
+                const t = safeFilename(thumbnail.originalname);
+                if (t) {
+                    thumbName = t;
+                    await r2.putObject(`users/${tree}/thumbnails/${thumbName}`, thumbnail.buffer, thumbnail.mimetype);
+                }
             }
 
-            // artifact.filename is the sanitized name multer actually wrote.
             const baseUrl = `${req.protocol}://${req.get("host")}`;
             res.json({
-                filename: artifact.filename,
+                filename: artifactName,
                 mimeType: artifact.mimetype,
-                fileUrl:
-                    `${baseUrl}/users/${username}/files/${encodeURIComponent(artifact.filename)}`,
-                thumbUrl:
-                    thumbnail
-                        ? `${baseUrl}/users/${username}/thumbnails/${encodeURIComponent(thumbnail.filename)}`
-                        : null
+                fileUrl: `${baseUrl}/download/${tree}/${encodeURIComponent(artifactName)}`,
+                thumbUrl: thumbName ? `${baseUrl}/thumbnail/${tree}/${encodeURIComponent(thumbName)}` : null,
             });
-        }
-        catch(err){
-            console.error(err);
-            res.status(500).json({
-                error:"Upload failed"
-            });
+        } catch (err) {
+            console.error("Upload failed:", err);
+            res.status(500).json({ error: "Upload failed" });
         }
     }
 );
 
-//temp because render does not support pdf-poppler     const pdf = require('pdf-poppler');
-
-// Need to move the creation of pdf thumbnails to the frontend.
-
-
-// Attachment files/thumbnails. Requires a valid session for the tree named
-// in the first path segment (/users/<tree>/files/...). Token comes from the
-// Authorization header or ?token= (for <img src>).
-app.use('/users', (req, res, next) => {
-  const decoded = decodeToken(req);
-  if (!decoded) return res.status(401).json({ error: "Authentication required" });
-  let treeSeg = "";
-  try { treeSeg = decodeURIComponent(req.url.split('/').filter(Boolean)[0] || ""); } catch (e) {}
-  if (!isKnownTree(treeSeg) || decoded.username !== treeSeg.toLowerCase()) {
-    return res.status(403).json({ error: "Token does not match this tree" });
-  }
-  next();
-}, express.static(path.join(__dirname, 'users'), {
-  dotfiles: 'deny',
-  setHeaders: (res, path) => {
-    if (path.endsWith('.png')) res.set('Content-Type', 'image/png');
-    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) res.set('Content-Type', 'image/jpeg');
-  }
-}));
+// Attachment bytes are served only through /download and /thumbnail (both from
+// R2). There is no static file mount - PDF thumbnails are made on the frontend.
 
 // ---------------------------------------
 // ---------- get all cluster info -------
