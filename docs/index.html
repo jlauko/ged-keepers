@@ -815,10 +815,13 @@ async function saveBioData() {
 
     if (res != null) {
         // Update local cache only after the backend confirmed the write
-        nodeInformation[currentEditingNodeId] = bioData;
-        console.log("Biography saved for node:", currentEditingNodeId);
+        const savedId = currentEditingNodeId;
+        nodeInformation[savedId] = bioData;
+        console.log("Biography saved for node:", savedId);
         closeBioEditor();
         if (network) network.redraw();
+        // Refresh the Information Center if this person is still pinned there
+        if (Pinned_NodeId === savedId) displayNodeInfo(savedId);
     } else {
         showError('Failed to save biography');
     }
