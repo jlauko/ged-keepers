@@ -2018,6 +2018,12 @@ async function createTree(userData) {
         MakeRoot(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
     });
 
+    const ebio = document.getElementById("editBio");
+    ebio.addEventListener("click", () => {
+        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
+        openBioEditor(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
+    });
+
     const hroot = document.getElementById("homeRoot");
     hroot.addEventListener("click", (e) => {
         console.log("Home Root clicked for node:", homeRootName);
