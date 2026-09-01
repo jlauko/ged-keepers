@@ -55,7 +55,7 @@ async function migrateDir(tree, sub) {
     console.error("R2 is not configured. Set R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET in backend/.env");
     process.exit(1);
   }
-  const tree = (process.argv.find(a => !a.startsWith("-") && !a.endsWith(".js") && a !== "node") || "lauko").toLowerCase();
+  const tree = (process.argv.slice(2).find(a => !a.startsWith("-")) || "lauko").toLowerCase();
   console.log(`Migrating attachments for "${tree}" to R2 bucket "${r2.bucket}"...`);
 
   const f = await migrateDir(tree, "files");
