@@ -65,6 +65,31 @@ function tokenMatchesTree(decoded, treeName) {
   return !treeName || decoded.username === String(treeName).toLowerCase();
 }
 
+// The trees this server serves. Multi-tenant later: derive from config/DB.
+const KNOWN_TREES = new Set([ADMIN_USERNAME]);
+function isKnownTree(name) {
+  return typeof name === "string" && KNOWN_TREES.has(name.toLowerCase());
+}
+
+// Reduce a client-supplied filename to a bare basename with no path parts.
+// Returns null if nothing safe is left.
+function safeFilename(name) {
+  if (typeof name !== "string" || !name) return null;
+  const base = path.basename(name);
+  if (!base || base === "." || base === ".." ) return null;
+  if (/[\/\\\0]/.test(base)) return null;
+  return base;
+}
+
+// Build <__dirname>/users/<tree>/<sub>/<file>, or null if any part is unsafe.
+// safeFilename() guarantees no separators, so path.join can't escape the dir.
+function resolveUserFile(tree, sub, filename) {
+  if (!isKnownTree(tree)) return null;
+  const clean = safeFilename(filename);
+  if (!clean) return null;
+  return path.join(__dirname, "users", tree.toLowerCase(), sub, clean);
+}
+
 // Middleware: any valid session (viewer or admin) for this tree.
 function requireView(req, res, next) {
   const decoded = decodeToken(req);
@@ -152,13 +177,11 @@ app.get("/auth/verify", requireView, (req, res) => {
 // --------- Download file to client --------------
 // ---------------------------------------------
 app.get("/download/:username/:filename", requireView, (req, res) => {
-    const { username, filename } = req.params;
-    const userDir = path.join(__dirname, 'users', username, 'files');
-    const file = path.join(userDir, filename);
-    console.log("Attempting to download file:", file);
+    const file = resolveUserFile(req.params.username, "files", req.params.filename);
+    if (!file) return res.status(400).json({ error: "Bad request" });
     res.download(file, (err) => {
         if (err) {
-            console.error("Error downloading file:", err);
+            console.error("Error downloading file:", err.message);
             res.status(404).send("File not found");
         }
     });
@@ -167,13 +190,11 @@ app.get("/download/:username/:filename", requireView, (req, res) => {
 // --------- Download thumbnail to client --------------
 // ---------------------------------------------
 app.get("/thumbnail/:username/:filename", requireView, (req, res) => {
-    const { username, filename } = req.params;
-    const userDir = path.join(__dirname, 'users', username, 'thumbnails');
-    const file = path.join(userDir, filename);
-    console.log("Attempting to download thumbnail:", file);
+    const file = resolveUserFile(req.params.username, "thumbnails", req.params.filename);
+    if (!file) return res.status(400).json({ error: "Bad request" });
     res.download(file, (err) => {
         if (err) {
-            console.error("Error downloading thumbnail:", err);
+            console.error("Error downloading thumbnail:", err.message);
             res.status(404).send("File not found");
         }
     });
@@ -183,21 +204,20 @@ app.get("/thumbnail/:username/:filename", requireView, (req, res) => {
 // ---------------------------------------------------------
 // DELETE route
 app.delete("/delete/:username/:filename", requireAdmin, async (req, res) => {
-    const { username, filename } = req.params;
-
-    // Build paths for file and thumbnail
-    const filePath = path.join(__dirname, "users", username, "files", filename);
-    const thumbPath = path.join(__dirname, "users", username, "thumbnails", getThumbnailFilename(filename));
+    const clean = safeFilename(req.params.filename);
+    const filePath = resolveUserFile(req.params.username, "files", req.params.filename);
+    if (!clean || !filePath) return res.status(400).json({ error: "Bad request" });
+    const thumbPath = resolveUserFile(req.params.username, "thumbnails", getThumbnailFilename(clean));
 
     console.log("Attempting to delete:", filePath, "and", thumbPath);
 
-    try { 
-        await deleteFileRobust(filePath); 
-        await deleteFileRobust(thumbPath); 
+    try {
+        await deleteFileRobust(filePath);
+        if (thumbPath) await deleteFileRobust(thumbPath);
         console.log("files deleted");
-        res.json({ success: true, message: "File and thumbnail deleted" }); 
-    } catch (err) { 
-        res.status(500).json({ success: false, message: "Error deleting file", error: err.message }); 
+        res.json({ success: true, message: "File and thumbnail deleted" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error deleting file", error: err.message });
     }
 });
 
@@ -207,11 +227,6 @@ function getThumbnailFilename(fileName) {
     }
     return fileName;
 }
-
-// Example
-const fileName = 'document.pdf';
-const thumbFileName = getThumbnailFilename(fileName);
-console.log(thumbFileName); // "document.jpg
 
 async function deleteFileRobust(filePath, retries = 5, delay = 2000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -324,7 +339,7 @@ app.delete("/nodeInfo/:username/:nodeId", requireAdmin, (req, res) => {
     const { username, nodeId } = req.params;
     try {
         nodeRepo.deleteNode(username, nodeId);
-        console("delete successful: ", username, " ", nodeId);
+        console.log("delete successful: ", username, " ", nodeId);
         res.json({ success: true, message: "Node deleted" });
     } catch (err) {
         res.status(500).json({ success: false, message: "Error deleting node" });
@@ -352,34 +367,55 @@ function saveClusterInformation() {
 // ------ Upload Attachments -------------
 // ---------------------------------------
 
-// Multer storage configuration
-// Use diskStorage to control the destination and filename
-// Store files in a user-specific directory
-// Store thumbnails in a separate subdirectory
-// Ensure directories exist before saving files
-// Use original filename for both artifact and thumbnail
+// What we accept as an attachment. Keeps HTML/SVG/scripts out of a directory
+// that gets served back to browsers.
+const ALLOWED_UPLOAD_MIME = new Set([
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/pdf",
+    "video/mp4", "video/quicktime",
+]);
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const username = req.params.username || "default";
-
-        const folder =
-            file.fieldname === "thumbnail"
-                ? "thumbnails"
-                : "files";
-
-        const dir = path.join(__dirname, "users", username, folder);
-
+        const tree = String(req.params.username || "").toLowerCase();
+        if (!isKnownTree(tree)) return cb(new Error("Unknown tree"));
+        const folder = file.fieldname === "thumbnail" ? "thumbnails" : "files";
+        const dir = path.join(__dirname, "users", tree, folder);
         fs.mkdirSync(dir, { recursive: true });
-
         cb(null, dir);
     },
-
+    // Keep the original name for display, but strip any path components.
     filename: (req, file, cb) => {
-        cb(null, file.originalname);
+        const clean = safeFilename(file.originalname);
+        if (!clean) return cb(new Error("Bad filename"));
+        cb(null, clean);
     }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 },
+    fileFilter: (req, file, cb) => {
+        if (!ALLOWED_UPLOAD_MIME.has(file.mimetype)) {
+            return cb(new Error(`Unsupported file type: ${file.mimetype}`));
+        }
+        cb(null, true);
+    }
+});
+
+// Run multer and turn its errors (bad type, too big, bad name) into 400s
+// instead of letting them fall through to a 500.
+function uploadAttachmentFields(req, res, next) {
+    const mw = upload.fields([
+        { name: 'artifact', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 }
+    ]);
+    mw(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message || "Upload rejected" });
+        next();
+    });
+}
 
 // ------------------------------------------------------------------
 // Upload route
@@ -389,16 +425,13 @@ const upload = multer({ storage });
 app.post(
     '/uploadAttachment/:username',
     requireAdmin,
-    upload.fields([
-        { name: 'artifact', maxCount: 1 },
-        { name: 'thumbnail', maxCount: 1 }
-    ]),
+    uploadAttachmentFields,
     async (req, res) => {
 
         try {
             const username = req.params.username;
-            const artifact = req.files.artifact?.[0];
-            const thumbnail = req.files.thumbnail?.[0];
+            const artifact = req.files?.artifact?.[0];
+            const thumbnail = req.files?.thumbnail?.[0];
 
             if (!artifact) {
                 return res.status(400).json({
@@ -406,15 +439,16 @@ app.post(
                 });
             }
 
+            // artifact.filename is the sanitized name multer actually wrote.
             const baseUrl = `${req.protocol}://${req.get("host")}`;
             res.json({
-                filename: artifact.originalname,
+                filename: artifact.filename,
                 mimeType: artifact.mimetype,
                 fileUrl:
-                    `${baseUrl}/users/${username}/files/${encodeURIComponent(artifact.originalname)}`,
+                    `${baseUrl}/users/${username}/files/${encodeURIComponent(artifact.filename)}`,
                 thumbUrl:
                     thumbnail
-                        ? `${baseUrl}/users/${username}/thumbnails/${encodeURIComponent(thumbnail.originalname)}`
+                        ? `${baseUrl}/users/${username}/thumbnails/${encodeURIComponent(thumbnail.filename)}`
                         : null
             });
         }
@@ -438,12 +472,14 @@ app.post(
 app.use('/users', (req, res, next) => {
   const decoded = decodeToken(req);
   if (!decoded) return res.status(401).json({ error: "Authentication required" });
-  const treeSeg = req.url.split('/').filter(Boolean)[0];
-  if (treeSeg && decoded.username !== decodeURIComponent(treeSeg).toLowerCase()) {
+  let treeSeg = "";
+  try { treeSeg = decodeURIComponent(req.url.split('/').filter(Boolean)[0] || ""); } catch (e) {}
+  if (!isKnownTree(treeSeg) || decoded.username !== treeSeg.toLowerCase()) {
     return res.status(403).json({ error: "Token does not match this tree" });
   }
   next();
 }, express.static(path.join(__dirname, 'users'), {
+  dotfiles: 'deny',
   setHeaders: (res, path) => {
     if (path.endsWith('.png')) res.set('Content-Type', 'image/png');
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) res.set('Content-Type', 'image/jpeg');

@@ -857,6 +857,7 @@ async function UpdateIndividualNode(nodeId, bioData) {
 }
 
 async function BioAddAttachment() {
+    if (!isAdmin()) return;
 
     // Implementation for adding attachment to a node or cluster
     if (currentEditingNodeId != null) {
@@ -916,10 +917,11 @@ function displayPinIndicator(showPin) {
             PinImg.style.height = '20px';
             PinImg.style.width = '20px';
             panelTitle.appendChild(PinImg);
-            // show the make root button if pinning is enabled
-            document.getElementById("editBio").style.display = "inline-flex";            
+            // Make Root is a view action (re-roots the tree) - everyone gets it.
+            // Edit Bio / Add Attachment write to the backend - editors only.
             document.getElementById("makeRoot").style.display = "inline-flex";
-            document.getElementById("addAttachment").style.display = "block";
+            document.getElementById("editBio").style.display = isAdmin() ? "inline-flex" : "none";
+            document.getElementById("addAttachment").style.display = isAdmin() ? "block" : "none";
         }
     } else {
         // If we want to hide/remove the pin
@@ -1801,7 +1803,7 @@ async function createTree(userData) {
     {
         console.log("Help button clicked, starting guided tour with rootNodeId:", rootNodeId);
         document.getElementById("makeRoot").style.display = "inline-flex";
-        document.getElementById("addAttachment").style.display = "inline-flex";
+        if (isAdmin()) document.getElementById("addAttachment").style.display = "inline-flex";
         startGuidedTour(rootNodeId);
 
     });
@@ -3701,6 +3703,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     // Star buttons ---------------------------------------------------------
     document.querySelectorAll(".star-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+            if (!isAdmin()) return;   // selecting a display photo is a write
             const ID = btn.dataset.id; // set in HTML
             console.log("Toggling star for attachment ID:", ID);
 
