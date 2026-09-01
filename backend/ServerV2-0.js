@@ -136,6 +136,7 @@ function requireAdmin(req, res, next) {
 let geoCache = {}; // in-memory cache for geocoding results
 
 const app = express();
+app.set("trust proxy", true); // Render terminates TLS at its proxy; honour X-Forwarded-Proto
 app.use(express.json({limit: '50mb'})); // for parsing application/json with larger payloads
 
 const allowedOrigins = [
