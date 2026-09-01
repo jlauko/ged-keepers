@@ -133,11 +133,17 @@ is false and the attachment routes 503 (rest of the app still runs).
 - The thumbnail's stored name isn't derivable from the artifact name (mix of
   `.png` and matching-extension), so the frontend reads it off `att.thumbUrl`
   (`lastPathSegment`), not by transforming `att.filename`.
-- `backend/scripts/migrate-to-r2.js` — one-time upload of the local files.
+- `backend/scripts/migrate-to-r2.js` — one-time upload of the local files
+  (already run: 165 files + 170 thumbnails).
 - The `backend/users/<tree>/{files,thumbnails}/` dirs on your disk are the
-  backup; they're gitignored but ~165 files + 170 thumbnails are still tracked
-  from before the ignore rule (and ~182 MB more sit in history — the
-  `git filter-repo` purge happens after R2 is verified in production).
+  local backup (gitignored, untracked). R2 is the live copy.
+- **History was purged** (`git filter-repo` + force-push, Sep 2026):
+  `backend/users/lauko/{files,thumbnails}/`, `backend/uploads/`, `frontend/`,
+  `node_modules/`, `pdfs/`, and all three real `.env` files
+  (`docs/.env`, `frontend/.env`, `backend/.env` — the leaked OpenAI/HF keys)
+  are gone from every commit. Fresh clone `.git` is ~16 MB (was ~250 MB). Every
+  commit hash changed; re-clone any other checkout. GitHub's reported repo
+  size lags — it gc's server-side on its own schedule.
 
 ## Conventions for adding researched data
 - Add new people/relationships to `individuals` / `families` (keeping
@@ -161,9 +167,12 @@ is false and the attachment routes 503 (rest of the app still runs).
   people's info beyond what's already there.
 - Historical attachments (pre-1950s) are lower sensitivity per the owner;
   treat anything post-1950 / likely-living with more caution.
-- `.env` files were removed from git (they had a live OpenAI key at one
-  point) and are gitignored. Real values live in Render / local `.env`.
-  HuggingFace token revocation may still be pending — check with the owner.
+- `.env` files (`docs/.env`, `frontend/.env`, `backend/.env`) held a live
+  OpenAI key + HuggingFace token at one point. They're gitignored, removed
+  from the working tree, and **purged from all history** (Sep 2026). Keys
+  revoked (OpenAI: none on account; Mongo project deleted). HuggingFace token
+  revocation may still be pending — check with the owner. Real values now
+  live only in Render / local `.env`.
 
 ## Testing
 No automated test suite. Changes have been verified by driving the running
