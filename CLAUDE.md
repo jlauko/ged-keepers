@@ -20,32 +20,40 @@ historical-events timeline.
   were unused scaffolding and have been removed.
 
 ## Auth & access (backend/ServerV2-0.js)
-Real auth as of the Aug 2026 security pass. **Not a mock any more.**
+Real auth as of the Aug 2026 security pass. **Not a mock any more.** Multi-tenant.
 - `POST /auth/login` `{ username, password }` — `username` is the tree
-  (the `users/<name>/` folder). `VIEW_PASSWORD` → a `viewer` JWT,
-  `ADMIN_PASSWORD` → an `admin` JWT. Signed with `JWT_SECRET`, 30-day expiry,
-  `{ role, username }` in the claim.
+  (the `users/<name>/` folder). Returns a `viewer` or `admin` JWT signed with
+  `JWT_SECRET`, 30-day expiry, `{ role, username }` in the claim.
+- **Credentials** come from `backend/trees.json` (gitignored; a Render Secret
+  File in prod): `{ "<tree>": { "viewHash": "<bcrypt>", "adminHash": "<bcrypt>" } }`.
+  `authenticateTree()` bcrypt-compares. `TREES` / `TREE_NAMES` load once on boot.
+  Manage with `node scripts/set-tree-password.js <tree> <view|admin>`.
+- **Legacy fallback**: if `trees.json` has no entry for `ADMIN_USERNAME`
+  (default `lauko`), the `VIEW_PASSWORD` / `ADMIN_PASSWORD` env vars still
+  unlock that one tree (plaintext compare). This is what prod currently uses;
+  drop the env vars once `trees.json` is uploaded.
 - `requireView` guards every GET data route + `/download` + `/thumbnail` +
-  the `/users` static mount + `/api/geocode`. `requireAdmin` guards all
-  writes (`PUT/DELETE nodeInfo`, `PUT edgeInfo`, `POST uploadAttachment`,
-  `POST clusterInfo`, `DELETE delete`). Both reject a token whose `username`
-  claim ≠ the route's `:username` (per-tree scoping).
+  `/api/geocode`. `requireAdmin` guards all writes (`PUT/DELETE nodeInfo`,
+  `PUT edgeInfo`, `POST uploadAttachment`, `POST clusterInfo`, `DELETE delete`).
+  Both reject a token whose `username` claim ≠ the route's `:username`.
 - Tokens can also arrive as `?token=` (for `<img src>` / download links);
   the frontend has a `withToken()` helper.
-- File routes sanitize `:filename` with `safeFilename()` and validate
-  `:username` with `isKnownTree()` (currently just `{ADMIN_USERNAME}`).
-- Frontend: a splash screen picks the tree + takes the password; the JWT is
-  kept in `localStorage` (`ft_auth`, plus `ft_tree`) and re-verified on load.
-  Corner button = log out. `isAdmin()` gates edit UI.
-- **Still single-tenant.** Multi-tenant = replace the one check in
-  `/auth/login` with a per-tree credential lookup, and widen `KNOWN_TREES`.
+- `isKnownTree(name)` = the tree has an entry in `TREES`. File routes also
+  sanitize `:filename` with `safeFilename()`.
+- Frontend: the splash screen takes the tree name + password (no code change
+  needed for new trees). JWT in `localStorage` (`ft_auth` + `ft_tree`),
+  re-verified on load. Corner button = log out. `isAdmin()` gates edit UI.
+- **Add a tree**: `node scripts/new-tree.js <tree>` (scaffolds
+  `users/<tree>/` with empty data + copies the pipeline scripts), import its
+  `.ged`, then `set-tree-password.js <tree> view` + `admin`.
 
 ### Deploying to Render
-Set in the Environment tab (never commit): `JWT_SECRET` (long random),
-`ADMIN_PASSWORD`, `VIEW_PASSWORD`, and the four `R2_*` vars (see Attachments).
-Optional `ADMIN_USERNAME` (default `lauko`). Missing `JWT_SECRET` → the process
-exits on boot. Missing `VIEW_PASSWORD` → only the admin password works. Missing
-`R2_*` → the app runs but attachment routes return 503.
+Set in the Environment tab (never commit): `JWT_SECRET` (long random) and the
+four `R2_*` vars (see Attachments). For credentials, either upload
+`backend/trees.json` as a Secret File (path `backend/trees.json`), or keep
+using `VIEW_PASSWORD` + `ADMIN_PASSWORD` (+ optional `ADMIN_USERNAME`) for the
+single `lauko` tree. Missing `JWT_SECRET` → the process exits on boot. No
+credentials at all → nobody can log in. Missing `R2_*` → attachment routes 503.
 
 ### Local dev
 `backend/.env` (gitignored) holds the same vars — see `backend/.env.example`.

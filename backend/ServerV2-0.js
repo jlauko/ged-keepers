@@ -14,26 +14,28 @@ const r2 = require('./r2Client');
 const CACHE_FILE = "./geoCache.json";
 
 // ---------------- AUTH CONFIG ----------------
-// JWT_SECRET     - required. Signs/verifies session tokens.
-// VIEW_PASSWORD  - password to view the tree (read-only). If unset, only the
-//                  admin password works and everyone who logs in can edit.
-// ADMIN_PASSWORD - password to view AND edit the tree.
-// ADMIN_USERNAME - which tree (users/<name>/ folder) the passwords unlock.
-//                  Defaults to "lauko". Multi-tenant later: replace the single
-//                  set below with a per-tree lookup keyed by username.
-// Set these in Render's Environment tab (never commit them).
+// JWT_SECRET - required. Signs/verifies session tokens.
+//
+// Per-tree credentials live in backend/trees.json (a Render Secret File, never
+// committed), keyed by tree name (the users/<name>/ folder):
+//   { "lauko": { "viewHash": "<bcrypt>", "adminHash": "<bcrypt>" }, ... }
+// Manage it with:  node scripts/set-tree-password.js <tree> <view|admin>
+//
+// Legacy fallback: if trees.json has no entry for ADMIN_USERNAME (default
+// "lauko"), the ADMIN_PASSWORD / VIEW_PASSWORD env vars still unlock that one
+// tree. Drop the env vars once trees.json covers every tree.
+const bcrypt = require('bcryptjs');
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const VIEW_PASSWORD = process.env.VIEW_PASSWORD;
 const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || "lauko").toLowerCase();
 const TOKEN_TTL = "30d";
+const TREES_FILE = path.join(__dirname, "trees.json");
 
 if (!JWT_SECRET) {
   console.error("FATAL: JWT_SECRET is not set. Refusing to start.");
   process.exit(1);
-}
-if (!ADMIN_PASSWORD && !VIEW_PASSWORD) {
-  console.warn("WARNING: neither ADMIN_PASSWORD nor VIEW_PASSWORD is set - nobody can log in.");
 }
 
 // Constant-time string compare that does not leak length via early return.
@@ -46,6 +48,45 @@ function safeEqual(a, b) {
     return false;
   }
   return crypto.timingSafeEqual(ab, bb);
+}
+
+// Load trees.json + fold in the env-var fallback tree. Re-run on boot only.
+function loadTrees() {
+  let raw = {};
+  try {
+    raw = JSON.parse(fs.readFileSync(TREES_FILE, "utf8"));
+    if (!raw || typeof raw !== "object") raw = {};
+  } catch (e) {
+    if (e.code !== "ENOENT") console.warn("trees.json unreadable:", e.message);
+  }
+  const trees = {};
+  for (const [k, v] of Object.entries(raw)) trees[k.toLowerCase()] = v;
+  if (!trees[ADMIN_USERNAME] && (ADMIN_PASSWORD || VIEW_PASSWORD)) {
+    trees[ADMIN_USERNAME] = { envFallback: true };
+  }
+  return trees;
+}
+
+const TREES = loadTrees();
+const TREE_NAMES = Object.keys(TREES);
+if (TREE_NAMES.length === 0) {
+  console.warn("WARNING: no trees configured (no trees.json, no ADMIN_PASSWORD/VIEW_PASSWORD) - nobody can log in.");
+} else {
+  console.log(`Trees configured: ${TREE_NAMES.join(", ")}`);
+}
+
+// Returns "admin" | "viewer" | null for a (tree, password) pair.
+async function authenticateTree(tree, password) {
+  const entry = TREES[String(tree || "").toLowerCase()];
+  if (!entry || !password) return null;
+  if (entry.envFallback) {
+    if (ADMIN_PASSWORD && safeEqual(password, ADMIN_PASSWORD)) return "admin";
+    if (VIEW_PASSWORD && safeEqual(password, VIEW_PASSWORD)) return "viewer";
+    return null;
+  }
+  if (entry.adminHash && await bcrypt.compare(password, entry.adminHash)) return "admin";
+  if (entry.viewHash && await bcrypt.compare(password, entry.viewHash)) return "viewer";
+  return null;
 }
 
 // Pull a JWT from the Authorization header, or a ?token= query param (needed
@@ -64,10 +105,10 @@ function tokenMatchesTree(decoded, treeName) {
   return !treeName || decoded.username === String(treeName).toLowerCase();
 }
 
-// The trees this server serves. Multi-tenant later: derive from config/DB.
-const KNOWN_TREES = new Set([ADMIN_USERNAME]);
+// A tree the server serves = one that has credentials configured.
 function isKnownTree(name) {
-  return typeof name === "string" && KNOWN_TREES.has(name.toLowerCase());
+  return typeof name === "string" &&
+    Object.prototype.hasOwnProperty.call(TREES, name.toLowerCase());
 }
 
 // Reduce a client-supplied filename to a bare basename with no path parts.
@@ -169,18 +210,13 @@ app.use((req, res, next) => {
 // NOTE: while family.json etc. remain in the public GitHub repo, this only
 // gates access *through the app* - the raw files are still fetchable from
 // GitHub. Real read-restriction needs the data moved off the public repo.
-app.post("/auth/login", (req, res) => {
+app.post("/auth/login", async (req, res) => {
     const { username, password } = req.body || {};
-    if (!ADMIN_PASSWORD && !VIEW_PASSWORD) {
+    if (TREE_NAMES.length === 0) {
         return res.status(503).json({ error: "Login is not configured" });
     }
     const tree = (username || ADMIN_USERNAME).toLowerCase();
-    // Single tenant for now: only ADMIN_USERNAME is a known tree.
-    let role = null;
-    if (tree === ADMIN_USERNAME && password) {
-        if (ADMIN_PASSWORD && safeEqual(password, ADMIN_PASSWORD)) role = "admin";
-        else if (VIEW_PASSWORD && safeEqual(password, VIEW_PASSWORD)) role = "viewer";
-    }
+    const role = await authenticateTree(tree, password);
     if (!role) {
         return res.status(401).json({ error: "Invalid credentials" });
     }

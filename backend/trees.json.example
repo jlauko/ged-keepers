@@ -1,0 +1,10 @@
+{
+  "lauko": {
+    "viewHash": "$2b$12$<bcrypt hash - generate with the CLI, do not type by hand>",
+    "adminHash": "$2b$12$<bcrypt hash>"
+  },
+  "smith": {
+    "viewHash": "$2b$12$...",
+    "adminHash": "$2b$12$..."
+  }
+}
