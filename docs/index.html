@@ -5149,11 +5149,16 @@ async function submitSplash() {
     if (!tree) { msg.textContent = "Enter a family tree name."; return; }
     if (!pw) { msg.textContent = "Enter the password for this tree."; return; }
 
-    msg.textContent = "Checking password...";
+    const btn = document.getElementById("splashOpenButton");
+    btn.disabled = true;
+    msg.style.color = "#666";
+    msg.textContent = "Checking… the server may take up to a minute to wake up.";
     const data = await Login(tree, pw);
+    btn.disabled = false;
+    msg.style.color = "";
     if (!data || !data.token) {
         logout();
-        msg.textContent = "Wrong password for this tree.";
+        msg.textContent = "Wrong password, or the server didn't respond — try again.";
         return;
     }
     userName = data.username || tree;
@@ -5178,17 +5183,23 @@ async function startApp() {
     const authBtn = document.getElementById("authButton");
     if (authBtn) authBtn.addEventListener("click", onAuthButton);
 
-    const haveSession = tree ? await restoreSession(tree) : false;
+    // Only block on the server if we actually have a stored token to check.
+    // Render's free tier can take ~30-60s to wake, so show feedback meanwhile.
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null"); } catch (e) {}
 
-    if (haveSession) {
-        // Still signed in (viewer or editor) for this tree - skip straight in.
-        enterApp();
-    } else {
-        // Need a password to view or edit. Show the splash; last tree is pre-filled.
-        renderAuthUI();
-        showSplash();
-        document.getElementById(tree ? "splashPassword" : "treeNameInput").focus();
+    if (tree && stored && stored.token) {
+        showLoading();
+        updateLoading("Reconnecting… (the server may take up to a minute to wake up)");
+        const ok = await restoreSession(tree);
+        if (ok) { enterApp(); return; }   // enterApp keeps the spinner up while data loads
+        hideLoading();
     }
+
+    // No live session - show the splash right away (no server round-trip needed).
+    renderAuthUI();
+    showSplash();
+    document.getElementById(tree ? "splashPassword" : "treeNameInput").focus();
 }
 
 // Update tree on root change
