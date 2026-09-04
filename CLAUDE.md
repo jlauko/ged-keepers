@@ -48,12 +48,15 @@ Real auth as of the Aug 2026 security pass. **Not a mock any more.** Multi-tenan
   `.ged`, then `set-tree-password.js <tree> view` + `admin`.
 
 ### Deploying to Render
-Set in the Environment tab (never commit): `JWT_SECRET` (long random) and the
-four `R2_*` vars (see Attachments). For credentials, either upload
+Set in the Environment tab (never commit): `JWT_SECRET` (long random), the
+four `R2_*` vars (see Attachments), and `MONGODB_URI` (see Node information —
+include a database name in the path, e.g. `.../ged-keepers?...`, or it
+silently connects to a db called `test`). For credentials, either upload
 `backend/trees.json` as a Secret File (path `backend/trees.json`), or keep
 using `VIEW_PASSWORD` + `ADMIN_PASSWORD` (+ optional `ADMIN_USERNAME`) for the
-single `lauko` tree. Missing `JWT_SECRET` → the process exits on boot. No
-credentials at all → nobody can log in. Missing `R2_*` → attachment routes 503.
+single `lauko` tree. Missing `JWT_SECRET` or `MONGODB_URI` → the process
+exits on boot. No credentials at all → nobody can log in. Missing `R2_*` →
+attachment routes 503.
 
 ### Local dev
 `backend/.env` (gitignored) holds the same vars — see `backend/.env.example`.
@@ -99,14 +102,41 @@ JSON as its own change, not bundled with code.
 - `parents_of`, `children_of`, `spouses_of`: precomputed lookup maps,
   regenerated wholesale by `family_tree5.py` — don't hand-edit in isolation.
 
+## Node information — MongoDB Atlas (Sep 2026)
+Per-person biography/evidence/attachment metadata used to live in
+`backend/users/<username>/nodeinformation.json` (one JSON blob per tree,
+whole-file overwrite on every save — the root cause of a bug where
+concurrent/failed saves silently dropped other people's edits). It's now one
+**MongoDB document per (tree, nodeId)** — `backend/models/NodeInfo.js`,
+connected via `backend/db.js` (`MONGODB_URI` env var, required — missing it
+exits on boot, same as `JWT_SECRET`). `backend/nodeRepo.js`'s
+`getNodeInfo`/`updateNode`/`deleteNode`/`saveNodeInfo` are now async and talk
+to Mongo instead of the filesystem; the route contracts (`GET/PUT
+/nodeInfo/:username`, `PUT /nodeInfo/:username/nodes/:nodeId`, `DELETE
+/nodeInfo/:username/:nodeId`) are unchanged, so the frontend didn't need to
+change. `saveNodeInfo` (the whole-file `PUT`) still keeps replace semantics —
+upserts everything in the payload, then deletes any doc for that tree that
+isn't in it — but since edits to *different* nodes are now different
+documents, two people editing different people no longer collide at all; only
+concurrent edits to the *same* node still race (last-write-wins on that one
+node, not the whole tree).
+- Local dev: `backend/.env` needs `MONGODB_URI` (a `mongodb+srv://...` string
+  from Atlas, **with a database name in the path**, e.g. `.../ged-keepers?...`
+  — the connection defaults to a db literally called `test` otherwise).
+  Render's Environment tab needs the same var before this will boot there.
+  Atlas Network Access must allow `0.0.0.0/0` (Render has no static outbound
+  IP on free/starter tiers).
+- `backend/scripts/migrate-nodeinfo-to-mongo.js` — one-time (idempotent)
+  loader from the old `nodeinformation.json` files into Mongo; already run
+  for `lauko` (171 nodes). The old JSON files are left in place in git as a
+  historical snapshot but are **no longer read by the app** — don't trust
+  them as current.
 ## Other per-user files (backend/users/<username>/)
-- `nodeinformation.json` — per-person biography/evidence/attachment metadata,
-  keyed by node id. Read/write via `backend/nodeRepo.js`
-  (`getNodeInfo`/`updateNode`/`deleteNode`/`saveNodeInfo`). The `PUT
-  /nodeInfo/:username` route replaces the **whole file** with the request
-  body — no merge.
 - `edgeinformation.json` — per-relationship evidence (`getEdgeInfo`/`saveEdgeInfo`).
-  Same whole-file-overwrite caveat on `PUT /edgeInfo/:username`.
+  **Not** migrated to Mongo — still file-based, still has the same
+  whole-file-overwrite caveat on `PUT /edgeInfo/:username` that
+  `nodeinformation.json` used to have. Move it the same way (see above) if it
+  ever needs the same multi-user editing.
 - `clusterInformation.json` — cluster metadata, via GET/POST `/clusterInfo`.
   Known bug: the GET reads `clusterinformation.json` (lowercased — breaks on
   Linux) and `POST /clusterInfo` writes to a module global that's undefined

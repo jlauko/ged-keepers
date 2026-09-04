@@ -333,25 +333,25 @@ app.get("/edgeInfo/:username", requireView, (req, res) => {
 // ------------------------------------------
 // ------- Get Nodeinfo from file -----------
 // ------------------------------------------
-app.get("/nodeInfo/:username", requireView, (req, res) => {
+app.get("/nodeInfo/:username", requireView, async (req, res) => {
   const username = req.params.username;
   try {
-    const info = nodeRepo.getNodeInfo(username);
+    const info = await nodeRepo.getNodeInfo(username);
     res.json(info);
   } catch (err) {
     res.status(500).json({ success: false, message: "Error reading node info" });
   }
 });
 // ------------------------------------------
-// ------- Save Nodeinfo to file -----------
+// ------- Save Nodeinfo to Mongo -----------
 // ------------------------------------------
-app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, (req, res) => {
+app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, async (req, res) => {
     const { username, nodeId } = req.params;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
-        const updated = nodeRepo.updateNode(username, nodeId, data);
+        const updated = await nodeRepo.updateNode(username, nodeId, data);
         console.log("update successful: ", username, " ", nodeId);
         res.json({ success: true, node: updated });
     } catch (err) {
@@ -359,28 +359,28 @@ app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, (req, res) => {
     }
 });
 // ------------------------------------------
-// ------- Save Nodeinfo (whole file) to file -----------
+// ------- Save Nodeinfo (whole file) to Mongo -----------
 // ------------------------------------------
-app.put("/nodeInfo/:username", requireAdmin, (req, res) => {
+app.put("/nodeInfo/:username", requireAdmin, async (req, res) => {
     const username = req.params.username;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
-        nodeRepo.saveNodeInfo(username, data);
-        console.log("updated nodeinformation.json successful: ", username);
+        await nodeRepo.saveNodeInfo(username, data);
+        console.log("updated node info successful: ", username);
         res.json({success: true});
     } catch (err) {
         res.status(500).json({ success: false, message: "Error saving node info" });
     }
 });
 // ------------------------------------------
-// ------- Delete Nodeinfo from file -----------
+// ------- Delete Nodeinfo from Mongo -----------
 // ------------------------------------------
-app.delete("/nodeInfo/:username/:nodeId", requireAdmin, (req, res) => {
+app.delete("/nodeInfo/:username/:nodeId", requireAdmin, async (req, res) => {
     const { username, nodeId } = req.params;
     try {
-        nodeRepo.deleteNode(username, nodeId);
+        await nodeRepo.deleteNode(username, nodeId);
         console.log("delete successful: ", username, " ", nodeId);
         res.json({ success: true, message: "Node deleted" });
     } catch (err) {
@@ -698,6 +698,13 @@ function loadCache() {
 const PORT = process.env.PORT || 4000;
 // Load cache and start server
 loadCache();
-app.listen(PORT, () => {
-    console.log(`GED Keepers server running on port ${PORT}`);
-});
+require("./db").connect()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`GED Keepers server running on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error("FATAL: could not connect to MongoDB:", err.message);
+        process.exit(1);
+    });
