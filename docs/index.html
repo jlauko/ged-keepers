@@ -864,6 +864,37 @@ async function UpdateIndividualNode(nodeId, bioData) {
     return response;
 }
 
+// Saves one edge's evidence/confidence to the backend without resending the
+// whole ~1000-edge dataset - so two people editing evidence on different
+// relationships at once don't race on the same write. Mirrors
+// UpdateIndividualNode's shape (await + null on failure).
+async function UpdateSingleEdge(edgeId, data) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/edgeInfo/${userName}/edges/${encodeURIComponent(edgeId)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders()
+            },
+            body: JSON.stringify({ data })
+        });
+        if (response.ok) {
+            console.log("Success saving Edge Information");
+            return response;
+        } else if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            return null;
+        } else {
+            const errorData = await response.json();
+            showError(`Failed to save Edge Information: ${errorData.message}`);
+            return null;
+        }
+    } catch (err) {
+        showError('Error saving Edge Information:', err);
+        return null;
+    }
+}
+
 async function BioAddAttachment() {
     if (!isAdmin()) return;
 
@@ -1927,9 +1958,10 @@ async function createTree(userData) {
         document.getElementById("evidenceFormContainer").classList.remove("hidden");
     });
     // ----------- save evidence button listener -------------
-    document.getElementById("saveEvidenceBtn").addEventListener("click", () => {
+    document.getElementById("saveEvidenceBtn").addEventListener("click", async () => {
         const edge = edges.get(currentEdgeId);
         if (!edge) return;
+        const beforeEdge = JSON.parse(JSON.stringify(edge));
 
         if (!edge.evidence) edge.evidence = [];
 
@@ -1981,8 +2013,14 @@ async function createTree(userData) {
         // Save edge back to dataset
         edges.update(edge);
 
-        // ------- Save edges with evidence to backend --------
-        saveEvidenceToBackend();
+        // ------- Save this edge's evidence to the backend --------
+        const savedEdge = await UpdateSingleEdge(edge.id, edge);
+        if (savedEdge == null) {
+            // Backend write failed - don't leave the UI showing evidence that
+            // was never actually persisted.
+            edges.update(beforeEdge);
+            showError('Failed to save evidence - try again.');
+        }
 
         // Refresh the table
         renderEvidenceList(edge);
@@ -2564,11 +2602,12 @@ function renderEvidenceList(edge) {
         tbody.appendChild(row);
     });
 }
-function deleteEvidence(evidenceId) {
+async function deleteEvidence(evidenceId) {
     const edge = edges.get(currentEdgeId);
     if (!edge || !edge.evidence) return;
+    const beforeEdge = JSON.parse(JSON.stringify(edge));
 
-    const canvas = network.canvas.frame.canvas;  
+    const canvas = network.canvas.frame.canvas;
     const ctx = canvas.getContext("2d");
 
     // Remove the evidence item
@@ -2582,7 +2621,11 @@ function deleteEvidence(evidenceId) {
     edges.update(edge);
 
     // Save to backend
-    saveEvidenceToBackend();
+    const savedEdge = await UpdateSingleEdge(edge.id, edge);
+    if (savedEdge == null) {
+        edges.update(beforeEdge);
+        showError('Failed to delete evidence - try again.');
+    }
 
     // Refresh UI
     renderEvidenceList(edge);

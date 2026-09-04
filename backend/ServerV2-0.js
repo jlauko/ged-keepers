@@ -317,30 +317,46 @@ const nodeRepo = require("./nodeRepo");
 // ------------------------------------------
 // ------- Save Evidence info (whole file) to file -----------
 // ------------------------------------------
-app.put("/edgeInfo/:username", requireAdmin, (req, res) => {
+app.put("/edgeInfo/:username", requireAdmin, async (req, res) => {
     const username = req.params.username;
     const { data } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
-        nodeRepo.saveEdgeInfo(username, data);
-        console.log("updated edgeinformation.json successful: ", username);
+        await nodeRepo.saveEdgeInfo(username, data);
+        console.log("updated edge info successful: ", username);
         res.json({success: true});
     } catch (err) {
         res.status(500).json({ success: false, message: "Error saving edge info" });
     }
 });
 // ------------------------------------------
-// ------- Get Evidence info from file -----------
+// ------- Get Evidence info from Mongo -----------
 // ------------------------------------------
-app.get("/edgeInfo/:username", requireView, (req, res) => {
+app.get("/edgeInfo/:username", requireView, async (req, res) => {
   const username = req.params.username;
   try {
-    const info = nodeRepo.getEdgeInfo(username);
+    const info = await nodeRepo.getEdgeInfo(username);
     res.json(info);
   } catch (err) {
     res.status(500).json({ success: false, message: "Error reading edge info" });
   }
+});
+// ------------------------------------------
+// ------- Save one edge's evidence to Mongo -----------
+// ------------------------------------------
+app.put("/edgeInfo/:username/edges/:edgeId", requireAdmin, async (req, res) => {
+    const { username, edgeId } = req.params;
+    const { data } = req.body;
+    if (!data) return res.status(400).json({ error: "Missing data" });
+
+    try {
+        const updated = await nodeRepo.updateEdge(username, edgeId, data);
+        console.log("update successful: ", username, " ", edgeId);
+        res.json({ success: true, edge: updated });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error saving edge info" });
+    }
 });
 
 // ---------------------------------------------------------

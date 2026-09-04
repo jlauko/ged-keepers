@@ -131,12 +131,36 @@ node, not the whole tree).
   for `lauko` (171 nodes). The old JSON files are left in place in git as a
   historical snapshot but are **no longer read by the app** — don't trust
   them as current.
+
+## Edge (relationship evidence) information — MongoDB Atlas (Sep 2026)
+`edgeinformation.json` moved the same way, right after node info — one
+**MongoDB document per (tree, edgeId)** (`backend/models/EdgeInfo.js`), where
+`edgeId` is the edge's own vis.js id (e.g. `@I..@-@I..@`). Each document *is*
+a vis.js edge object (`from`/`to`/`evidence`/`confidence`/`color`/`width`/…,
+`strict:false` so display fields pass through untouched) — `getEdgeInfo`
+returns them as an array with `edgeId` mapped back to `id`, matching what
+`edges.add(...)` expects.
+- Unlike node info, the frontend's original save path
+  (`saveEvidenceToBackend()`) always resent the **entire** ~1000-edge array
+  from the client's local `edges.get()` snapshot on every single evidence
+  edit — so migrating storage alone would still leave two people editing
+  *different* relationships racing on stale client-side snapshots, unlike
+  node info where per-node saves already existed. Fixed by adding a real
+  per-edge route, `PUT /edgeInfo/:username/edges/:edgeId` →
+  `nodeRepo.updateEdge()`, and a frontend `UpdateSingleEdge(edgeId, data)`
+  (mirrors `UpdateIndividualNode`) that the two evidence add/edit/delete call
+  sites (`saveEvidenceBtn` click handler, `deleteEvidence()`) now await, with
+  a snapshot-and-rollback on failure — the same fire-and-forget bug class the
+  attachment code had, fixed the same way. `saveEvidenceToBackend()` and the
+  whole-array `PUT /edgeInfo/:username` route are kept (upsert-everything,
+  delete-what's-missing, same replace semantics as `saveNodeInfo`) but are no
+  longer on the hot path for a single evidence edit.
+- `backend/scripts/migrate-edgeinfo-to-mongo.js` — one-time (idempotent)
+  loader from `edgeinformation.json`; already run for `lauko` (1003 edges).
+  Same caveat as node info: the old JSON file is left in git as a historical
+  snapshot, no longer read by the app.
+
 ## Other per-user files (backend/users/<username>/)
-- `edgeinformation.json` — per-relationship evidence (`getEdgeInfo`/`saveEdgeInfo`).
-  **Not** migrated to Mongo — still file-based, still has the same
-  whole-file-overwrite caveat on `PUT /edgeInfo/:username` that
-  `nodeinformation.json` used to have. Move it the same way (see above) if it
-  ever needs the same multi-user editing.
 - `clusterInformation.json` — cluster metadata, via GET/POST `/clusterInfo`.
   Known bug: the GET reads `clusterinformation.json` (lowercased — breaks on
   Linux) and `POST /clusterInfo` writes to a module global that's undefined
