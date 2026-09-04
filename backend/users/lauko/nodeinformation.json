@@ -283,6 +283,15 @@
           "iptcdata": {}
         },
         "orientation": 1
+      },
+      {
+        "name": "Clyde 1904",
+        "filename": "Clyde 1904.jpg",
+        "fileUrl": "https://ged-keepers.onrender.com/download/lauko/Clyde%201904.jpg",
+        "thumbUrl": "https://ged-keepers.onrender.com/thumbnail/lauko/Clyde%201904.jpg",
+        "uploadedAt": "2026-09-01T17:50:38.301Z",
+        "type": "file",
+        "selected": false
       }
     ]
   },
