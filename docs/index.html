@@ -3163,7 +3163,7 @@ async function SelectAttachment() {
         input.click();
     }
 }
-function AddNodeAttachment(nodeId,attachmentInfo) {
+async function AddNodeAttachment(nodeId,attachmentInfo) {
 
     // Add an attachment to a node's attachments array in nodeInformation, creating the structure if it doesn't exist
     if (!nodeInformation[nodeId]) { 
@@ -3187,12 +3187,18 @@ function AddNodeAttachment(nodeId,attachmentInfo) {
     const newAtt = nodeInformation[nodeId].attachments[ nodeInformation[nodeId].attachments.length - 1 ];
     newAtt.selected = false; // default to not selected for display
     RenderNodeAttachments(nodeId);
-    UpdateIndividualNode(nodeId, nodeInformation[nodeId]); // Update the node in the network with the new attachment info
 
-    // ------------------------------------------------------
-    // Need to add logic here to send to backend server to store attachment metadata
+    // Wait for the backend write - if it fails, don't leave the UI showing
+    // an attachment that was never actually persisted (it's uploaded to R2,
+    // but not linked to this node until this call succeeds).
+    const saved = await UpdateIndividualNode(nodeId, nodeInformation[nodeId]);
+    if (saved == null) {
+        nodeInformation[nodeId].attachments = nodeInformation[nodeId].attachments.filter(a => a !== newAtt);
+        RenderNodeAttachments(nodeId);
+        showError(`Failed to save attachment "${attachmentInfo.name}" - it was uploaded but not linked to this person. Try again.`);
+    }
     return;
-}   
+}
 async function getThumbnailUrl(username, filename) {
 
     // console.log(`Fetching thumbnail for ${API_BASE_URL}/thumbnail/${username}/${filename} from backend...`);
@@ -3639,8 +3645,13 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
                 // --- remove attachment from this entity -------------
                 // --- but leave the file on the server -------------
                 // --------------------------------------------------
-                nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.filter(att => att.uploadedAt !== ID);
-                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                const beforeShared = nodeInformation[Pinned_NodeId].attachments;
+                nodeInformation[Pinned_NodeId].attachments = beforeShared.filter(att => att.uploadedAt !== ID);
+                const savedShared = await UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                if (savedShared == null) {
+                    nodeInformation[Pinned_NodeId].attachments = beforeShared;
+                    showError("Failed to save the removal - it may reappear after reload. Try again.");
+                }
                 RenderNodeAttachments(Pinned_NodeId);
                 return;
             }
@@ -3660,8 +3671,13 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
                         console.log("Deleting attachment and Re-rendering node attachments for node:", Pinned_NodeId);
                         // -----------------------------------
                         // --- remove attachment -------------
-                        nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.filter(att => att.uploadedAt !== ID);
-                        UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                        const beforeDelete = nodeInformation[Pinned_NodeId].attachments;
+                        nodeInformation[Pinned_NodeId].attachments = beforeDelete.filter(att => att.uploadedAt !== ID);
+                        const savedDelete = await UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                        if (savedDelete == null) {
+                            nodeInformation[Pinned_NodeId].attachments = beforeDelete;
+                            showError("File deleted from storage, but failed to update this person's record. Try refreshing.");
+                        }
                         RenderNodeAttachments(Pinned_NodeId);
                     }
                     else {
@@ -3680,25 +3696,30 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
 
     // Edit name buttons
     document.querySelectorAll(".edit-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
             const currentName = btn.dataset.name;
             const ID = btn.dataset.id;
             console.log("Editing attachment name - ID:", ID, " Current Name:", currentName);
             // -----------------------------
             // -- Open prompt to edit name
-            // -----------------------------    
+            // -----------------------------
             const newName = window.prompt("Edit attachment name:", currentName);
             if (newName === null) return; // cancelled
-            
+
             if (Pinned_NodeId != null) {
                 console.log("Re-rendering node attachments for node:", Pinned_NodeId);
-                nodeInformation[Pinned_NodeId].attachments = nodeInformation[Pinned_NodeId].attachments.map(att => {
+                const beforeRename = nodeInformation[Pinned_NodeId].attachments;
+                nodeInformation[Pinned_NodeId].attachments = beforeRename.map(att => {
                     if (att.uploadedAt === ID) {
                         return { ...att, name: newName.trim() || att.filename };
                     }
                     return att;
                 });
-                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                const savedRename = await UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                if (savedRename == null) {
+                    nodeInformation[Pinned_NodeId].attachments = beforeRename;
+                    showError("Failed to save the new name - it may revert after reload. Try again.");
+                }
                 RenderNodeAttachments(Pinned_NodeId);
             }
             else {
@@ -3710,7 +3731,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     // Favorite selections
     // Star buttons ---------------------------------------------------------
     document.querySelectorAll(".star-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
             if (!isAdmin()) return;   // selecting a display photo is a write
             const ID = btn.dataset.id; // set in HTML
             console.log("Toggling star for attachment ID:", ID);
@@ -3761,7 +3782,10 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
                         return att; // return unchanged object
                     });
                 // write the updated "selection" to the backend
-                UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                const savedStar = await UpdateIndividualNode(Pinned_NodeId, nodeInformation[Pinned_NodeId]);
+                if (savedStar == null) {
+                    showError("Failed to save favorite selection - it may not persist. Try again.");
+                }
             }
 
         });
