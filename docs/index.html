@@ -3497,14 +3497,20 @@ function RenderNodeAttachments(nodeId) {
 function BuildAttachmentRow(att, ID, displayName,ext,html) {
 
 //    console.log(" Building attachment row for:", att, ID);
-    // Attachment bytes always go through the token-gated /download + /thumbnail
-    // routes (backed by R2). The artifact name is att.filename; the thumbnail
-    // name is whatever was actually stored (its extension isn't predictable -
-    // some are .png, some match the artifact), so read it off att.thumbUrl.
+    // Attachment bytes always go through the token-gated /download, /view +
+    // /thumbnail routes (backed by R2). The artifact name is att.filename; the
+    // thumbnail name is whatever was actually stored (its extension isn't
+    // predictable - some are .png, some match the artifact), so read it off
+    // att.thumbUrl. /download forces a save-to-disk prompt (Content-Disposition:
+    // attachment) - that's right for the Download button, but wrong for the
+    // eye icon, which should open/render the file in the tab, so it uses
+    // /view (same bytes, no forced-download header) instead.
     const attName = att.filename || lastPathSegment(att.fileUrl) || lastPathSegment(att.thumbUrl);
     const thumbName = lastPathSegment(att.thumbUrl) || attName;
     const fileHref = attName
         ? withToken(`${API_BASE_URL}/download/${encodeURIComponent(userName)}/${encodeURIComponent(attName)}`) : "";
+    const viewHref = attName
+        ? withToken(`${API_BASE_URL}/view/${encodeURIComponent(userName)}/${encodeURIComponent(attName)}`) : "";
     const thumbHref = thumbName
         ? withToken(`${API_BASE_URL}/thumbnail/${encodeURIComponent(userName)}/${encodeURIComponent(thumbName)}`) : "";
 
@@ -3566,7 +3572,7 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
 
         <div class="attachment-buttons" style="display:flex; gap:6px; align-items:center;">
             <button class="open-btn"
-                data-url="${fileHref}"
+                data-url="${viewHref}"
                 data-tnurl="${thumbHref}"
                 data-type="${ext}" title="Open">
                 <i class="fa-solid fa-eye"></i>

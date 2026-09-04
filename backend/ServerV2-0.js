@@ -259,6 +259,23 @@ app.get("/download/:username/:filename", requireView, requireR2, async (req, res
     }
 });
 
+// --------- Serve an attachment inline (for the "open/preview" eye icon) ----------
+// Same object as /download, but without Content-Disposition: attachment, so
+// the browser renders it in the tab (PDF viewer, image, video) instead of
+// forcing a save-to-disk prompt.
+app.get("/view/:username/:filename", requireView, requireR2, async (req, res) => {
+    const key = r2Key(req.params.username, "files", req.params.filename);
+    if (!key) return res.status(400).json({ error: "Bad request" });
+    try {
+        await streamR2ToResponse(res, key);
+    } catch (err) {
+        if (r2.isNotFound(err)) return res.status(404).send("File not found");
+        console.error(`R2 view error for ${key}:`, err.name, "-", err.message,
+            err.$metadata ? JSON.stringify(err.$metadata) : "");
+        res.status(500).send("Error");
+    }
+});
+
 app.get("/thumbnail/:username/:filename", requireView, requireR2, async (req, res) => {
     const key = r2Key(req.params.username, "thumbnails", req.params.filename);
     if (!key) return res.status(400).json({ error: "Bad request" });
