@@ -314,6 +314,9 @@ const nodeRepo = require("./nodeRepo");
 const TreeData = require("./models/TreeData");
 const PersonalEvent = require("./models/PersonalEvent");
 const LocationGroups = require("./models/LocationGroups");
+const { importGedcom } = require("./gedcomImport");
+const { saveTreeData } = require("./lib/saveTreeData");
+const { diffTreeData } = require("./lib/diffTreeData");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
 // ---------------------------------------------------------    
@@ -554,6 +557,93 @@ app.post('/clusterInfo', requireAdmin, (req, res) => {
     res.json({ success: true, message: 'Cluster information saved' });
 });
 // ------------ end cluster info routes ------------
+
+// ---------------------------------------------------------
+// ---------------- GEDCOM IMPORT ROUTES --------------------
+// ---------------------------------------------------------
+// Two-step (preview, then confirm) rather than upload-and-apply in one
+// shot - preserves the human-review-before-it's-live property a git diff
+// used to give when this was a local `.bat` + manual commit, just moved
+// into the app. Preview parses the upload and returns a diff summary plus
+// the full parsed payload; nothing is written until confirm sends that same
+// payload back. No server-side pending-import state needed.
+const gedUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+    fileFilter: (req, file, cb) => {
+        if (!/\.ged$/i.test(file.originalname || "")) {
+            return cb(new Error("Expected a .ged file"));
+        }
+        cb(null, true);
+    },
+});
+
+function gedUploadField(req, res, next) {
+    const mw = gedUpload.single("gedFile");
+    mw(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message || "Upload rejected" });
+        next();
+    });
+}
+
+app.post("/importGedcom/:username/preview", requireAdmin, gedUploadField, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    if (!req.file) return res.status(400).json({ error: "No .ged file uploaded." });
+
+    let gedText;
+    try {
+        gedText = req.file.buffer.toString("utf8");
+    } catch (err) {
+        return res.status(400).json({ error: "Could not read the uploaded file as text." });
+    }
+    const charMatch = gedText.match(/\n1 CHAR (\S+)/);
+    if (charMatch && charMatch[1].toUpperCase() !== "UTF-8") {
+        return res.status(400).json({
+            error: `This file declares "${charMatch[1]}" encoding, not UTF-8 - re-export as UTF-8 before importing.`,
+        });
+    }
+
+    let parsed;
+    try {
+        parsed = importGedcom(gedText);
+    } catch (err) {
+        console.error("GEDCOM parse failed:", err);
+        return res.status(400).json({ error: `Could not parse this .ged file: ${err.message}` });
+    }
+
+    try {
+        const summary = await diffTreeData(tree, parsed);
+
+        // Best-effort archive of the raw upload to R2, so there's a durable
+        // copy of the source file without depending on git. Not fatal if
+        // R2 isn't configured or the put fails - the import can proceed.
+        if (r2.configured) {
+            const archiveName = `${Date.now()}-${safeFilename(req.file.originalname) || "import.ged"}`;
+            r2.putObject(`users/${tree}/gedcom-imports/${archiveName}`, req.file.buffer, "text/plain")
+                .catch((err) => console.error("GEDCOM archive to R2 failed (non-fatal):", err.message));
+        }
+
+        res.json({ success: true, summary, data: parsed });
+    } catch (err) {
+        console.error("GEDCOM preview failed:", err);
+        res.status(500).json({ error: "Error comparing against the current tree." });
+    }
+});
+
+app.post("/importGedcom/:username/confirm", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { data } = req.body;
+    if (!data) return res.status(400).json({ error: "Missing data" });
+
+    try {
+        const summary = await saveTreeData(tree, data);
+        console.log("GEDCOM import confirmed for", tree, JSON.stringify(summary));
+        res.json({ success: true, summary });
+    } catch (err) {
+        console.error("GEDCOM import confirm failed:", err);
+        res.status(500).json({ error: "Error saving the imported tree." });
+    }
+});
 
 // -------------------------------------------------
 // ---------- Get Family Tree Settings -------------

@@ -92,7 +92,21 @@ emitted HTML. Regenerating the JSON from the current `.ged` produces real
 diffs (the committed data lags the `.ged`), so regen + review + commit the
 JSON as its own change, not bundled with code.
 
-### Node port — backend/gedcomImport.js (in progress, not yet wired up)
+### In-app GEDCOM import (Sep 2026)
+`POST /importGedcom/:username/preview` (`requireAdmin`, multer memory upload,
+50MB limit, `.ged` extension only) parses the upload with `gedcomImport.js`
+(below), diffs it against the tree's current `TreeData` doc
+(`backend/lib/diffTreeData.js` — added/removed/kept individual & family
+counts, plus the *names* of anyone disappearing), archives the raw upload to
+R2 at `users/<tree>/gedcom-imports/<timestamp>-<name>.ged` (best-effort, not
+gated on R2 being configured), and returns `{ summary, data }` — nothing is
+written yet. `POST /importGedcom/:username/confirm` takes that same `data`
+payload back from the browser and calls `backend/lib/saveTreeData.js`, which
+does the actual Mongo writes (shared with
+`scripts/migrate-treedata-to-mongo.js`, so there's one write path for both).
+No frontend for this yet — routes only.
+
+### Node port — backend/gedcomImport.js
 A from-scratch Node reimplementation of all four steps above (`importGedcom(gedText)`
 → `{ individuals, families, parentsOf, childrenOf, spousesOf, personalEvents,
 birthLocationGroups, deathLocationGroups }`), built for an in-app "upload a
