@@ -555,24 +555,6 @@ app.post('/clusterInfo', requireAdmin, (req, res) => {
 });
 // ------------ end cluster info routes ------------
 
-// TEMPORARY - one-time seed of TreeData/PersonalEvent/LocationGroups from
-// the git-committed JSON files still sitting on this deploy's disk. Only
-// needed because local dev currently can't reach Atlas (corporate network
-// blocks outbound 27017) to run scripts/migrate-treedata-to-mongo.js
-// directly, so this triggers the same logic over HTTP instead. Remove this
-// route once the migration has been run and verified.
-const { migrateTree, listTrees } = require("./lib/migrateTreeData");
-app.post("/admin/migrateTreeData/:username", requireAdmin, async (req, res) => {
-    try {
-        const summary = await migrateTree(req.params.username);
-        console.log("migrateTreeData:", JSON.stringify(summary));
-        res.json({ success: true, summary });
-    } catch (err) {
-        console.error("migrateTreeData failed:", err);
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
 // -------------------------------------------------
 // ---------- Get Family Tree Settings -------------
 // -------------------------------------------------
