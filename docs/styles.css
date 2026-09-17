@@ -193,7 +193,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
 
   /* Modal styles */
-  #bioModal {
+  #bioModal, #gedImportModal {
     display: none;
     position: fixed;
     top: 0; left: 0;
@@ -203,7 +203,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     align-items: center;
     justify-content: center;
   }
-  #bioModal.active {
+  #bioModal.active, #gedImportModal.active {
     display: flex;
   }
   .bioModalContent {
@@ -683,4 +683,22 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 }
 
 #authButton:hover { background: #f0f6ff; border-color: #5d9cec; }
+
+/* Admin-only, sits directly below the auth button in the same corner column. */
+#gedImportButton {
+    position: fixed;
+    top: 52px;
+    left: 78px;
+    z-index: 9999;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+#gedImportButton:hover { background: #f0f6ff; border-color: #5d9cec; }
 

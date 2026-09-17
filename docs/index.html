@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20260831">
+    <link rel="stylesheet" href="styles.css?v=20260917">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -45,6 +45,10 @@
 
 <!-- Corner control: log in to edit / log out. Sits over the canvas, clear of the panel. -->
 <button id="authButton">Log in</button>
+
+<!-- Admin-only: import a new .ged export. Hidden for viewers via renderAuthUI(). -->
+<button id="gedImportButton" style="display:none;" title="Upload a new GEDCOM export and preview what would change">Import GEDCOM</button>
+<input type="file" id="gedImportFileInput" accept=".ged" style="display:none;">
 
 <div id="nodeOptionsMenu" class="nodeOptionsMenu" 
     style="display:none;">
@@ -183,6 +187,18 @@
         <button type="button" class="btnMakeRoot" id="bioMakeRootBtn">Make Root</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- GEDCOM Import Modal for Admins: preview a new .ged, then confirm or cancel. -->
+<div id="gedImportModal">
+  <div class="bioModalContent" style="max-width:520px;">
+    <div class="bioModalHeader">Import GEDCOM</div>
+    <div id="gedImportBody"><p>Choose a .ged file to see what would change before anything is saved.</p></div>
+    <div class="bioModalButtons">
+      <button type="button" class="btnSave" id="gedImportConfirmBtn" style="display:none;">Confirm Import</button>
+      <button type="button" class="btnCancel" id="gedImportCancelBtn">Close</button>
+    </div>
   </div>
 </div>
 
@@ -540,6 +556,9 @@ function renderAuthUI() {
     btn.title = isAdmin()
         ? `Editing ${userName} - click to log out`
         : `Viewing ${userName} - click to log out / switch tree`;
+
+    const gedBtn = document.getElementById("gedImportButton");
+    if (gedBtn) gedBtn.style.display = isAdmin() ? "inline-block" : "none";
 }
 
 // Corner button: log out and return to the splash.
@@ -777,6 +796,111 @@ function closeBioEditor() {
     const modal = document.getElementById('bioModal');
     modal.classList.remove('active');
     currentEditingNodeId = null;
+}
+
+//-----------------------------------------------------------------------------
+// GEDCOM Import (admin only) - preview a new .ged, then confirm or cancel.
+// Two-step by design: nothing is saved until Confirm Import is clicked, so
+// there's a chance to review what would change (same idea as reviewing a
+// git diff before committing a re-imported family.json, just moved into
+// the app since this has to work without local Python/git access).
+//-----------------------------------------------------------------------------
+let gedImportPreviewData = null; // the parsed tree from /preview, resent as-is to /confirm
+
+function openGedImportModal() {
+    document.getElementById('gedImportModal').classList.add('active');
+}
+function closeGedImportModal() {
+    document.getElementById('gedImportModal').classList.remove('active');
+    gedImportPreviewData = null;
+    const confirmBtn = document.getElementById('gedImportConfirmBtn');
+    confirmBtn.style.display = 'none';
+    confirmBtn.disabled = false;
+    document.getElementById('gedImportFileInput').value = '';
+}
+
+async function handleGedFileSelected(file) {
+    if (!file) return;
+    const body = document.getElementById('gedImportBody');
+    const confirmBtn = document.getElementById('gedImportConfirmBtn');
+    confirmBtn.style.display = 'none';
+    gedImportPreviewData = null;
+    body.innerHTML = `<p>Uploading and parsing "${file.name}"… this can take a minute for a large tree.</p>`;
+    openGedImportModal();
+
+    try {
+        const formData = new FormData();
+        formData.append('gedFile', file);
+        const response = await fetch(`${API_BASE_URL}/importGedcom/${userName}/preview`, {
+            method: 'POST',
+            headers: { ...authHeaders() },
+            body: formData
+        });
+        if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            closeGedImportModal();
+            return;
+        }
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            body.innerHTML = `<p style="color:#c00;">${result.error || 'Import failed.'}</p>`;
+            return;
+        }
+
+        gedImportPreviewData = result.data;
+        const s = result.summary;
+        const removedListHtml = s.individuals.removedList.length
+            ? `<div style="margin-top:8px; max-height:140px; overflow-y:auto; border:1px solid #ddd; border-radius:4px; padding:6px; font-size:12px;">
+                 ${s.individuals.removedList.map(p => `<div>${p.name} <span style="color:#999;">(${p.id})</span></div>`).join('')}
+               </div>`
+            : '';
+        body.innerHTML = `
+            <p><strong>Individuals:</strong> ${s.individuals.before} &rarr; ${s.individuals.after}
+                (<span style="color:#2e7d32;">+${s.individuals.added} new</span>,
+                 <span style="color:${s.individuals.removed ? '#c00' : '#999'};">${s.individuals.removed} no longer present</span>)</p>
+            <p><strong>Families:</strong> ${s.families.before} &rarr; ${s.families.after}
+                (<span style="color:#2e7d32;">+${s.families.added} new</span>,
+                 <span style="color:${s.families.removed ? '#c00' : '#999'};">${s.families.removed} no longer present</span>)</p>
+            ${s.individuals.removed ? `<p style="font-size:12px; color:#666;">People no longer in this export (nothing about them is deleted - any biography, evidence, or attachments they have would just be unreferenced):</p>${removedListHtml}` : ''}
+            <p style="margin-top:10px;">Review the counts above, then confirm to save this into the live tree.</p>
+        `;
+        confirmBtn.style.display = 'block';
+    } catch (err) {
+        body.innerHTML = `<p style="color:#c00;">Error uploading file: ${err.message}</p>`;
+    }
+}
+
+async function confirmGedImport() {
+    if (!gedImportPreviewData) return;
+    const body = document.getElementById('gedImportBody');
+    const confirmBtn = document.getElementById('gedImportConfirmBtn');
+    confirmBtn.disabled = true;
+    body.innerHTML = `<p>Saving…</p>`;
+    try {
+        const response = await fetch(`${API_BASE_URL}/importGedcom/${userName}/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ data: gedImportPreviewData })
+        });
+        if (response.status === 401 || response.status === 403) {
+            handleAuthExpired();
+            return;
+        }
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            body.innerHTML = `<p style="color:#c00;">${result.error || 'Save failed.'}</p>`;
+            confirmBtn.disabled = false;
+            return;
+        }
+        body.innerHTML = `<p>Import saved. Reloading the tree…</p>`;
+        // A full reload re-runs the exact same load path every other page
+        // open already uses (restoreSession + enterApp), rather than trying
+        // to patch the live vis.js network in place.
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        body.innerHTML = `<p style="color:#c00;">Error saving: ${err.message}</p>`;
+        confirmBtn.disabled = false;
+    }
 }
 
 async function saveBioData() {
@@ -5255,6 +5379,21 @@ async function startApp() {
     });
     const authBtn = document.getElementById("authButton");
     if (authBtn) authBtn.addEventListener("click", onAuthButton);
+
+    const gedBtn = document.getElementById("gedImportButton");
+    const gedInput = document.getElementById("gedImportFileInput");
+    if (gedBtn && gedInput) {
+        gedBtn.addEventListener("click", () => gedInput.click());
+        gedInput.addEventListener("change", (e) => {
+            const file = e.target.files && e.target.files[0];
+            handleGedFileSelected(file);
+        });
+    }
+    document.getElementById("gedImportCancelBtn").addEventListener("click", closeGedImportModal);
+    document.getElementById("gedImportConfirmBtn").addEventListener("click", confirmGedImport);
+    document.getElementById("gedImportModal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("gedImportModal")) closeGedImportModal();
+    });
 
     // Only block on the server if we actually have a stored token to check.
     // Render's free tier can take ~30-60s to wake, so show feedback meanwhile.
