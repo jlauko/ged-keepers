@@ -104,7 +104,50 @@ written yet. `POST /importGedcom/:username/confirm` takes that same `data`
 payload back from the browser and calls `backend/lib/saveTreeData.js`, which
 does the actual Mongo writes (shared with
 `scripts/migrate-treedata-to-mongo.js`, so there's one write path for both).
-No frontend for this yet — routes only.
+Frontend: an admin-only "Import GEDCOM" button below the corner auth button
+(`docs/index.html` — `gedImportButton`/`gedImportModal`/`handleGedFileSelected`/
+`confirmGedImport`) opens a file picker, shows the diff summary, and on
+confirm reloads the page (reuses the normal `restoreSession` + `enterApp`
+load path rather than patching the live vis.js network in place).
+
+#### Known gap: a hand-edit to individuals/families doesn't survive a reimport
+There is currently **no in-app way to edit an individual's core fields**
+(name/birthdate/birthplace/etc.) or add a person directly — `individuals`/
+`families` only ever get written by this import. If that data is ever
+hand-edited some other way (a script, directly in Mongo), be aware:
+`saveTreeData` is a **wholesale replace**, same as the old Python pipeline
+was. A person who isn't in the next `.ged` re-export disappears; a field
+hand-corrected on someone who *is* in it gets silently overwritten back to
+whatever Ancestry still says, unless Ancestry was also fixed to match.
+
+The fix for this — discussed at length but **deliberately deferred** to keep
+the reimport-button plan scoped — is an overlay applied *after* the
+wholesale replace instead of being clobbered by it:
+- A new collection (e.g. `researchAdditions`) holding hand-added people/
+  corrections, each synthetic person keyed in an id namespace that can't
+  collide with Ancestry's (`@I310053455724@`-style) — e.g. `@S1@`, `@S2@`.
+  `saveTreeData` would apply every entry in this collection on top of the
+  freshly-parsed `.ged` data before writing `TreeData`.
+- The same collection doubles as the "still needs to be entered into
+  Ancestry" to-do list — it already has to carry name/dates/relationship/
+  source to apply the overlay, which is the same information needed to fill
+  in Ancestry's own "add a relative" form.
+- **The remap problem**: when a hand-added person is later actually entered
+  into Ancestry and shows up in a new export, Ancestry assigns them a brand
+  new id with no relationship to the old synthetic one. Naively dropping the
+  overlay entry at that point would orphan their MongoDB `NodeInfo`/
+  `EdgeInfo` (bio, evidence, attachments) — same failure mode as the
+  R2-orphaned-attachments bug, just triggered by an id swap instead of a
+  failed save. The fix is to *resolve* rather than delete: match remaining
+  overlay entries against newly-appeared native individuals by name +
+  birth/death year (same technique already used and proven for the R2
+  orphan-attachment recovery — see git history, Sep 2026), auto-remap
+  confident matches (re-key the Mongo docs to the new id, retire the overlay
+  entry), and surface anything ambiguous for a human decision instead of
+  guessing.
+
+Not built. Revisit if/when Claude's research work needs to add a person or
+correct a field the live tree doesn't have a home for otherwise.
 
 ### Node port — backend/gedcomImport.js
 A from-scratch Node reimplementation of all four steps above (`importGedcom(gedText)`
@@ -257,14 +300,19 @@ is false and the attachment routes 503 (rest of the app still runs).
   size lags — it gc's server-side on its own schedule.
 
 ## Conventions for adding researched data
-- Add new people/relationships to `individuals` / `families` (keeping
-  `parents_of`/`children_of`/`spouses_of` in sync), or better, add an
-  "evidence" entry in `nodeinformation.json` against the existing GEDCOM id.
-- Every researched fact should carry a source citation. There's no `sources[]`
-  field on individuals yet — decide: add one to `family.json`'s schema, or
-  store citations as `nodeinformation.json` evidence entries.
-- IDs: individuals `@I<number>@`, families `@F<number>@`. New synthetic people
-  need a non-colliding scheme — confirm before generating.
+- Prefer adding an "evidence" entry against the existing GEDCOM id in
+  MongoDB `NodeInfo` (person) or `EdgeInfo` (relationship) over touching
+  `individuals`/`families` directly — there's no supported write path for
+  the latter at all right now (see the "Known gap" note under In-app
+  GEDCOM import above), so a hand-edit there would just get silently
+  overwritten by the next `.ged` reimport.
+- Every researched fact should carry a source citation. There's no
+  `sources[]` field on individuals yet — decide: add one to `TreeData`'s
+  schema, or store citations as `NodeInfo`/`EdgeInfo` evidence entries.
+- IDs: individuals `@I<number>@`, families `@F<number>@`. A new synthetic
+  person needs a non-colliding scheme (e.g. `@S1@`) and the reimport-overlay
+  support described in the "Known gap" note above — neither exists yet;
+  don't generate synthetic ids without that support in place first.
 - Store a found document/photo via `POST /uploadAttachment/:username`, not by
   writing a file directly.
 
