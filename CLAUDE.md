@@ -92,6 +92,41 @@ emitted HTML. Regenerating the JSON from the current `.ged` produces real
 diffs (the committed data lags the `.ged`), so regen + review + commit the
 JSON as its own change, not bundled with code.
 
+### Node port — backend/gedcomImport.js (in progress, not yet wired up)
+A from-scratch Node reimplementation of all four steps above (`importGedcom(gedText)`
+→ `{ individuals, families, parentsOf, childrenOf, spousesOf, personalEvents,
+birthLocationGroups, deathLocationGroups }`), built for an in-app "upload a
+`.ged`, see a preview, confirm" import flow that doesn't require Python or a
+local machine. Validated to **exact parity** against the real `LaukoFamilyTree.ged`
+(8200 individuals, 2710 families) — every individual/family/parents_of/
+children_of/residence field and every personalEvent matches the Python
+pipeline's output byte-for-byte, with one known cosmetic residual: ~226/8200
+people whose GEDCOM `NAME` is missing a given- or surname-half produce a
+slightly different boundary-whitespace pattern in event *labels* (Marriage/
+ChildBirth) than `python-gedcom`'s `get_name()` — never in `family.json`'s
+own name fields, which match exactly. Not worth chasing further; see the
+inline comments on `formatNameNoSuffix`.
+
+The date normalizer (`normalizeGedcomDate`) reverse-engineers several
+non-obvious `ged4py` quirks found by diffing against real data — worth
+knowing if a *new* `.ged` export surfaces a date format that breaks parity:
+- Full month names are phrase-wrapped in parens as unparseable ("March" →
+  `(dd March yyyy)`) **except** "June" and "July", which parse normally.
+  Non-English abbreviations (`Sept`, `Okt`, `Dez`, `Mai`) are also accepted.
+- `ABT`/`BEF`/`AFT`/`CAL`/`EST`/`BET...AND` are spelled out in full
+  (`ABOUT`/`BEFORE`/.../`BETWEEN...AND`).
+- Day-Month-Year order is required for a "standard" date; month-first
+  ("Sep 30 1897") is treated as an unparseable phrase.
+- A single all-digit token of any length (a date typed with no separators,
+  e.g. "01071917") is treated as a raw number, not validated as a sane year.
+- `Death` events default a missing place to `""`; `Birth` events default to
+  `null` — a genuine asymmetry between `python-gedcom`'s `get_birth_data()`/
+  `get_death_data()`, not a bug.
+- `MARR`/`DEAT` use the *last* matching record when a person/family has more
+  than one (e.g. a placeholder `DATE DECEASED` after a real dated `DEAT`);
+  a child's `BIRT` lookup for `ChildBirth` events merges *per field* across
+  all their `BIRT` records rather than picking one whole record.
+
 ## Data model (backend/users/<username>/GED/family.json)
 - `individuals`: dict keyed by GEDCOM id (e.g. `@I310053455724@`) →
   `{ name, birthdate, deathdate, birthplace, deathplace, sex, residences: [{date, place, address}] }`
