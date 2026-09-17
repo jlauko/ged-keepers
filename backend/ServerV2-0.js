@@ -311,6 +311,9 @@ app.delete("/delete/:username/:filename", requireAdmin, requireR2, async (req, r
 });
 
 const nodeRepo = require("./nodeRepo");
+const TreeData = require("./models/TreeData");
+const PersonalEvent = require("./models/PersonalEvent");
+const LocationGroups = require("./models/LocationGroups");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
 // ---------------------------------------------------------    
@@ -552,19 +555,42 @@ app.post('/clusterInfo', requireAdmin, (req, res) => {
 });
 // ------------ end cluster info routes ------------
 
+// TEMPORARY - one-time seed of TreeData/PersonalEvent/LocationGroups from
+// the git-committed JSON files still sitting on this deploy's disk. Only
+// needed because local dev currently can't reach Atlas (corporate network
+// blocks outbound 27017) to run scripts/migrate-treedata-to-mongo.js
+// directly, so this triggers the same logic over HTTP instead. Remove this
+// route once the migration has been run and verified.
+const { migrateTree, listTrees } = require("./lib/migrateTreeData");
+app.post("/admin/migrateTreeData/:username", requireAdmin, async (req, res) => {
+    try {
+        const summary = await migrateTree(req.params.username);
+        console.log("migrateTreeData:", JSON.stringify(summary));
+        res.json({ success: true, summary });
+    } catch (err) {
+        console.error("migrateTreeData failed:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // -------------------------------------------------
 // ---------- Get Family Tree Settings -------------
 // -------------------------------------------------
-app.get("/FamilyInfo/:username", requireView, (req, res) => {
+app.get("/FamilyInfo/:username", requireView, async (req, res) => {
     const username = req.params.username;
-    const FamilyInfoPath = path.join(__dirname, "users", username, "GED", "family.json");
-
-    console.log("Fetching family information from:", username, "from file:", FamilyInfoPath);
-    try { 
-        const data = fs.readFileSync(FamilyInfoPath, "utf8"); 
-        res.json(JSON.parse(data)); 
-    } catch (err) { 
-        res.status(404).json({ success: false, message: "Cluster information not found" }); 
+    console.log("Fetching family information from Mongo for:", username);
+    try {
+        const doc = await TreeData.findOne({ tree: username }).lean();
+        if (!doc) return res.status(404).json({ success: false, message: "Family info not found" });
+        res.json({
+            individuals: doc.individuals || {},
+            families: doc.families || {},
+            parents_of: doc.parentsOf || {},
+            children_of: doc.childrenOf || {},
+            spouses_of: doc.spousesOf || {},
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error reading family info" });
     }
 });
 
@@ -601,16 +627,18 @@ app.get("/HistoricalEvents/:username", requireView, (req, res) => {
 // -------------------------------------------------
 // ---------- Personal History Events -------------
 // -------------------------------------------------
-app.get("/PersonalHistoryEvents/:username", requireView, (req, res) => {
+app.get("/PersonalHistoryEvents/:username", requireView, async (req, res) => {
     const username = req.params.username;
-    const Path = path.join(__dirname, "users", username, "GED", "personalHistoryEvents.json");
-
-    console.log("Fetching Personal History Event information from:", username, "from file:", Path);
-    try { 
-        const data = fs.readFileSync(Path, "utf8"); 
-        res.json(JSON.parse(data)); 
-    } catch (err) { 
-        res.status(404).json({ success: false, message: "Personal History Events not found" }); 
+    console.log("Fetching Personal History Event information from Mongo for:", username);
+    try {
+        const docs = await PersonalEvent.find({ tree: username }).lean();
+        const result = {};
+        for (const doc of docs) {
+            result[doc.personId] = { personId: doc.personId, name: doc.name, events: doc.events };
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error reading personal history events" });
     }
 });
 // -------------------------------------------------
@@ -631,31 +659,29 @@ app.get("/OffLineEvents/:username", requireView, (req, res) => {
 // -------------------------------------------------
 // ---------- Birth Location Groups -------------
 // -------------------------------------------------
-app.get("/BirthLocationGroups/:username", requireView, (req, res) => {
+app.get("/BirthLocationGroups/:username", requireView, async (req, res) => {
     const username = req.params.username;
-    const Path = path.join(__dirname, "users", username, "GED", "birthLocationGroups.json");
-
-    console.log("Fetching Birth Location Groups information from:", username, "from file:", Path);
-    try { 
-        const data = fs.readFileSync(Path, "utf8"); 
-        res.json(JSON.parse(data)); 
-    } catch (err) { 
-        res.status(404).json({ success: false, message: "Birth Location Groups information not found" }); 
+    console.log("Fetching Birth Location Groups information from Mongo for:", username);
+    try {
+        const doc = await LocationGroups.findOne({ tree: username }).lean();
+        if (!doc) return res.status(404).json({ success: false, message: "Birth Location Groups information not found" });
+        res.json(doc.birth || {});
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error reading birth location groups" });
     }
 });
 // -------------------------------------------------
 // ---------- Death Location Groups -------------
 // -------------------------------------------------
-app.get("/DeathLocationGroups/:username", requireView, (req, res) => {
+app.get("/DeathLocationGroups/:username", requireView, async (req, res) => {
     const username = req.params.username;
-    const Path = path.join(__dirname, "users", username, "GED", "DeathLocationGroups.json");
-
-    console.log("Fetching Birth Location Groups information from:", username, "from file:", Path);
-    try { 
-        const data = fs.readFileSync(Path, "utf8"); 
-        res.json(JSON.parse(data)); 
-    } catch (err) { 
-        res.status(404).json({ success: false, message: "Death Location Groups information not found" }); 
+    console.log("Fetching Death Location Groups information from Mongo for:", username);
+    try {
+        const doc = await LocationGroups.findOne({ tree: username }).lean();
+        if (!doc) return res.status(404).json({ success: false, message: "Death Location Groups information not found" });
+        res.json(doc.death || {});
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error reading death location groups" });
     }
 });
 // -------------------------------------------------
