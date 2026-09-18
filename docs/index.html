@@ -819,6 +819,57 @@ function closeGedImportModal() {
     document.getElementById('gedImportFileInput').value = '';
 }
 
+// Renders the birth/death location-group warnings from diffLocationGroups.js
+// (backend/lib/diffLocationGroups.js) inside the GEDCOM import preview modal:
+// clusters that already carry a biography/attachments and would be orphaned
+// or dropped to a low member count by this import, plus any cluster write-up
+// whose tagged coverageStartYear/coverageEndYear no longer spans everyone
+// the reimport would put in that group.
+function renderLocationGroupWarnings(locationGroups) {
+    if (!locationGroups) return '';
+
+    const sections = [];
+    for (const eventType of ['birth', 'death']) {
+        const d = locationGroups[eventType];
+        if (!d) continue;
+        const label = eventType === 'birth' ? 'Birth' : 'Death';
+
+        if (d.atRisk && d.atRisk.length) {
+            const rows = d.atRisk.map(g => {
+                const what = g.status === 'removed'
+                    ? `no longer has ${eventType === 'birth' ? 'any members' : 'any members'} at all`
+                    : `down to ${g.memberCount} member${g.memberCount === 1 ? '' : 's'}`;
+                const content = [
+                    g.attachmentCount ? `${g.attachmentCount} attachment${g.attachmentCount === 1 ? '' : 's'}` : null,
+                    g.hasBiography ? 'a biography' : null,
+                ].filter(Boolean).join(' and ');
+                return `<div>&#9888; <strong>${g.name}</strong> (${label}) ${what}, but still carries ${content}.</div>`;
+            }).join('');
+            sections.push(`
+                <div style="margin-top:8px; padding:6px 8px; border:1px solid #f0c36d; background:#fff8e6; border-radius:4px; font-size:12px;">
+                    ${rows}
+                </div>`);
+        }
+
+        if (d.coverageGaps && d.coverageGaps.length) {
+            const rows = d.coverageGaps.map(g => {
+                const bits = [];
+                if (g.yearsBelowCoverage) bits.push(`${g.yearsBelowCoverage} year(s) earlier (now ${g.currentRange.minYear})`);
+                if (g.yearsAboveCoverage) bits.push(`${g.yearsAboveCoverage} year(s) later (now ${g.currentRange.maxYear})`);
+                return `<div>&#9888; <strong>${g.name}</strong> (${label}) now spans ${g.currentRange.minYear}&ndash;${g.currentRange.maxYear},
+                    but its write-up${d.coverageGaps.length > 1 ? 's' : ''} only cover${bits.length ? '' : 's'} ${g.coveredRange.minYear}&ndash;${g.coveredRange.maxYear}
+                    (${bits.join(', ')}) &mdash; may need extending.</div>`;
+            }).join('');
+            sections.push(`
+                <div style="margin-top:8px; padding:6px 8px; border:1px solid #90caf9; background:#eaf4fe; border-radius:4px; font-size:12px;">
+                    ${rows}
+                </div>`);
+        }
+    }
+
+    return sections.join('');
+}
+
 async function handleGedFileSelected(file) {
     if (!file) return;
     const body = document.getElementById('gedImportBody');
@@ -862,6 +913,7 @@ async function handleGedFileSelected(file) {
                 (<span style="color:#2e7d32;">+${s.families.added} new</span>,
                  <span style="color:${s.families.removed ? '#c00' : '#999'};">${s.families.removed} no longer present</span>)</p>
             ${s.individuals.removed ? `<p style="font-size:12px; color:#666;">People no longer in this export (nothing about them is deleted - any biography, evidence, or attachments they have would just be unreferenced):</p>${removedListHtml}` : ''}
+            ${renderLocationGroupWarnings(s.locationGroups)}
             <p style="margin-top:10px;">Review the counts above, then confirm to save this into the live tree.</p>
         `;
         confirmBtn.style.display = 'block';

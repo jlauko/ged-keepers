@@ -317,6 +317,7 @@ const LocationGroups = require("./models/LocationGroups");
 const { importGedcom } = require("./gedcomImport");
 const { saveTreeData } = require("./lib/saveTreeData");
 const { diffTreeData } = require("./lib/diffTreeData");
+const { diffLocationGroups } = require("./lib/diffLocationGroups");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
 // ---------------------------------------------------------    
@@ -613,6 +614,7 @@ app.post("/importGedcom/:username/preview", requireAdmin, gedUploadField, async 
 
     try {
         const summary = await diffTreeData(tree, parsed);
+        summary.locationGroups = await diffLocationGroups(tree, parsed);
 
         // Best-effort archive of the raw upload to R2, so there's a durable
         // copy of the source file without depending on git. Not fatal if

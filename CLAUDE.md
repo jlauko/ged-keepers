@@ -149,6 +149,57 @@ wholesale replace instead of being clobbered by it:
 Not built. Revisit if/when Claude's research work needs to add a person or
 correct a field the live tree doesn't have a home for otherwise.
 
+### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
+
+The frontend's map-style clusters (`docs/clusters.js`) are drawn from
+`birthLocationGroups`/`deathLocationGroups` (Mongo `LocationGroups`, one doc
+per tree — see below), which bucket people by a normalized birth/death place
+against a small hardcoded vocabulary (`EUROPEAN_COUNTRIES`, `US_STATES`, etc.
+in `location_groups.py` / `gedcomImport.js`'s `normalizeLocation`) and drop
+any group under `MIN_GROUP_SIZE = 3`. A cluster's biography/attachments are
+stored in `NodeInfo`, keyed by the **plain group name** (e.g. `"Slovakia"`) —
+confirmed empirically, not the `groupName_minBirthYear_maxBirthYear`
+composite id `clusters.js` builds for its own DBSCAN spatial sub-split.
+
+**That spatial sub-split (`Slovakia-A`, `Slovakia-B`, ...) is not durable and
+must never be used as a storage key.** There is no `/clusters/:username`
+backend route, so `Clusters.Get()`'s fetch always fails and falls through to
+`Create()`, which recomputes the DBSCAN split live from whatever node x/y
+positions the physics layout happens to have *this render* — unpersisted,
+and not guaranteed stable even across two loads of identical data, let alone
+across a reimport. The plain group name is the only stable identity a
+cluster write-up can be filed under.
+
+**Coordinating a location group's write-ups with what a reimport would
+change** — two real risks, both handled by `backend/lib/diffLocationGroups.js`,
+called from `/importGedcom/:username/preview` and rendered in the import
+modal (`renderLocationGroupWarnings` in `docs/index.html`) before an admin
+confirms:
+1. *Orphaning* — a group that already carries a biography/attachments
+   disappearing entirely, or dropping close to `MIN_GROUP_SIZE`, leaving
+   that content in Mongo with nothing on the canvas pointing to it.
+2. *Coverage gaps* — a write-up only covers part of the era its group
+   actually spans. Tag a cluster write-up's attachment entry with
+   `coverageStartYear`/`coverageEndYear` (an ad-hoc field — `NodeInfo` is
+   `strict:false`, so this is safe) and the check compares that against the
+   group's **full-membership** birth/death-year range, computed by
+   `backend/lib/locationGroupYearRange.js` from `TreeData.individuals` +
+   the group's own member list — not the number the info panel shows on
+   hover, which (like the spatial split) comes from the same ephemeral
+   per-render DBSCAN sub-cluster and isn't a stable ground truth either.
+   Example: the `"Slovakia"` write-up is tagged `1850`–`1989` (what it
+   actually discusses), but the full birth group spans `1756`–`1924` across
+   all 449 members tree-wide — a real, currently-unaddressed gap the check
+   correctly flags, not a bug.
+
+When adding a new cluster write-up: upload via `POST /uploadAttachment`
+same as any attachment (generate a thumbnail yourself — see Attachments
+below, thumbnailing is client-side JS, not server-side), then set that
+attachment's `coverageStartYear`/`coverageEndYear` via `PUT
+/nodeInfo/:username/nodes/:nodeId` to the actual era the write-up's content
+addresses (not the group's full range, unless the write-up truly covers all
+of it) — an honest tag is what makes the coverage-gap check useful later.
+
 ### Node port — backend/gedcomImport.js
 A from-scratch Node reimplementation of all four steps above (`importGedcom(gedText)`
 → `{ individuals, families, parentsOf, childrenOf, spousesOf, personalEvents,
