@@ -37,7 +37,7 @@ function hasContent(doc) {
   return !!doc && (!!(doc.biography && doc.biography.trim()) || !!(doc.attachments && doc.attachments.length));
 }
 
-async function diffOneEventType(tree, oldGroups, newGroups, newIndividuals) {
+async function diffOneEventType(tree, oldGroups, newGroups, newIndividuals, dateField) {
   const oldNames = Object.keys(oldGroups);
   const newNames = Object.keys(newGroups);
   const removedNames = oldNames.filter((n) => !(n in newGroups));
@@ -84,7 +84,7 @@ async function diffOneEventType(tree, oldGroups, newGroups, newIndividuals) {
     );
     if (taggedAttachments.length === 0) continue; // nothing era-tagged to check against
 
-    const range = computeYearRange(newIndividuals, newGroups[name]);
+    const range = computeYearRange(newIndividuals, newGroups[name], dateField);
     if (!range) continue;
 
     const coveredMin = Math.min(...taggedAttachments.map((a) => a.coverageStartYear));
@@ -112,8 +112,8 @@ async function diffLocationGroups(tree, parsed) {
   const individuals = parsed.individuals || {};
 
   const [birth, death] = await Promise.all([
-    diffOneEventType(tree, oldBirth, newBirth, individuals),
-    diffOneEventType(tree, oldDeath, newDeath, individuals),
+    diffOneEventType(tree, oldBirth, newBirth, individuals, "birthdate"),
+    diffOneEventType(tree, oldDeath, newDeath, individuals, "deathdate"),
   ]);
 
   return { birth, death };

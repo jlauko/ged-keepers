@@ -12,9 +12,12 @@
 // pushed a group outside every existing write-up's stated coverage.
 const { extractYear } = require("../gedcomImport");
 
-function computeYearRange(individuals, memberIds) {
+// `field` is "birthdate" for a birth-location group and "deathdate" for a
+// death-location group - the span of a group is the span of the event that
+// put each person in it, not always their birth year.
+function computeYearRange(individuals, memberIds, field = "birthdate") {
   const years = (memberIds || [])
-    .map((id) => individuals[id] && individuals[id].birthdate)
+    .map((id) => individuals[id] && individuals[id][field])
     .map((bd) => extractYear(bd))
     .filter((y) => y !== null);
 
