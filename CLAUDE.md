@@ -230,6 +230,27 @@ export goes back to pending. Refused while people/links added in the app hang of
 person. NodeInfo/EdgeInfo are kept (restore brings them back). The tree's home root
 cannot be deleted from the UI.
 
+### Loading a research checklist as pending edits (Nov 2026)
+`POST /person/:username/bulk/preview` and `POST /person/:username/bulk`
+(`requireAdmin`; `lib/bulkEdits.js`): takes `items: [{ key, personId, personName,
+tier, changes: {field: value|null}, note, source }]`, previews each (apply / already
+matches / not in the tree / invalid, plus "different person?" when the name at that id
+does not match) and applies the chosen ones through the ordinary `applyPersonEdit`, so
+they are logged as pending edits for Ancestry updates. UI: *Load checklist…* in the
+Ancestry updates panel (tier A preselected, values editable). The checklist `.xlsx`
+files are prose, so the JSON is curated from them (the build script read the workbooks
+read-only) and lives next to them, **outside the repo** (it names real people);
+dates must use the GEDCOM short forms (`ABT`, `BEF`, `AFT`, `BET x AND y`) or they are
+stored as free text. Only name/sex/date/place corrections load; links, merges,
+residences, military service and additions stay in the checklist.
+
+### Information Center (Nov 2026)
+Shows the highlights (dates, places) and, under them, the person's **Short Bio**
+(the attachment whose display name is literally "Short Bio", see the upload notes) as a
+large preview; `RenderNodeAttachments` fills `#shortBioSlot` and leaves the other
+attachments in the Attachments panel. The panel is 3:2 against Attachments (it was 1:2).
+Clusters have no slot, so their attachments all stay in the list.
+
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
 
 The frontend's map-style clusters (`docs/clusters.js`) are drawn from

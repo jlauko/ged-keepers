@@ -322,6 +322,7 @@ const { saveTreeData } = require("./lib/saveTreeData");
 const { diffTreeData } = require("./lib/diffTreeData");
 const { diffLocationGroups } = require("./lib/diffLocationGroups");
 const personEdits = require("./lib/personEdits");
+const bulkEdits = require("./lib/bulkEdits");
 const auditLog = require("./lib/auditLog");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
@@ -734,6 +735,26 @@ app.post("/additions/:username", requireAdmin, async (req, res) => {
         res.json({ success: true, ...result });
     } catch (err) {
         sendEditError(res, err, "Error adding the person");
+    }
+});
+
+// Load many field corrections at once (e.g. a research Tree-Fix checklist) as ordinary
+// pending edits: preview what each would do, then apply the chosen ones. See lib/bulkEdits.js.
+app.post("/person/:username/bulk/preview", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    try {
+        res.json({ success: true, items: await bulkEdits.previewBulk(tree, (req.body || {}).items) });
+    } catch (err) {
+        sendEditError(res, err, "Error previewing the checklist edits");
+    }
+});
+app.post("/person/:username/bulk", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { items, editor } = req.body || {};
+    try {
+        res.json({ success: true, ...(await bulkEdits.applyBulk(tree, items, { editor: editor || req.user.username })) });
+    } catch (err) {
+        sendEditError(res, err, "Error loading the checklist edits");
     }
 });
 

@@ -154,7 +154,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
     */
 #infoSection {
-    flex: 1;
+    flex: 3;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -193,7 +193,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
 
   /* Modal styles */
-  #bioModal, #gedImportModal, #detailsModal, #editsModal, #relativeModal {
+  #bioModal, #gedImportModal, #detailsModal, #editsModal, #relativeModal, #bulkModal {
     display: none;
     position: fixed;
     top: 0; left: 0;
@@ -203,7 +203,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
     align-items: center;
     justify-content: center;
   }
-  #bioModal.active, #gedImportModal.active, #detailsModal.active, #editsModal.active, #relativeModal.active {
+  #bioModal.active, #gedImportModal.active, #detailsModal.active, #editsModal.active, #relativeModal.active, #bulkModal.active {
     display: flex;
   }
   .bioModalContent {
@@ -802,3 +802,27 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 /* Delete person: red accents */
 .biobutton.biobuttonDanger:hover { background: #fdecea; border-color: #c0392b; color: #c0392b; }
 .nodeOptionsMenu .menuDanger { color: #c0392b; }
+
+/* Information Center: the person's Short Bio preview sits under their highlights */
+#shortBioSlot { margin-top: 10px; }
+#shortBioSlot .shortBioHeading { font-weight: 600; font-size: 14px; color: #333; padding: 4px 0; border-top: 1px solid #ddd; }
+#shortBioSlot .attachment-thumb { max-width: 100% !important; max-height: 420px !important; border: 1px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,.15); background: #fff; }
+#shortBioSlot .attachment-row { align-items: flex-start !important; }
+
+/* Load checklist edits */
+.bulkRow { display: flex; gap: 10px; border: 1px solid #e2e2e2; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; font-size: 13px; }
+.bulkRowOff { background: #fafafa; color: #777; }
+.bulkPick { padding-top: 2px; }
+.bulkMain { flex: 1; min-width: 0; }
+.bulkHead { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 4px; }
+.bulkField { display: flex; gap: 8px; align-items: center; margin: 3px 0; flex-wrap: wrap; }
+.bulkFieldName { width: 82px; font-weight: 600; color: #444; }
+.bulkCur { color: #a33; max-width: 260px; overflow-wrap: anywhere; }
+.bulkSame .bulkCur { color: #777; }
+.bulkArrow { color: #888; }
+.bulkNew { flex: 1; min-width: 180px; padding: 4px 6px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; }
+.bulkTier { display: inline-block; width: 20px; text-align: center; font-weight: 700; border-radius: 3px; color: #fff; background: #999; }
+.bulkTier-A { background: #2e7d32; } .bulkTier-B { background: #e0a800; } .bulkTier-C { background: #c0392b; }
+.bulkFlag { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #eee; color: #555; }
+.bulkFlag-warn { background: #fff3cd; color: #7a5b00; }
+.bulkFlag-missing, .bulkFlag-invalid { background: #fde2e0; color: #a33; }

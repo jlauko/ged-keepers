@@ -405,6 +405,41 @@ const T = "edits-test-tree";
     await assert.rejects(pe.setEditStatus(T3, d8.edit.editId, "revert", {}), /Cannot/);
     console.log("ok: deletion confirmed once Ancestry drops the person");
 
+    // 9. loading a checklist of corrections: preview, then apply as ordinary pending edits
+    const bulk = require("../lib/bulkEdits");
+    const T4 = "bulk-test-tree";
+    await saveTreeData(T4, importGedcom(gedF(people8, fams8)));
+    const items9 = [
+      { key: "r1", personId: "@I3@", personName: "Kim Smith", tier: "A", changes: { birthdate: "abt 1926", birthplace: null }, note: "census", source: "Kim_Smith_1925" },
+      { key: "r2", personId: "@I4@", personName: "Kit Smith", tier: "B", changes: { name: "Kit Smith" } },          // already matches
+      { key: "r3", personId: "@I404@", personName: "Nobody", changes: { name: "X" } },                              // not in the tree
+      { key: "r4", personId: "@I1@", personName: "Pat Smith", changes: { sex: "Q" } },                              // invalid
+      { key: "r5", personId: "@I2@", personName: "Somebody Else", changes: { deathdate: "1 JAN 1970" } },           // id points at a different person
+    ];
+    const prev9 = await bulk.previewBulk(T4, items9);
+    assert.deepEqual(prev9.map((p) => p.status), ["apply", "same", "missing", "invalid", "apply"]);
+    assert.equal(prev9[0].fields.find((f) => f.field === "birthdate").next, "ABOUT 1926");
+    assert.equal(prev9[0].fields.find((f) => f.field === "birthplace").current, SK);
+    assert.equal(prev9[4].nameMismatch, true, "the name on the checklist is not the person at that id");
+    assert.equal(prev9[0].nameMismatch, false);
+    assert.equal((await TreeEdit.find({ tree: T4 }).lean()).length, 0, "a preview writes nothing");
+    const res9 = await bulk.applyBulk(T4, items9, { editor: "Joe" });
+    assert.deepEqual(res9.applied.map((a) => a.key), ["r1", "r5"]);
+    assert.deepEqual(res9.skipped.map((a) => a.key), ["r2"]);
+    assert.deepEqual(res9.failed.map((a) => a.key), ["r3", "r4"]);
+    const td9 = await TreeData.findOne({ tree: T4 }).lean();
+    assert.equal(td9.individuals["@I3@"].birthdate, "ABOUT 1926");
+    assert.equal(td9.individuals["@I3@"].birthplace, null);
+    const rows9 = await TreeEdit.find({ tree: T4, personId: "@I3@", status: "pending" }).lean();
+    assert.equal(rows9.length, 2);
+    assert.ok(rows9.every((r) => r.source === "Kim_Smith_1925" && r.note === "census" && r.editor === "Joe"));
+    const again9 = await bulk.applyBulk(T4, items9, { editor: "Joe" });
+    assert.equal(again9.applied.length, 0, "loading the same checklist twice changes nothing");
+    assert.deepEqual(again9.skipped.map((a) => a.key), ["r1", "r2", "r5"]);
+    await assert.rejects(bulk.previewBulk(T4, []), /No items/);
+    await assert.rejects(bulk.previewBulk(T4, [{ personId: "@I1@" }]), /no changes/);
+    console.log("ok: checklist edits preview and load as pending edits; repeats are no-ops");
+
     console.log("\nALL INTEGRATION CHECKS PASSED");
   } finally {
     if (!USE_FAKE) {

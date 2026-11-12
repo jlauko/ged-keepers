@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261117">
+    <link rel="stylesheet" href="styles.css?v=20261119">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -308,9 +308,29 @@
         <option value="all">Everything (full change log)</option>
       </select>
       <button type="button" id="editsExportBtn" class="editsBtn">Export CSV</button>
+      <button type="button" id="bulkLoadBtn" class="editsBtn" title="Load a research checklist of corrections (JSON) as pending edits">Load checklist&hellip;</button>
+      <input type="file" id="bulkFileInput" accept=".json,application/json" style="display:none;">
       <button type="button" id="editsCloseBtn" class="editsBtn">Close</button>
     </div>
     <div id="editsBody"><p>Loading&hellip;</p></div>
+  </div>
+</div>
+
+<!-- Load a checklist of corrections (JSON) as pending edits: preview, pick, apply. -->
+<div id="bulkModal">
+  <div class="bioModalContent" style="max-width:980px;">
+    <div class="bioModalHeader">Load checklist edits</div>
+    <div class="editsToolbar">
+      <span id="bulkSummary" style="flex:1; font-size:13px;"></span>
+      <button type="button" class="editsBtn" id="bulkSelTierA">Select tier A</button>
+      <button type="button" class="editsBtn" id="bulkSelAll">Select all that apply</button>
+      <button type="button" class="editsBtn" id="bulkSelNone">Clear</button>
+    </div>
+    <div id="bulkBody"><p>Choose a checklist file to preview.</p></div>
+    <div class="bioModalButtons">
+      <button type="button" class="btnSave" id="bulkApplyBtn" style="display:none;">Load selected as pending edits</button>
+      <button type="button" class="btnCancel" id="bulkCloseBtn">Close</button>
+    </div>
   </div>
 </div>
 
@@ -1361,6 +1381,121 @@ function applyPendingFocus() {
     else showError('Added. The new person is outside the generations currently shown; raise the number of generations to see them.');
 }
 
+// ---- load a checklist of corrections as pending edits ----
+let bulkItems = [];        // the items from the file, as loaded
+let bulkPreview = [];      // the server's preview of each
+let bulkNeedsReload = false;
+const BULK_FIELD_LABEL = { name: 'Name', sex: 'Sex', birthdate: 'Birth date', birthplace: 'Birth place', deathdate: 'Death date', deathplace: 'Death place' };
+const BULK_STATUS_TEXT = { apply: '', same: 'already matches', missing: 'not in the tree', invalid: 'invalid' };
+
+async function onBulkFileChosen(file) {
+    if (!file) return;
+    let parsed;
+    try { parsed = JSON.parse(await file.text()); } catch (e) { showError('That file is not valid JSON.'); return; }
+    const items = Array.isArray(parsed) ? parsed : parsed.items;
+    if (!Array.isArray(items) || !items.length) { showError('No items found in that file.'); return; }
+    bulkItems = items;
+    bulkNeedsReload = false;
+    document.getElementById('bulkModal').classList.add('active');
+    document.getElementById('bulkApplyBtn').style.display = 'none';
+    document.getElementById('bulkBody').innerHTML = '<p>Checking each item against the tree&hellip;</p>';
+    try {
+        const response = await adminFetch(`/person/${userName}/bulk/preview`, { method: 'POST', body: JSON.stringify({ items }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) { document.getElementById('bulkBody').innerHTML = `<p style="color:#c00;">${escHtml(result.error || 'Could not preview that file.')}</p>`; return; }
+        bulkPreview = result.items;
+        renderBulkPreview();
+    } catch (err) {
+        document.getElementById('bulkBody').innerHTML = `<p style="color:#c00;">${escHtml(err.message)}</p>`;
+    }
+}
+
+function renderBulkPreview() {
+    const counts = { apply: 0, same: 0, missing: 0, invalid: 0 };
+    bulkPreview.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; });
+    document.getElementById('bulkSummary').innerHTML =
+        `<strong>${bulkPreview.length}</strong> items: <strong>${counts.apply}</strong> would change something, ${counts.same} already match, ${counts.missing} not in the tree, ${counts.invalid} invalid. `
+        + `Tier <strong>A</strong> = a record I read contradicts the tree; <strong>B</strong> = the tree's claim has no support; <strong>C</strong> = a judgment call.`;
+    const row = (p) => {
+        const canApply = p.status === 'apply';
+        const flags = [];
+        if (BULK_STATUS_TEXT[p.status]) flags.push(`<span class="bulkFlag bulkFlag-${p.status}">${BULK_STATUS_TEXT[p.status]}</span>`);
+        if (p.nameMismatch) flags.push(`<span class="bulkFlag bulkFlag-warn" title="The checklist named &quot;${escHtml(p.expected)}&quot; but this id is ${escHtml(p.person)}">different person?</span>`);
+        if (p.alreadyOpen && p.alreadyOpen.length) flags.push(`<span class="bulkFlag bulkFlag-warn" title="An unresolved edit already exists for this field; loading replaces it">has an open edit</span>`);
+        const src = bulkItems[p.index] || {};
+        const fields = p.fields.map(f => `<div class="bulkField${f.same ? ' bulkSame' : ''}">
+            <span class="bulkFieldName">${escHtml(BULK_FIELD_LABEL[f.field] || f.field)}</span>
+            <span class="bulkCur">${f.current === null || f.current === '' ? '<em>(blank)</em>' : escHtml(f.current)}</span>
+            <span class="bulkArrow">&rarr;</span>
+            <input type="text" class="bulkNew" data-index="${p.index}" data-field="${escHtml(f.field)}" value="${escHtml(f.next === null ? '' : f.next)}" placeholder="(blank)" ${f.same ? 'disabled' : ''}>
+            ${f.warning ? `<span class="bulkFlag bulkFlag-warn" title="${escHtml(f.warning)}">free-text date</span>` : ''}</div>`).join('');
+        const checked = canApply && p.tier === 'A' && !p.nameMismatch;
+        return `<div class="bulkRow${canApply ? '' : ' bulkRowOff'}">
+            <label class="bulkPick"><input type="checkbox" class="bulkCheck" data-index="${p.index}" data-tier="${escHtml(p.tier || '')}" ${canApply ? '' : 'disabled'} ${checked ? 'checked' : ''}></label>
+            <div class="bulkMain">
+                <div class="bulkHead"><span class="bulkTier bulkTier-${escHtml(p.tier || '')}">${escHtml(p.tier || '?')}</span>
+                    <span class="editPerson" data-focus="${escHtml(p.personId)}">${escHtml(p.person)}</span> ${flags.join(' ')}
+                    <span class="editMeta">${escHtml(p.key || '')}</span></div>
+                ${fields}
+                ${p.errors && p.errors.length ? `<div class="editConflict">${p.errors.map(escHtml).join(' ')}</div>` : ''}
+                <div class="editMeta">${escHtml((src.shouldBe || '').slice(0, 220))}${(src.shouldBe || '').length > 220 ? '&hellip;' : ''}</div>
+            </div></div>`;
+    };
+    document.getElementById('bulkBody').innerHTML = bulkPreview.map(row).join('');
+    document.getElementById('bulkApplyBtn').style.display = counts.apply ? 'block' : 'none';
+    updateBulkApplyLabel();
+}
+
+function bulkSelect(mode) {
+    document.querySelectorAll('#bulkBody .bulkCheck:not(:disabled)').forEach(cb => {
+        cb.checked = mode === 'all' || (mode === 'A' && cb.dataset.tier === 'A');
+    });
+    updateBulkApplyLabel();
+}
+function updateBulkApplyLabel() {
+    const n = document.querySelectorAll('#bulkBody .bulkCheck:checked').length;
+    const btn = document.getElementById('bulkApplyBtn');
+    btn.textContent = `Load ${n} selected as pending edit${n === 1 ? '' : 's'}`;
+    btn.disabled = n === 0;
+}
+
+async function applyBulkSelected() {
+    const picked = [...document.querySelectorAll('#bulkBody .bulkCheck:checked')].map(cb => Number(cb.dataset.index));
+    if (!picked.length) return;
+    const items = picked.map(i => {
+        const src = bulkItems[i];
+        const changes = {};
+        document.querySelectorAll(`#bulkBody .bulkNew[data-index="${i}"]`).forEach(inp => {
+            if (!inp.disabled) changes[inp.dataset.field] = inp.value.trim() === '' ? null : inp.value;
+        });
+        return { key: src.key, personId: src.personId, personName: src.personName, tier: src.tier, changes, note: src.note, source: src.source };
+    });
+    const btn = document.getElementById('bulkApplyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    try {
+        const response = await adminFetch(`/person/${userName}/bulk`, { method: 'POST', body: JSON.stringify({ items, editor: localStorage.getItem('ft_editor') || '' }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) { showError(result.error || 'Could not load those edits.'); btn.disabled = false; updateBulkApplyLabel(); return; }
+        bulkNeedsReload = result.applied.length > 0;
+        const failed = result.failed.map(f => `<div>${escHtml(f.key || '#' + f.index)}: ${escHtml(f.error)}</div>`).join('');
+        document.getElementById('bulkSummary').textContent = '';
+        document.getElementById('bulkApplyBtn').style.display = 'none';
+        document.getElementById('bulkBody').innerHTML = `<p><strong>${result.applied.length}</strong> loaded as pending edits (they are in <em>Ancestry updates</em> now), ${result.skipped.length} already matched.</p>`
+            + (failed ? `<p style="color:#c00;">${result.failed.length} could not be loaded:</p>${failed}` : '')
+            + (bulkNeedsReload ? '<p>Close this window to reload the tree with the corrections.</p>' : '');
+        await loadOpenEdits();
+    } catch (err) {
+        showError(err.message);
+        btn.disabled = false;
+        updateBulkApplyLabel();
+    }
+}
+function closeBulkModal() {
+    document.getElementById('bulkModal').classList.remove('active');
+    if (bulkNeedsReload) location.reload();
+}
+
 // ---- Ancestry updates panel ----
 let editsPersonFilter = null;   // set when the panel is opened from a person's History button
 function openEditsModal(personId) {
@@ -1818,6 +1953,8 @@ function displayNodeInfo(nodeId) {
     html += `<normal>Birthplace:</normal> ${node.birthPlace || '-'}${editFlag(nodeId, 'birthplace')}<br><br>`;
     html += `<normal>Deathdate:</normal> ${node.deathdatestring || '-'}${editFlag(nodeId, 'deathdate')}<br>`;
     html += `<normal>Deathplace:</normal> ${node.deathPlace || '-'}${editFlag(nodeId, 'deathplace')}<br>`;
+    // filled by RenderNodeAttachments: the person's "Short Bio" document preview
+    html += `<div id="shortBioSlot"></div>`;
     
     if (bioData && bioData.biography) {
         html += `<br><strong>Biography:</strong><br><p style="font-size:15px; line-height:1.5;">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
@@ -4442,22 +4579,41 @@ function RenderNodeAttachments(nodeId) {
     if (!nodeInformation[nodeId].attachments) { 
         return;
     } 
-//    console.log(" Attachments: for node:", nodeId, nodeInformation[nodeId]);
 // ----------------------------------------------------------------------------
 // --- Create a row for each attachment (Name, Open, Download, Delete) --------
 // ----------------------------------------------------------------------------
     const list = document.getElementById("attachmentsList");
     list.innerHTML = '<p style="color: #999; font-size: 12px;">Hover over a person or cluster to view any attachments here ... Click on a node or cluster to pin the information, Click on open space to release</p>'; // clear old entries
+
+    // A person's "Short Bio" is shown in the Information Center (under their highlights),
+    // not in the Attachments list. Clusters have no such slot, so keep everything in the list.
+    const slot = document.getElementById("shortBioSlot");
+    const all = nodeInformation[nodeId].attachments;
+    const shortBio = slot ? all.find(a => (a.name || '').trim().toLowerCase() === 'short bio') : null;
+    const rest = shortBio ? all.filter(a => a !== shortBio) : all;
+
+    if (slot) {
+        slot.innerHTML = '';
+        if (shortBio) {
+            const ext = (shortBio.filename || '').split('.').pop().toLowerCase();
+            slot.innerHTML = `<div class="shortBioHeading"><i class="fa-solid fa-file-lines"></i> Short Bio</div>${BuildAttachmentRow(shortBio, nodeId, shortBio.name || shortBio.filename, ext, '')}`;
+            BuildListenersForAttachmentButtons([shortBio], nodeId, slot);
+            const thumb = slot.querySelector('.attachment-thumb');
+            const open = slot.querySelector('.open-btn');
+            if (thumb && open) { thumb.style.cursor = 'pointer'; thumb.title = 'Open the Short Bio'; thumb.addEventListener('click', () => open.click()); }
+        }
+    }
+
     let html = '';
-    nodeInformation[nodeId].attachments.forEach(att => {
+    rest.forEach(att => {
         const displayName = att.name || att.filename;
-        const extraFilename = (att.name && att.name !== att.filename) ? ` <small style="color:#666; margin-left:6px;">(${att.filename})</small>` : '';
         const ext = att.filename.split('.').pop().toLowerCase();
- 
+
         html += BuildAttachmentRow(att, nodeId, displayName,ext,html);
     });
-    list.innerHTML = html;  
-    BuildListenersForAttachmentButtons(nodeInformation[nodeId].attachments,nodeId);
+    if (shortBio && !rest.length) html = '<p style="color: #999; font-size: 12px;">No other attachments. The Short Bio is shown in the Information Center.</p>';
+    list.innerHTML = html;
+    BuildListenersForAttachmentButtons(rest, nodeId, list);
 }
 
 function BuildAttachmentRow(att, ID, displayName,ext,html) {
@@ -4554,13 +4710,13 @@ function BuildAttachmentRow(att, ID, displayName,ext,html) {
 
     return html;
 }
-function BuildListenersForAttachmentButtons(attachments,ID) {
+function BuildListenersForAttachmentButtons(attachments,ID,root = document) {
 // ----------------------------------------------------------------
 // --------------- Listeners for buttons for attachments ----------
 // ----------------------------------------------------------------
     // Open buttons
 //console.log(" BuildListenersForAttachmentButtons for nodeId:", nodeId, attachments);
-    document.querySelectorAll(".open-btn").forEach(btn => {
+    root.querySelectorAll(".open-btn").forEach(btn => {
 //        console.log("Binding open button listener for:", btn.dataset.url, btn.dataset.type);
         // click still opens in a new tab/modal
         btn.addEventListener("click", () => {
@@ -4589,7 +4745,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     });
 
     // Download buttons
-    document.querySelectorAll(".download-btn").forEach(btn => {
+    root.querySelectorAll(".download-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const filename = btn.dataset.filename;
             if (!filename) return;
@@ -4605,7 +4761,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     });
 
     // Delete buttons
-    document.querySelectorAll(".delete-btn").forEach(btn => {
+    root.querySelectorAll(".delete-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const ID = btn.dataset.id;
             const filename = btn.dataset.filename;
@@ -4667,7 +4823,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     });
 
     // Edit name buttons
-    document.querySelectorAll(".edit-btn").forEach(btn => {
+    root.querySelectorAll(".edit-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const currentName = btn.dataset.name;
             const ID = btn.dataset.id;
@@ -4702,7 +4858,7 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
     // ---------------------------------------------------------------------
     // Favorite selections
     // Star buttons ---------------------------------------------------------
-    document.querySelectorAll(".star-btn").forEach(btn => {
+    root.querySelectorAll(".star-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             if (!isAdmin()) return;   // selecting a display photo is a write
             const ID = btn.dataset.id; // set in HTML
@@ -6229,6 +6385,16 @@ async function startApp() {
     document.getElementById("editsCloseBtn").addEventListener("click", closeEditsModal);
     document.getElementById("editsFilter").addEventListener("change", refreshEditsList);
     document.getElementById("editsExportBtn").addEventListener("click", exportEditsCsv);
+    document.getElementById("bulkLoadBtn").addEventListener("click", () => document.getElementById("bulkFileInput").click());
+    document.getElementById("bulkFileInput").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; onBulkFileChosen(f); });
+    document.getElementById("bulkSelTierA").addEventListener("click", () => bulkSelect("A"));
+    document.getElementById("bulkSelAll").addEventListener("click", () => bulkSelect("all"));
+    document.getElementById("bulkSelNone").addEventListener("click", () => bulkSelect("none"));
+    document.getElementById("bulkApplyBtn").addEventListener("click", applyBulkSelected);
+    document.getElementById("bulkCloseBtn").addEventListener("click", closeBulkModal);
+    document.getElementById("bulkModal").addEventListener("click", (e) => { if (e.target.id === "bulkModal") closeBulkModal(); });
+    document.getElementById("bulkBody").addEventListener("change", (e) => { if (e.target.classList.contains("bulkCheck")) updateBulkApplyLabel(); });
+    document.getElementById("bulkBody").addEventListener("click", (e) => { const f = e.target.closest("[data-focus]"); if (f) { closeBulkModal(); closeEditsModal(); focusNode(f.dataset.focus); } });
     document.getElementById("editsBody").addEventListener("click", onEditsBodyClick);
     document.getElementById("editsModal").addEventListener("click", (e) => { if (e.target.id === "editsModal") closeEditsModal(); });
     document.getElementById("editDetails").addEventListener("click", () => {
