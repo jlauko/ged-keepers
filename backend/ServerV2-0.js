@@ -649,6 +649,7 @@ app.post("/importGedcom/:username/preview", requireAdmin, gedUploadField, async 
         const summary = await diffTreeData(tree, parsed);
         summary.locationGroups = await diffLocationGroups(tree, parsed);
         summary.edits = personEdits.summarize(await personEdits.planImport(tree, parsed));
+        summary.additions = personEdits.summarizeAdditions(await personEdits.planAdditions(tree, parsed));
 
         // Best-effort archive of the raw upload to R2, so there's a durable
         // copy of the source file without depending on git. Not fatal if
@@ -676,8 +677,13 @@ app.post("/importGedcom/:username/confirm", requireAdmin, async (req, res) => {
         // retired, or flagged) before it replaces TreeData - see design/tree-editing.md.
         const plan = await personEdits.planImport(tree, data);
         personEdits.applyPlan(plan, data);
+        // People and relationships added in the app are laid over the import
+        // (or matched to the person Ancestry now has) - see lib/additions.js.
+        const addPlan = await personEdits.planAdditions(tree, data);
+        personEdits.applyAdditionsPlan(addPlan, data);
         const summary = await saveTreeData(tree, data);
         summary.edits = await personEdits.commitPlan(tree, plan);
+        summary.additions = await personEdits.commitAdditions(tree, addPlan);
         console.log("GEDCOM import confirmed for", tree, JSON.stringify(summary));
         res.json({ success: true, summary });
     } catch (err) {
@@ -712,6 +718,20 @@ app.put("/person/:username/:personId", requireAdmin, async (req, res) => {
     }
 });
 
+// Add a child / father / mother / spouse (a new person plus the link to an existing one).
+app.post("/additions/:username", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { anchorId, relation, person, otherParentId, note, source, editor } = req.body || {};
+    try {
+        const result = await personEdits.addRelative(tree, {
+            anchorId, relation, person, otherParentId, note, source, editor: editor || req.user.username,
+        });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendEditError(res, err, "Error adding the person");
+    }
+});
+
 app.get("/edits/:username", requireAdmin, async (req, res) => {
     const tree = req.params.username.toLowerCase();
     try {
@@ -740,6 +760,19 @@ app.get("/edits/:username/export.csv", requireAdmin, async (req, res) => {
         const head = ["Person", "Person id", "Field", "Change FROM (Ancestry's value)", "Change TO", "Source / note", "Edited by", "Date", "Status", "Ancestry now says (conflicts)"];
         const lines = [head.map(csvCell).join(",")];
         for (const e of edits) {
+            if (e.type === "addPerson" || e.type === "addRelationship") {
+                // additions: nothing to change FROM; the "TO" column says what to add in Ancestry
+                const a = e.after || {};
+                const text = e.type === "addPerson"
+                    ? `Add person: ${a.name || ""}${a.sex ? ` (${a.sex})` : ""}; born ${[a.birthdate, a.birthplace].filter(Boolean).join(", ") || "unknown"}; died ${[a.deathdate, a.deathplace].filter(Boolean).join(", ") || "unknown/not recorded"}. ${(e.payload && e.payload.summary) || ""}`
+                    : `Link: ${(e.payload && e.payload.summary) || ""}`;
+                lines.push([
+                    e.personName, e.personId, e.type === "addPerson" ? "New person" : "New relationship", "", text,
+                    [e.source, e.note].filter(Boolean).join(" - "), e.editor,
+                    e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : "", e.status, "",
+                ].map(csvCell).join(","));
+                continue;
+            }
             lines.push([
                 e.personName, e.personId, FIELD_LABELS[e.field] || e.field, e.baseValue, e.after,
                 [e.source, e.note].filter(Boolean).join(" - "), e.editor,
@@ -756,9 +789,9 @@ app.get("/edits/:username/export.csv", requireAdmin, async (req, res) => {
 
 app.put("/edits/:username/:editId", requireAdmin, async (req, res) => {
     const tree = req.params.username.toLowerCase();
-    const { action, note, editor } = req.body || {};
+    const { action, note, editor, nativeId } = req.body || {};
     try {
-        const edit = await personEdits.setEditStatus(tree, req.params.editId, action, { by: editor || req.user.username, note });
+        const edit = await personEdits.setEditStatus(tree, req.params.editId, action, { by: editor || req.user.username, note, nativeId });
         res.json({ success: true, edit });
     } catch (err) {
         sendEditError(res, err, "Error updating the edit");

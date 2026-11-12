@@ -111,11 +111,12 @@ confirm reloads the page (reuses the normal `restoreSession` + `enterApp`
 load path rather than patching the live vis.js network in place).
 
 #### Known gap: a hand-edit to individuals/families doesn't survive a reimport
-**Update (Nov 2026): partly built.** Editing a person's name, sex, birth/death
-date and place is now supported in-app and *does* survive a reimport — see
-"Editing a person's core fields" below and `design/tree-editing.md`. What's
-described here still applies to everything else (adding people, families,
-residences): those remain unbuilt, phase C of the design.
+**Update (Nov 2026): mostly built.** Editing a person's name, sex, birth/death
+date and place (phase A) and adding people/relationships (phase C: synthetic
+`@S<n>@` / `@FS<n>@` ids laid over every import) are supported in-app and
+*do* survive a reimport — see "Editing a person's core fields" and "Adding
+people and relationships" below and `design/tree-editing.md`. What's described
+here still applies to residences and to editing a native family directly.
 
 Originally: there was **no in-app way to edit an individual's core fields**
 (name/birthdate/birthplace/etc.) or add a person directly — `individuals`/
@@ -152,8 +153,7 @@ wholesale replace instead of being clobbered by it:
   entry), and surface anything ambiguous for a human decision instead of
   guessing.
 
-Adding people is not built (phase C). Revisit if/when Claude's research work
-needs to add a person the live tree doesn't have a home for otherwise.
+Adding people is built (phase C, Nov 2026) — see the next sections.
 
 ### Editing a person's core fields (phase A, Nov 2026)
 Full design: `design/tree-editing.md`. Ancestry stays the master; every in-app
@@ -194,6 +194,26 @@ next GEDCOM import until Ancestry catches up.
   best-effort, never blocks a save). They need no Ancestry action, so they only
   show under the "Audit log" filter or a person's **History** button. Evidence
   (`EdgeInfo`) and cluster write-ups are not audited yet.
+
+### Adding people and relationships (phase C, Nov 2026)
+Design: `design/tree-editing.md` ("Phase C as built"). A new child / father /
+mother / spouse is a synthetic person `@S<n>@` (flagged `synthetic: true`) plus a
+synthetic family `@FS<n>@`, stored as two `TreeEdit` rows (`type: addPerson` /
+`addRelationship`) whose open rows are the *overlay*. `lib/overlay.js` (pure)
+strips and re-applies it; `lib/additions.js` does the Mongo work. A native family
+is never edited. Every import lays the overlay back over the fresh data, and
+matches each added person to the person Ancestry later exports (exact or
+first+last name + same birth year, unique) — confident matches are re-keyed
+(`NodeInfo`, `EdgeInfo`, log rows) onto the Ancestry id; ambiguous ones are
+flagged (`conflict`) in Ancestry updates for a human to pick.
+- `POST /additions/:username` `{ anchorId, relation, person, otherParentId, note, source, editor }`
+  (`requireAdmin`); undo/remap/not-them through `PUT /edits/:username/:editId`
+  (`revert`, `remapTo` + `nativeId`, `notThem`). Editing an added person goes
+  through the same `PUT /person/...` route (it updates the addPerson row).
+- UI: Add Relative button/menu entry; dashed outline + banner for admins; the page
+  reloads after an add (layout is built from birth years at load).
+- Do not create `@S` ids by hand: always use the route, so the log and overlay
+  stay in step.
 
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
 
@@ -407,10 +427,9 @@ is false and the attachment routes 503 (rest of the app still runs).
 - Every researched fact should carry a source citation. There's no
   `sources[]` field on individuals yet — decide: add one to `TreeData`'s
   schema, or store citations as `NodeInfo`/`EdgeInfo` evidence entries.
-- IDs: individuals `@I<number>@`, families `@F<number>@`. A new synthetic
-  person needs a non-colliding scheme (e.g. `@S1@`) and the reimport-overlay
-  support described in the "Known gap" note above — neither exists yet;
-  don't generate synthetic ids without that support in place first.
+- IDs: individuals `@I<number>@`, families `@F<number>@`. People added in the
+  app get `@S<number>@` / `@FS<number>@` from `POST /additions/:username` (see
+  "Adding people and relationships"); never invent them any other way.
 - Store a found document/photo via `POST /uploadAttachment/:username`, not by
   writing a file directly.
 

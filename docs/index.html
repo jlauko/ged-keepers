@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261113">
+    <link rel="stylesheet" href="styles.css?v=20261114">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -58,6 +58,7 @@
     <div data-action="attachment">Add Attachment</div>
     <div data-action="bio">Edit Biography</div>
     <div data-action="details">Edit Details</div>
+    <div data-action="relative">Add Relative</div>
 </div>
 
 <div id="ErrorBox" ></div>
@@ -234,6 +235,59 @@
   </div>
 </div>
 
+<!-- Add Relative (admin): a child, parent or spouse who is not in Ancestry yet. Logged like every
+     other change (design/tree-editing.md, phase C) and carried over every GEDCOM import until Ancestry has them. -->
+<div id="relativeModal">
+  <div class="bioModalContent">
+    <div class="bioModalHeader" id="relTitle">Add Relative</div>
+    <form id="relativeForm" onsubmit="return false;">
+      <div class="bioFormGroup">
+        <label for="relRelation">The new person is this person's&hellip;</label>
+        <select id="relRelation">
+          <option value="child">Child</option>
+          <option value="father">Father</option>
+          <option value="mother">Mother</option>
+          <option value="spouse">Spouse / partner</option>
+        </select>
+      </div>
+      <div class="bioFormGroup" id="relOtherParentGroup">
+        <label for="relOtherParent">Other parent</label>
+        <select id="relOtherParent"></select>
+      </div>
+      <div class="bioFormGroup">
+        <label for="relName">Name</label>
+        <input type="text" id="relName" autocomplete="off" placeholder="Given names and surname">
+      </div>
+      <div class="bioFormGroup">
+        <label for="relSex">Sex</label>
+        <select id="relSex"><option value="">(unknown)</option><option value="M">M</option><option value="F">F</option><option value="U">U (undetermined)</option></select>
+      </div>
+      <div class="detailsRow">
+        <div class="bioFormGroup"><label for="relBirthDate">Birth date</label><input type="text" id="relBirthDate" autocomplete="off" placeholder="e.g. 24 MAY 1894"></div>
+        <div class="bioFormGroup"><label for="relBirthPlace">Birth place</label><input type="text" id="relBirthPlace" autocomplete="off" placeholder="City, County, State, Country"></div>
+      </div>
+      <div class="detailsRow">
+        <div class="bioFormGroup"><label for="relDeathDate">Death date</label><input type="text" id="relDeathDate" autocomplete="off" placeholder="e.g. ABOUT 1950"></div>
+        <div class="bioFormGroup"><label for="relDeathPlace">Death place</label><input type="text" id="relDeathPlace" autocomplete="off" placeholder="City, County, State, Country"></div>
+      </div>
+      <div class="bioFormGroup">
+        <label for="relSource">Source / reason</label>
+        <textarea id="relSource" style="min-height:60px;" placeholder="e.g. 1910 census, Buffalo Ward 9; baptismal register; family Bible"></textarea>
+      </div>
+      <div class="bioFormGroup">
+        <label for="relEditor">Your name (recorded in the change log)</label>
+        <input type="text" id="relEditor" autocomplete="off">
+      </div>
+      <div class="detailsHint">The person appears in the tree with a dashed outline until Ancestry has them. Find them under <em>Ancestry updates</em> to enter them there; a later import links the two automatically.</div>
+      <div id="relMsg" class="detailsMsg"></div>
+      <div class="bioModalButtons">
+        <button type="button" class="btnSave" id="relSaveBtn">Add</button>
+        <button type="button" class="btnCancel" id="relCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Ancestry updates (admin): the corrections made here, and what to do about each in Ancestry. -->
 <div id="editsModal">
   <div class="bioModalContent" style="max-width:860px;">
@@ -338,7 +392,9 @@
                         <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
                             <i class="fa-solid fa-id-card"></i> Edit Details</button>
                         <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
-                            <i class="fa-solid fa-clock-rotate-left"></i> History</button> 
+                            <i class="fa-solid fa-clock-rotate-left"></i> History</button>
+                        <button id="addRelative" class="biobutton" style="display: none" title="Add a child, parent or spouse who is not in Ancestry yet">
+                            <i class="fa-solid fa-user-plus"></i> Add Relative</button>
                         <button id="makeRoot" class="biobutton" style="display: none">
                             <i class="fa-solid fa-tree"></i>
                             <span> Make Root</span>
@@ -987,6 +1043,7 @@ async function handleGedFileSelected(file) {
             ${s.individuals.removed ? `<p style="font-size:12px; color:#666;">People no longer in this export (nothing about them is deleted - any biography, evidence, or attachments they have would just be unreferenced):</p>${removedListHtml}` : ''}
             ${renderLocationGroupWarnings(s.locationGroups)}
             ${renderEditReconciliation(s.edits)}
+            ${renderAdditionsPlan(s.additions)}
             <p style="margin-top:10px;">Review the counts above, then confirm to save this into the live tree.</p>
         `;
         confirmBtn.style.display = 'block';
@@ -1082,7 +1139,10 @@ async function loadOpenEdits() {
         const response = await adminFetch(`/edits/${userName}?status=open`);
         const result = await response.json();
         const map = {};
-        for (const e of (result.edits || [])) (map[e.personId] = map[e.personId] || []).push(e);
+        for (const e of (result.edits || [])) {
+            if (e.type && e.type !== 'field') continue;   // additions are shown in the Ancestry updates panel
+            (map[e.personId] = map[e.personId] || []).push(e);
+        }
         openEditsByPerson = map;
     } catch (err) {
         console.warn('Could not load the edit log:', err.message);
@@ -1198,6 +1258,102 @@ function applyEditedIndividual(nodeId, individual) {
     }
 }
 
+// ---- Add Relative (phase C): a new person plus the link to an existing one ----
+let relativeAnchorId = null;
+function openRelativeEditor(nodeId) {
+    if (!isAdmin()) return;
+    const ind = dataJSON && dataJSON.individuals && dataJSON.individuals[nodeId];
+    if (!ind) { showError('Select a person first.'); return; }
+    relativeAnchorId = nodeId;
+    document.getElementById('relTitle').textContent = `Add Relative of ${ind.name || nodeId}`;
+    for (const id of ['relName', 'relBirthDate', 'relBirthPlace', 'relDeathDate', 'relDeathPlace', 'relSource']) document.getElementById(id).value = '';
+    document.getElementById('relRelation').value = 'child';
+    document.getElementById('relSex').value = '';
+    document.getElementById('relEditor').value = editorName();
+    document.getElementById('relMsg').textContent = '';
+    const sel = document.getElementById('relOtherParent');
+    const spouses = ((dataJSON.spouses_of || {})[nodeId] || []);
+    sel.innerHTML = '<option value="">(unknown / not recorded)</option>' + spouses.map(id => {
+        const s = dataJSON.individuals[id] || {};
+        const yr = (String(s.birthdate || '').match(/\b\d{4}\b/) || [''])[0];
+        return `<option value="${escHtml(id)}">${escHtml(s.name || id)}${yr ? ' (b. ' + yr + ')' : ''}</option>`;
+    }).join('');
+    if (spouses.length === 1) sel.value = spouses[0];
+    relationChanged();
+    document.getElementById('relativeModal').classList.add('active');
+    document.getElementById('relName').focus();
+}
+function closeRelativeEditor() {
+    document.getElementById('relativeModal').classList.remove('active');
+    relativeAnchorId = null;
+}
+function relationChanged() {
+    const rel = document.getElementById('relRelation').value;
+    document.getElementById('relOtherParentGroup').style.display = rel === 'child' ? '' : 'none';
+    const sex = document.getElementById('relSex');
+    if (rel === 'father' || rel === 'mother') { sex.value = rel === 'father' ? 'M' : 'F'; sex.disabled = true; }
+    else sex.disabled = false;
+}
+async function saveRelative() {
+    if (!relativeAnchorId) return;
+    const msg = document.getElementById('relMsg');
+    const editor = document.getElementById('relEditor').value.trim();
+    const name = document.getElementById('relName').value.trim();
+    if (!name) { msg.style.color = '#c00'; msg.textContent = 'Enter the new person\'s name.'; return; }
+    if (!editor) { msg.style.color = '#c00'; msg.textContent = 'Enter your name so the change log shows who added this person.'; return; }
+    const relation = document.getElementById('relRelation').value;
+    const btn = document.getElementById('relSaveBtn');
+    btn.disabled = true;
+    msg.style.color = '#666';
+    msg.textContent = 'Saving...';
+    try {
+        localStorage.setItem('ft_editor', editor);
+        const response = await adminFetch(`/additions/${userName}`, {
+            method: 'POST',
+            body: JSON.stringify({
+                anchorId: relativeAnchorId,
+                relation,
+                otherParentId: relation === 'child' ? (document.getElementById('relOtherParent').value || undefined) : undefined,
+                person: {
+                    name,
+                    sex: document.getElementById('relSex').value,
+                    birthdate: document.getElementById('relBirthDate').value.trim(),
+                    birthplace: document.getElementById('relBirthPlace').value.trim(),
+                    deathdate: document.getElementById('relDeathDate').value.trim(),
+                    deathplace: document.getElementById('relDeathPlace').value.trim(),
+                },
+                source: document.getElementById('relSource').value.trim(),
+                editor
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const detail = (result.details || []).map(d => `${FIELD_LABEL[d.field] || d.field}: ${d.error}`).join(' ');
+            msg.style.color = '#c00';
+            msg.textContent = `${result.error || 'Save failed.'} ${detail}`;
+            return;
+        }
+        // The layout is built at load from birth years, so reload and bring the new person into view.
+        try { sessionStorage.setItem('ft_pending_focus', result.personId); } catch (_) { /* fine: just no auto-focus */ }
+        msg.style.color = '#2e7d32';
+        msg.textContent = 'Added and logged. Reloading the tree...';
+        setTimeout(() => location.reload(), 600);
+    } catch (err) {
+        msg.style.color = '#c00';
+        msg.textContent = err.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+// After the reload that follows an addition: pin and centre the new person if they are on the canvas.
+function applyPendingFocus() {
+    let id = null;
+    try { id = sessionStorage.getItem('ft_pending_focus'); sessionStorage.removeItem('ft_pending_focus'); } catch (_) { return; }
+    if (!id) return;
+    if (nodes.get(id)) { centerOnPerson(id); showError('Added. The new person is outlined with a dashed line.'); }
+    else showError('Added. The new person is outside the generations currently shown; raise the number of generations to see them.');
+}
+
 // ---- Ancestry updates panel ----
 let editsPersonFilter = null;   // set when the panel is opened from a person's History button
 function openEditsModal(personId) {
@@ -1291,7 +1447,45 @@ function renderAuditRow(e) {
     </div>`;
 }
 
+// ---- people and relationships added in the app (phase C) ----
+function renderAdditionRow(e) {
+    const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
+    const isPerson = e.type === 'addPerson';
+    const a = e.after || {};
+    const summary = (e.payload && e.payload.summary) || '';
+    const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
+    const place = (d, p) => [d, p].filter(Boolean).map(escHtml).join(', ') || '<em>(not recorded)</em>';
+    const change = isPerson
+        ? `Enter in Ancestry: <strong>${escHtml(a.name || '')}</strong>${a.sex ? ` (${escHtml(a.sex)})` : ''}
+           <div>Born: ${place(a.birthdate, a.birthplace)} &middot; Died: ${place(a.deathdate, a.deathplace)}</div>
+           <div class="editMeta">${escHtml(summary)}</div>`
+        : `Link in Ancestry: <strong>${escHtml(summary)}</strong>`;
+    const buttons = [];
+    if (e.status === 'pending') buttons.push(['markEntered', 'Mark entered in Ancestry', null], ['revert', isPerson ? 'Remove this person' : 'Remove this link', null]);
+    else if (e.status === 'entered') buttons.push(['markPending', 'Back to pending', null], ['revert', isPerson ? 'Remove this person' : 'Remove this link', null]);
+    else if (e.status === 'conflict' && isPerson) {
+        for (const c of ((e.payload && e.payload.candidates) || [])) buttons.push(['remapTo', `Same person as ${c.name}${c.birthdate ? ' (b. ' + c.birthdate + ')' : ''}`, c.id]);
+        buttons.push(['notThem', 'None of these', null], ['revert', 'Remove this person', null]);
+    }
+    const conflict = e.status === 'conflict'
+        ? `<div class="editConflict">The latest import has several people who could be this one. Pick the right one, or say none of them is.</div>` : '';
+    const done = e.status === 'confirmed' && e.payload && e.payload.remappedTo
+        ? `<div class="editMeta">Now in Ancestry as ${escHtml(e.payload.remappedTo)}; notes and evidence were moved to it.</div>` : '';
+    return `<div class="editRow editRow-${escHtml(e.status)}">
+        <div class="editRowHead">
+            <span class="editPerson" ${exists ? `data-focus="${escHtml(e.personId)}"` : ''}>${escHtml(e.personName || e.personId)}</span>
+            <span class="editField">${isPerson ? 'New person' : 'New relationship'}</span>
+            <span class="editStatus editStatus-${escHtml(e.status)}">${escHtml(EDIT_STATUS_LABEL[e.status] || e.status)}</span>
+        </div>
+        <div class="editChange">${change}</div>
+        ${conflict}${done}
+        <div class="editMeta">${escHtml([e.source, e.note].filter(Boolean).join(' - ') || 'no source recorded')} &middot; ${escHtml(e.editor || '')} &middot; ${escHtml(when)}</div>
+        ${buttons.length ? `<div class="editActions">${buttons.map(([act, t, native]) => `<button type="button" class="editsBtn" data-action="${act}" data-edit="${escHtml(e.editId)}"${native ? ` data-native="${escHtml(native)}"` : ''}>${escHtml(t)}</button>`).join('')}</div>` : ''}
+    </div>`;
+}
+
 function renderEditRow(e) {
+    if (e.type === 'addPerson' || e.type === 'addRelationship') return renderAdditionRow(e);
     if (e.type && e.type !== 'field') return renderAuditRow(e);
     const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
     const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
@@ -1330,10 +1524,16 @@ async function onEditsBodyClick(ev) {
     try {
         const response = await adminFetch(`/edits/${userName}/${encodeURIComponent(btn.dataset.edit)}`, {
             method: 'PUT',
-            body: JSON.stringify({ action: btn.dataset.action, editor: localStorage.getItem('ft_editor') || '' })
+            body: JSON.stringify({ action: btn.dataset.action, editor: localStorage.getItem('ft_editor') || '', nativeId: btn.dataset.native || undefined })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) { showError(result.error || 'Could not update that item.'); return; }
+        // removing or re-linking an added person changes the tree's shape: reload it
+        const added = result.edit && (result.edit.type === 'addPerson' || result.edit.type === 'addRelationship');
+        if (added && (btn.dataset.action === 'revert' || btn.dataset.action === 'remapTo')) {
+            location.reload();
+            return;
+        }
         // a re-apply or an undo changes the live value: refresh the person from the server copy
         if (btn.dataset.action === 'reapplyMine' || btn.dataset.action === 'revert') {
             const fam = await (await fetch(`${API_BASE_URL}/FamilyInfo/${userName}`, { headers: { ...authHeaders() } })).json();
@@ -1369,6 +1569,20 @@ async function exportEditsCsv() {
     } catch (err) {
         showError(err.message);
     }
+}
+
+// What the GEDCOM import would do with the people and relationships added in this app.
+function renderAdditionsPlan(a) {
+    if (!a) return '';
+    const parts = [];
+    if (a.remapped && a.remapped.length) parts.push(`<li><strong>${a.remapped.length}</strong> person(s) are now in Ancestry and will be linked automatically (notes, attachments and evidence move with them): ${a.remapped.map(r => escHtml(r.person)).join(', ')}.</li>`);
+    if (a.ambiguous && a.ambiguous.length) parts.push(`<li style="color:#a60;"><strong>${a.ambiguous.length}</strong> could be several people in this import; they stay as added and are flagged under Ancestry updates for you to choose: ${a.ambiguous.map(r => escHtml(r.person)).join(', ')}.</li>`);
+    if (a.carried) parts.push(`<li><strong>${a.carried}</strong> person(s) not in Ancestry yet will be kept in the tree.</li>`);
+    if (a.linksConfirmed) parts.push(`<li><strong>${a.linksConfirmed}</strong> relationship(s) are now in Ancestry and will be marked confirmed.</li>`);
+    if (a.linksCarried) parts.push(`<li><strong>${a.linksCarried}</strong> relationship(s) not in Ancestry yet will be kept.</li>`);
+    if (!parts.length) return '';
+    return `<div style="margin-top:8px; padding:8px; background:#f8fbf4; border:1px solid #d3e6c0; border-radius:6px; font-size:13px;">
+        <strong>People added in this app</strong><ul style="margin:4px 0 0 18px; padding:0;">${parts.join('')}</ul></div>`;
 }
 
 // What the GEDCOM import would do with the open edits (shown in the import preview).
@@ -1525,6 +1739,9 @@ function displayNodeInfo(nodeId) {
     const bioData = nodeInformation[nodeId];
     
     let html = `<normal>${node.Name}</normal>${editFlag(nodeId, 'name')}${editFlag(nodeId, 'sex')}<br><br>`;
+    if (isAdmin() && dataJSON.individuals[nodeId] && dataJSON.individuals[nodeId].synthetic) {
+        html += `<div class="addedBanner">Added in this app &mdash; not in Ancestry yet. See <em>Ancestry updates</em>.</div>`;
+    }
 
     if (bioData && bioData.summary) {
         html += `<em>${bioData.summary}</em><br><br>`;
@@ -1573,6 +1790,7 @@ function displayPinIndicator(showPin) {
             document.getElementById("editBio").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("editDetails").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("personHistory").style.display = isAdmin() ? "inline-flex" : "none";
+            document.getElementById("addRelative").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addAttachment").style.display = isAdmin() ? "block" : "none";
         }
     } else {
@@ -1586,6 +1804,7 @@ function displayPinIndicator(showPin) {
         document.getElementById("editBio").style.display = "none";
         document.getElementById("editDetails").style.display = "none";
         document.getElementById("personHistory").style.display = "none";
+        document.getElementById("addRelative").style.display = "none";
     }
 }
 
@@ -1783,6 +2002,9 @@ function addNode(ind,pid,gen = 0,nodeupdate) {
             hover: { background: colorBySex(ind.sex), border: "#555555" }},
         level: Number(gen),
         interaction: { hover: true},
+        // people added in this app and not in Ancestry yet: dashed outline (admins only)
+        shapeProperties: { borderDashes: (ind.synthetic && isAdmin()) ? [6, 4] : false },
+        borderWidth: (ind.synthetic && isAdmin()) ? 2 : 1,
         birthdatestring: ind.birthdate,
         deathdatestring: ind.deathdate,
         Name: ind.name,
@@ -1941,6 +2163,7 @@ function InitializeCluster(cluster,locationGroups,groupName) {
         hideLoading();
         document.getElementById("helpButton")
                 .style.visibility = "visible";
+        applyPendingFocus();
     });   
 }
 function ClearTree() {
@@ -2710,6 +2933,10 @@ async function createTree(userData) {
 
             case "details":
                 openDetailsEditor(currentEditingNodeId);
+                break;
+
+            case "relative":
+                openRelativeEditor(currentEditingNodeId);
                 break;
         }
         // Hide menu
@@ -5903,6 +6130,14 @@ async function startApp() {
         if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
         openEditsModal(Pinned_NodeId);
     });
+    document.getElementById("addRelative").addEventListener("click", () => {
+        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
+        openRelativeEditor(Pinned_NodeId);
+    });
+    document.getElementById("relRelation").addEventListener("change", relationChanged);
+    document.getElementById("relSaveBtn").addEventListener("click", saveRelative);
+    document.getElementById("relCancelBtn").addEventListener("click", closeRelativeEditor);
+    document.getElementById("relativeModal").addEventListener("click", (e) => { if (e.target.id === "relativeModal") closeRelativeEditor(); });
     document.getElementById("detailsSaveBtn").addEventListener("click", saveDetails);
     document.getElementById("detailsCancelBtn").addEventListener("click", closeDetailsEditor);
     document.getElementById("detailsModal").addEventListener("click", (e) => { if (e.target.id === "detailsModal") closeDetailsEditor(); });

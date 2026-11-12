@@ -6,7 +6,7 @@
 const assert = require("node:assert/strict");
 const USE_FAKE = !process.env.TEST_MONGODB_URI;
 const mongoose = require("mongoose");
-if (USE_FAKE) require("./fakeModels").install();
+if (USE_FAKE) require("./fakeModels").install(["TreeData", "PersonalEvent", "LocationGroups", "TreeEdit", "NodeInfo", "EdgeInfo"]);
 const { importGedcom } = require("../gedcomImport");
 const { saveTreeData } = require("../lib/saveTreeData");
 const pe = require("../lib/personEdits");
@@ -173,6 +173,157 @@ const T = "edits-test-tree";
     const plan3 = await pe.planImport(T, parsed3);
     assert.ok(plan3.every((p) => p.edit.type === "field"));
     console.log("ok: phase B audit entries");
+
+    // 7. phase C: add people and relationships, survive and be matched by a reimport
+    const NodeInfo = require("../models/NodeInfo");
+    const EdgeInfo = require("../models/EdgeInfo");
+    const T2 = "additions-test-tree";
+    const gedF = (people, fams) => {
+      const lines = ["0 HEAD", "1 CHAR UTF-8"];
+      for (const p of people) {
+        lines.push(`0 ${p.id} INDI`, `1 NAME ${p.name}`, `1 SEX ${p.sex}`, "1 BIRT", `2 DATE ${p.bd}`);
+        if (p.bp) lines.push(`2 PLAC ${p.bp}`);
+      }
+      for (const f of fams) {
+        lines.push(`0 ${f.id} FAM`);
+        if (f.h) lines.push(`1 HUSB ${f.h}`);
+        if (f.w) lines.push(`1 WIFE ${f.w}`);
+        for (const c of f.c || []) lines.push(`1 CHIL ${c}`);
+      }
+      lines.push("0 TRLR");
+      return lines.join("\n") + "\n";
+    };
+    const people2 = [
+      { id: "@I1@", name: "Pat /Smith/", sex: "M", bd: "1 JAN 1900" },
+      { id: "@I2@", name: "Sam /Jones/", sex: "F", bd: "2 FEB 1902" },
+      { id: "@I3@", name: "Kim /Smith/", sex: "F", bd: "3 MAR 1925", bp: SK },
+      { id: "@I4@", name: "Old /Smith/", sex: "M", bd: "4 APR 1870" },
+    ];
+    const fams2 = [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I3@"] }];
+    await saveTreeData(T2, importGedcom(gedF(people2, fams2)));
+
+    // 7a. add a child (with the other parent), a spouse, and a father for someone with no parents
+    let a = await pe.addRelative(T2, { anchorId: "@I1@", relation: "child", otherParentId: "@I2@", person: { name: "Zed Smith", sex: "m", birthdate: "1 jan 1950", birthplace: SK }, editor: "Joe", source: "family bible" });
+    assert.equal(a.personId, "@S1@");
+    assert.equal(a.edits.length, 2);
+    assert.ok(a.edits.every((e) => e.status === "pending"));
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals["@S1@"].synthetic, true);
+    assert.equal(td.individuals["@S1@"].birthdate, "1 JAN 1950");
+    assert.deepEqual(td.parentsOf["@S1@"], ["@I1@", "@I2@"]);
+    assert.deepEqual(td.families["@F1@"].children, ["@I3@"], "Ancestry's family is untouched");
+    assert.equal((await PersonalEvent.findOne({ tree: T2, personId: "@S1@" }).lean()).events[0].startYear, 1950);
+    const w = await pe.addRelative(T2, { anchorId: "@S1@", relation: "spouse", person: { name: "Wen Li", sex: "F", birthdate: "1952" }, editor: "Joe" });
+    assert.equal(w.personId, "@S2@");
+    const el = await pe.addRelative(T2, { anchorId: "@I4@", relation: "father", person: { name: "Elder Smith" }, editor: "Joe" });
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals[el.personId].sex, "M", "a father is male");
+    assert.deepEqual(td.spousesOf["@S1@"], ["@S2@"]);
+    await assert.rejects(pe.addRelative(T2, { anchorId: "@I3@", relation: "mother", person: { name: "Second Mom" } }), /already has a mother/);
+    await assert.rejects(pe.addRelative(T2, { anchorId: "@I3@", relation: "child", person: { name: "" } }), /not valid/);
+    await assert.rejects(pe.addRelative(T2, { anchorId: "@I999@", relation: "child", person: { name: "X" } }), /No person/);
+    console.log("ok: add child, spouse, father; refuses a second mother and bad input");
+
+    // 7b. editing an added person changes its record, not a Ancestry field edit
+    r = await pe.applyPersonEdit(T2, "@S1@", { birthdate: "2 JAN 1950" }, { editor: "Joe" });
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals["@S1@"].birthdate, "2 JAN 1950");
+    assert.equal((await TreeEdit.findOne({ tree: T2, type: "addPerson", personId: "@S1@" }).lean()).after.birthdate, "2 JAN 1950");
+    assert.equal((await TreeEdit.find({ tree: T2, type: "field" }).lean()).length, 0);
+    console.log("ok: editing an added person");
+
+    // 7c. an import that does not have them keeps them; one that does (Zed, entered by hand in Ancestry) re-keys the notes
+    await NodeInfo.insertMany([{ tree: T2, nodeId: "@S1@", biography: "Zed's notes", attachments: [] }]);
+    await EdgeInfo.insertMany([{ tree: T2, edgeId: "@I1@-@S1@", from: "@I1@", to: "@S1@", evidence: [{ text: "bible" }] }]);
+    const zedRow = await TreeEdit.findOne({ tree: T2, type: "addPerson", personId: "@S1@" }).lean();
+    await pe.setEditStatus(T2, zedRow.editId, "markEntered", { by: "Joe" });
+
+    let parsedA = importGedcom(gedF(people2, fams2)); // unchanged Ancestry
+    let planA = await pe.planAdditions(T2, parsedA);
+    let sumA = pe.summarizeAdditions(planA);
+    assert.equal(sumA.carried, 3);
+    assert.equal(sumA.remapped.length, 0);
+    pe.applyAdditionsPlan(planA, parsedA);
+    await saveTreeData(T2, parsedA);
+    await pe.commitAdditions(T2, planA);
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.ok(td.individuals["@S1@"] && td.individuals["@S2@"] && td.individuals[el.personId], "added people survive an import that lacks them");
+    assert.deepEqual(td.parentsOf["@S1@"], ["@I1@", "@I2@"]);
+    assert.ok((await LocationGroups.findOne({ tree: T2 }).lean()));
+    console.log("ok: additions survive a reimport");
+
+    const people3 = [...people2, { id: "@I20@", name: "Zed /Smith/", sex: "M", bd: "2 JAN 1950", bp: SK }];
+    const fams3 = [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I3@", "@I20@"] }];
+    let parsedB = importGedcom(gedF(people3, fams3));
+    let planB = await pe.planAdditions(T2, parsedB);
+    sumA = pe.summarizeAdditions(planB);
+    assert.deepEqual(sumA.remapped.map((x) => [x.personId, x.nativeId]), [["@S1@", "@I20@"]]);
+    assert.equal(sumA.linksConfirmed, 1, "Zed's child link is already in Ancestry's family");
+    pe.applyAdditionsPlan(planB, parsedB);
+    await saveTreeData(T2, parsedB);
+    const cb = await pe.commitAdditions(T2, planB);
+    assert.equal(cb.remapped, 1);
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals["@S1@"], undefined, "the synthetic Zed is gone");
+    assert.ok(td.individuals["@S2@"].synthetic, "Wen is still hand-added");
+    assert.deepEqual(td.spousesOf["@I20@"], ["@S2@"], "Wen is now Zed's spouse by Zed's Ancestry id");
+    assert.equal(await NodeInfo.findOne({ tree: T2, nodeId: "@S1@" }).lean(), null);
+    assert.equal((await NodeInfo.findOne({ tree: T2, nodeId: "@I20@" }).lean()).biography, "Zed's notes");
+    const edge = await EdgeInfo.findOne({ tree: T2, edgeId: "@I1@-@I20@" }).lean();
+    assert.ok(edge && edge.to === "@I20@" && edge.evidence.length === 1, "relationship evidence re-keyed");
+    const zedAfter = await TreeEdit.findOne({ tree: T2, editId: zedRow.editId }).lean();
+    assert.equal(zedAfter.status, "confirmed");
+    assert.equal(zedAfter.payload.remappedTo, "@I20@");
+    const links = await TreeEdit.find({ tree: T2, type: "addRelationship" }).lean();
+    const childLink = links.find((l) => l.after.kind === "child");
+    assert.equal(childLink.status, "confirmed");
+    const spouseLink = links.find((l) => l.after.kind === "spouse");
+    assert.equal(spouseLink.status, "pending");
+    assert.equal(spouseLink.after.husb, "@I20@", "the spouse link now points at Zed's Ancestry id");
+    console.log("ok: reimport matched Zed, re-keyed notes and evidence, confirmed the child link, kept Wen");
+
+    // 7d. an ambiguous match is flagged; remapping by hand and 'not them' both work
+    const ann = await pe.addRelative(T2, { anchorId: "@I3@", relation: "child", person: { name: "Ann Lee", birthdate: "1999" }, editor: "Joe" });
+    const bob = await pe.addRelative(T2, { anchorId: "@I3@", relation: "child", person: { name: "Bob Lee", birthdate: "2001" }, editor: "Joe" });
+    const people4 = [...people3, { id: "@I30@", name: "Ann /Lee/", sex: "F", bd: "1 JAN 1998" }, { id: "@I31@", name: "Ann /Lee/", sex: "F", bd: "1 JAN 1996" }, { id: "@I32@", name: "Bob Q /Lee/", sex: "M", bd: "1 JAN 2001" }];
+    const parsedC = importGedcom(gedF(people4, fams3));
+    const planC = await pe.planAdditions(T2, parsedC);
+    const sumC = pe.summarizeAdditions(planC);
+    assert.deepEqual(sumC.ambiguous.map((x) => x.person), ["Ann Lee"]);
+    assert.equal(sumC.ambiguous[0].candidates.length, 2);
+    assert.deepEqual(sumC.remapped.map((x) => x.person), ["Bob Lee"], "first+last name with the same birth year is confident");
+    pe.applyAdditionsPlan(planC, parsedC);
+    await saveTreeData(T2, parsedC);
+    await pe.commitAdditions(T2, planC);
+    const annRow = await TreeEdit.findOne({ tree: T2, type: "addPerson", personId: ann.personId }).lean();
+    assert.equal(annRow.status, "conflict");
+    assert.equal(annRow.conflictReason, "ambiguous-match");
+    await pe.setEditStatus(T2, annRow.editId, "notThem", { by: "Joe" });
+    assert.equal((await TreeEdit.findOne({ tree: T2, editId: annRow.editId }).lean()).status, "pending");
+    const parsedD = importGedcom(gedF(people4, fams3));
+    const planD = await pe.planAdditions(T2, parsedD);
+    pe.applyAdditionsPlan(planD, parsedD);
+    await saveTreeData(T2, parsedD);
+    await pe.commitAdditions(T2, planD);
+    await pe.setEditStatus(T2, annRow.editId, "remapTo", { by: "Joe", nativeId: "@I31@" });
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals[ann.personId], undefined);
+    assert.equal((await TreeEdit.findOne({ tree: T2, editId: annRow.editId }).lean()).payload.remappedTo, "@I31@");
+    await assert.rejects(pe.setEditStatus(T2, annRow.editId, "remapTo", { nativeId: "@I31@" }), /Cannot/);
+    console.log("ok: ambiguous match flagged, 'not them', and remap by hand");
+
+    // 7e. undo removes the person and their links
+    const tmp = await pe.addRelative(T2, { anchorId: "@I4@", relation: "spouse", person: { name: "Temp Person", sex: "F" }, editor: "Joe" });
+    const tmpRow = await TreeEdit.findOne({ tree: T2, type: "addPerson", personId: tmp.personId }).lean();
+    await pe.setEditStatus(T2, tmpRow.editId, "revert", { by: "Joe" });
+    td = await TreeData.findOne({ tree: T2 }).lean();
+    assert.equal(td.individuals[tmp.personId], undefined);
+    assert.equal(await PersonalEvent.findOne({ tree: T2, personId: tmp.personId }).lean(), null);
+    assert.ok(!(td.spousesOf["@I4@"] || []).includes(tmp.personId));
+    assert.equal((await TreeEdit.find({ tree: T2, type: "addRelationship", status: "reverted" }).lean()).length, 1);
+    const reuse = await pe.addRelative(T2, { anchorId: "@I4@", relation: "spouse", person: { name: "Another Person" } });
+    assert.notEqual(reuse.personId, tmp.personId, "ids are never reused");
+    console.log("ok: undo");
 
     console.log("\nALL INTEGRATION CHECKS PASSED");
   } finally {

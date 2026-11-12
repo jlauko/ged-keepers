@@ -1,6 +1,6 @@
 # Editing the tree inside ged-keepers: design
 
-Status: phases A and B built (see "Phase A as built" and "Phase B as built"); phase C not built.
+Status: phases A, B and C built (see "... as built" below). Still open from phase C: loading a Tree-Fix checklist as pending edits, adding a relationship between two people who are both already in the tree, residences, and auditing `EdgeInfo`.
 Supersedes the "Known gap" note in `CLAUDE.md` for core-field edits (that note's
 overlay idea is what this builds on).
 
@@ -166,3 +166,62 @@ actionable). Entry `type` is `bio` or `attachment`; `field` names the action:
 - Not covered: relationship evidence (`EdgeInfo`) edits and cluster write-up
   saves are not audited yet.
 
+
+## Phase C as built
+
+Add a child, father, mother or spouse who is not in Ancestry yet. Everything is
+in `lib/overlay.js` (pure, `test/overlay.test.js`) and `lib/additions.js` (Mongo,
+`test/integration.js` section 7).
+
+**Model.** An addition is two `TreeEdit` rows: `type: "addPerson"` (`personId` is
+the synthetic id `@S1@`, `after` holds name/sex/dates/places) and
+`type: "addRelationship"` (`personId` is the person it was added to, `after` is
+`{ husb, wife, child, famId, kind, newPersonId }`, i.e. "a family with these
+parents includes this child"). Same statuses as phase A: `pending` (to enter in
+Ancestry), `entered`, `confirmed` (Ancestry has it / matched), `conflict`
+(ambiguous match), `reverted`. The open rows *are* the overlay.
+
+**One apply path.** `stripOverlay(data)` removes every synthetic person
+(`@S<n>@`, flagged `synthetic: true`) and family (`@FS<n>@`) and rebuilds
+`parentsOf/childrenOf/spousesOf` from the families; `applyOverlay(data, additions)`
+lays the open rows back on. Live edits (add, edit, undo, remap) update the rows
+and call `recomputeOverlay`, which does strip + apply on the stored `TreeData`
+(and patches `PersonalEvent`/`LocationGroups`); a GEDCOM import does strip-less
+apply on the freshly parsed data. A native family is never modified: a link
+becomes a *synthetic* family (children of the same parents share one), and a
+link Ancestry already has is reported satisfied and skipped.
+
+**Rules.** `child` takes an optional other parent (default: the only spouse);
+`father`/`mother` is paired with the child's one existing parent of the other
+sex, and is refused if that parent already exists; a lone-parent link is dropped
+when the child later gets a complete family. Added people can be edited with the
+normal Edit Details (`PUT /person/...` routes to the addPerson row, not to a
+field edit) and get a normal node, bio and attachments under their `@S` id.
+
+**Import.** `planAdditions` matches each open addPerson against people who are
+*new* in the import (not in the previous TreeData): exact name or first+last
+name, with the same birth year, exactly one candidate -> confident `remap`;
+anything else with candidates -> `ambiguous` (status `conflict`, candidates stored
+in `payload.candidates`); two additions claiming one person -> ambiguous. Remap
+re-keys `NodeInfo` (bio, attachments), `EdgeInfo` (evidence; edge ids/from/to),
+the other log rows and the link rows onto the Ancestry id, then marks the
+addPerson `confirmed` (`payload.remappedTo`). Links that Ancestry now has are
+marked `confirmed`; the rest keep applying to the new id. Preview reports
+`summary.additions` (carried / remapped / ambiguous / links).
+
+**API.** `POST /additions/:tree` `{ anchorId, relation: child|father|mother|spouse,
+person: {...}, otherParentId?, note, source, editor }`; `PUT /edits/:tree/:editId`
+gains `remapTo` (with `nativeId`), `notThem`, and `revert` (removes the person
+and their open links) for additions. CSV export has "New person" /
+"New relationship" rows.
+
+**UI.** Add Relative (Info Center button and node menu), dashed outline and an
+"Added in this app" banner (admins only), addition rows with candidate buttons in
+Ancestry updates, and the import preview section. The layout is built from birth
+years at load, so after adding, the page reloads and centres the new person.
+
+**Known limits.** Notes/attachments on a person who is *removed* are not deleted
+(they stay under the dead `@S` id); a remap where Ancestry already has notes under
+the new id keeps both (reported by `rekeyPerson`, not yet shown in the UI); only
+new people can be added (no linking two existing people); removing a person does
+not undo anything already entered in Ancestry.

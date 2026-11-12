@@ -12,13 +12,9 @@ const T = require("./treeEdits");
 const newEditId = () => crypto.randomBytes(8).toString("hex");
 const stamp = (status, by, note) => ({ status, at: new Date().toISOString(), by: by || "", note: note || "" });
 
-class EditError extends Error {
-  constructor(status, message, details) {
-    super(message);
-    this.status = status;
-    this.details = details;
-  }
-}
+const { EditError } = require("./editError");
+const additions = require("./additions");
+const O = require("./overlay");
 
 function clean(doc) {
   if (!doc) return doc;
@@ -66,6 +62,8 @@ async function applyPersonEdit(tree, personId, changes, meta = {}) {
   if (!changes || typeof changes !== "object" || Object.keys(changes).length === 0) {
     throw new EditError(400, "No changes supplied.");
   }
+  // a person added in this app is not a field edit on Ancestry's data: its details live in its addPerson record
+  if (O.isSyntheticPersonId(personId)) return additions.editAddedPerson(tree, personId, changes, meta);
   const current = await getIndividual(tree, personId);
 
   const values = {};
@@ -141,9 +139,10 @@ async function listEdits(tree, { status, personId, limit = 1000 } = {}) {
 }
 
 // actions: markEntered, markPending, keepAncestry, reapplyMine, revert
-async function setEditStatus(tree, editId, action, { by, note } = {}) {
+async function setEditStatus(tree, editId, action, { by, note, nativeId } = {}) {
   const edit = await TreeEdit.findOne({ tree, editId }).lean();
   if (!edit) throw new EditError(404, "No such edit.");
+  if (additions.isAddition(edit)) return additions.setAdditionStatus(tree, edit, action, { by, note, nativeId });
   const need = (...statuses) => {
     if (!statuses.includes(edit.status)) throw new EditError(409, `Cannot ${action} an edit that is "${edit.status}".`);
   };
@@ -183,7 +182,7 @@ async function setEditStatus(tree, editId, action, { by, note } = {}) {
 // ---- reconciliation with a GEDCOM import ----
 
 async function planImport(tree, parsed) {
-  const open = await TreeEdit.find({ tree, status: { $in: T.OPEN_STATUSES } }).lean();
+  const open = (await TreeEdit.find({ tree, status: { $in: T.OPEN_STATUSES } }).lean()).filter((e) => !e.type || e.type === "field");
   return T.planReconcile(open, parsed.individuals || {});
 }
 
@@ -215,4 +214,11 @@ async function commitPlan(tree, plan, by = "GEDCOM import") {
   return { confirmed, conflicts };
 }
 
-module.exports = { EditError, applyPersonEdit, listEdits, setEditStatus, planImport, commitPlan, summarize: T.summarizePlan, applyPlan: T.applyPlan };
+module.exports = {
+  EditError, applyPersonEdit, listEdits, setEditStatus, planImport, commitPlan, summarize: T.summarizePlan, applyPlan: T.applyPlan,
+  addRelative: additions.addRelative,
+  planAdditions: additions.planAdditions,
+  summarizeAdditions: additions.summarizeAdditions,
+  applyAdditionsPlan: additions.applyAdditionsPlan,
+  commitAdditions: additions.commitAdditions,
+};

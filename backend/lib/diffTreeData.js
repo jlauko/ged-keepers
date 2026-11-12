@@ -11,13 +11,16 @@ async function diffTreeData(tree, parsed) {
   const oldFam = (current && current.families) || {};
   const newFam = parsed.families || {};
 
-  const oldIndIds = Object.keys(oldInd);
+  // People and families added inside the app (phase C) are re-applied after the
+  // import, so they are not "gone" just because the .ged does not have them.
+  const synthetic = (o, id) => !!(o[id] && o[id].synthetic);
+  const oldIndIds = Object.keys(oldInd).filter((id) => !synthetic(oldInd, id));
   const newIndIds = Object.keys(newInd);
   const removedIndIds = oldIndIds.filter((id) => !(id in newInd));
   const addedIndIds = newIndIds.filter((id) => !(id in oldInd));
   const keptIndCount = newIndIds.length - addedIndIds.length;
 
-  const oldFamIds = Object.keys(oldFam);
+  const oldFamIds = Object.keys(oldFam).filter((id) => !synthetic(oldFam, id));
   const newFamIds = Object.keys(newFam);
   const removedFamIds = oldFamIds.filter((id) => !(id in newFam));
   const addedFamIds = newFamIds.filter((id) => !(id in oldFam));
