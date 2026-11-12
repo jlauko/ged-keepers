@@ -217,6 +217,113 @@ async function addRelative(tree, input) {
   return { personId: me.id, individual: await getInd(tree, me.id), edits: rows, warnings, summary };
 }
 
+// ---- linking two people who are both already in the tree ----
+
+// Everyone above (or below) `id` in the given lookup ({ id: [ids] }).
+function reach(map, id) {
+  const seen = new Set();
+  const stack = [id];
+  while (stack.length) {
+    for (const n of map[stack.pop()] || []) {
+      if (!seen.has(n)) {
+        seen.add(n);
+        stack.push(n);
+      }
+    }
+  }
+  return seen;
+}
+
+// A relationship between two existing people is one addRelationship row (no
+// addPerson). input: { anchorId, relation: child|father|mother|spouse, otherId,
+// otherParentId (child only), note, source, editor } - "otherId is the
+// <relation> of anchorId". Refuses links that would be contradictory.
+async function linkExisting(tree, input) {
+  const { anchorId, relation, otherId, otherParentId, note, source, editor } = input || {};
+  if (!RELATIONS.includes(relation)) throw new EditError(400, `relation must be one of ${RELATIONS.join(", ")}.`);
+  if (!anchorId || !otherId) throw new EditError(400, "Choose both people.");
+  if (anchorId === otherId) throw new EditError(400, "A person cannot be linked to themselves.");
+  const anchor = await getInd(tree, anchorId);
+  if (!anchor) throw new EditError(404, `No person ${anchorId} in tree "${tree}".`);
+  const other = await getInd(tree, otherId);
+  if (!other) throw new EditError(404, `No person ${otherId} in tree "${tree}".`);
+
+  const doc = await TreeData.findOne({ tree }).select({ parentsOf: 1, childrenOf: 1, spousesOf: 1 }).lean();
+  const parentsOf = (doc && doc.parentsOf) || {};
+  const childrenOf = (doc && doc.childrenOf) || {};
+  const spousesOf = (doc && doc.spousesOf) || {};
+  const nm = (p, id) => p.name || id;
+  const A = { id: anchorId, sex: anchor.sex };
+  const B = { id: otherId, sex: other.sex };
+  const sexOf = async (id) => ((await getInd(tree, id)) || {}).sex;
+  let husb;
+  let wife;
+  let child = null;
+  let summary;
+
+  if (relation === "child") {
+    if ((childrenOf[anchorId] || []).includes(otherId)) throw new EditError(409, `${nm(other, otherId)} is already a child of ${nm(anchor, anchorId)}.`);
+    if (reach(parentsOf, anchorId).has(otherId)) throw new EditError(409, `${nm(other, otherId)} is an ancestor of ${nm(anchor, anchorId)}, so they cannot also be a child.`);
+    if (anchor.sex === "M" || anchor.sex === "F") {
+      for (const pid of parentsOf[otherId] || []) {
+        if ((await sexOf(pid)) === anchor.sex) throw new EditError(409, `${nm(other, otherId)} already has a ${anchor.sex === "F" ? "mother" : "father"} listed; edit that link instead.`);
+      }
+    }
+    let mate = null;
+    if (otherParentId) {
+      const o = await getInd(tree, otherParentId);
+      if (!o) throw new EditError(404, `No person ${otherParentId} in tree "${tree}".`);
+      if (otherParentId === anchorId || otherParentId === otherId) throw new EditError(400, "The other parent must be a different person.");
+      mate = { id: otherParentId, sex: o.sex, name: o.name };
+    }
+    ({ husb, wife } = slotsFor(A, mate));
+    child = otherId;
+    summary = `${nm(other, otherId)} is a child of ${nm(anchor, anchorId)}${mate ? ` and ${mate.name || mate.id}` : ""}`;
+  } else if (relation === "spouse") {
+    if ((spousesOf[anchorId] || []).includes(otherId)) throw new EditError(409, `${nm(other, otherId)} is already a spouse of ${nm(anchor, anchorId)}.`);
+    if (reach(parentsOf, anchorId).has(otherId) || reach(parentsOf, otherId).has(anchorId)) {
+      throw new EditError(409, `${nm(other, otherId)} and ${nm(anchor, anchorId)} are already ancestor and descendant.`);
+    }
+    ({ husb, wife } = slotsFor(A, B));
+    summary = `${nm(other, otherId)} is a spouse of ${nm(anchor, anchorId)}`;
+  } else {
+    const mySex = relation === "father" ? "M" : "F";
+    if (other.sex && other.sex !== "U" && other.sex !== mySex) {
+      throw new EditError(400, `${nm(other, otherId)} is recorded as ${other.sex === "M" ? "male" : "female"}, so they cannot be listed as ${relation === "father" ? "a father" : "a mother"}. Correct their sex first if that is wrong.`);
+    }
+    if ((parentsOf[anchorId] || []).includes(otherId)) throw new EditError(409, `${nm(other, otherId)} is already a parent of ${nm(anchor, anchorId)}.`);
+    if (reach(childrenOf, anchorId).has(otherId)) throw new EditError(409, `${nm(other, otherId)} is a descendant of ${nm(anchor, anchorId)}, so they cannot also be a parent.`);
+    const parents = [];
+    for (const pid of parentsOf[anchorId] || []) parents.push({ id: pid, sex: await sexOf(pid) });
+    if (parents.some((p) => p.sex === mySex)) throw new EditError(409, `${nm(anchor, anchorId)} already has a ${relation} listed; edit that link instead.`);
+    const mates = parents.filter((p) => p.sex !== mySex);
+    const mate = mates.length === 1 ? mates[0].id : null;
+    husb = relation === "father" ? otherId : mate;
+    wife = relation === "mother" ? otherId : mate;
+    child = anchorId;
+    summary = `${nm(other, otherId)} is the ${relation} of ${nm(anchor, anchorId)}`;
+  }
+
+  const ids = await nextIds(tree);
+  const row = {
+    tree, editId: newEditId(), type: "addRelationship", personId: anchorId, personName: nm(anchor, anchorId), field: "relationship",
+    note: String(note || "").slice(0, 1000), source: String(source || "").slice(0, 500), editor: String(editor || "").slice(0, 80), status: "pending",
+    baseValue: null, before: null,
+    after: { husb, wife, child, famId: ids.famId, kind: relation, newPersonId: null, existing: true },
+    payload: { summary, existing: true, otherId, otherName: nm(other, otherId) },
+    statusHistory: [stamp("pending", editor, "created")],
+  };
+  await TreeEdit.insertMany([row]);
+  try {
+    await recomputeOverlay(tree, { by: editor });
+  } catch (err) {
+    await TreeEdit.deleteMany({ tree, editId: row.editId }).catch(() => {});
+    await recomputeOverlay(tree).catch(() => {});
+    throw new EditError(500, "Could not link them, so nothing was changed: " + err.message);
+  }
+  return { edits: [row], summary };
+}
+
 // ---- editing / undoing / remapping an addition ----
 
 async function editAddedPerson(tree, personId, changes, meta = {}) {
@@ -417,6 +524,7 @@ module.exports = {
   ADD_TYPES,
   isAddition,
   addRelative,
+  linkExisting,
   editAddedPerson,
   setAdditionStatus,
   recomputeOverlay,

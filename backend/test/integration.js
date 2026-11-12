@@ -440,6 +440,66 @@ const T = "edits-test-tree";
     await assert.rejects(bulk.previewBulk(T4, [{ personId: "@I1@" }]), /no changes/);
     console.log("ok: checklist edits preview and load as pending edits; repeats are no-ops");
 
+    // 10. linking two people who are already in the tree
+    const T5 = "links-test-tree";
+    const people10 = [
+      { id: "@I1@", name: "Pat /Smith/", sex: "M", bd: "1 JAN 1900" },
+      { id: "@I2@", name: "Sam /Jones/", sex: "F", bd: "2 FEB 1902" },
+      { id: "@I3@", name: "Kim /Smith/", sex: "F", bd: "3 MAR 1925" },
+      { id: "@I5@", name: "Lee /Park/", sex: "M", bd: "1 JAN 1950" },
+      { id: "@I6@", name: "Ann /Park/", sex: "F", bd: "1 JAN 1951" },
+    ];
+    const fams10 = [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I3@"] }];
+    await saveTreeData(T5, importGedcom(gedF(people10, fams10)));
+
+    // 10a. spouses: one relationship row, no new person
+    const l1 = await pe.linkExisting(T5, { anchorId: "@I5@", relation: "spouse", otherId: "@I6@", editor: "Joe", source: "marriage record" });
+    assert.equal(l1.edits.length, 1);
+    assert.equal((await TreeEdit.find({ tree: T5, type: "addPerson" }).lean()).length, 0);
+    td = await TreeData.findOne({ tree: T5 }).lean();
+    assert.deepEqual(td.spousesOf["@I5@"], ["@I6@"]);
+    assert.equal(td.individuals["@I6@"].synthetic, undefined, "linking does not make anyone synthetic");
+
+    // 10b. a child linked to a parent and the other parent
+    const l2 = await pe.linkExisting(T5, { anchorId: "@I1@", relation: "child", otherId: "@I5@", otherParentId: "@I2@", editor: "Joe" });
+    td = await TreeData.findOne({ tree: T5 }).lean();
+    assert.deepEqual(td.parentsOf["@I5@"], ["@I1@", "@I2@"]);
+    assert.deepEqual(td.families["@F1@"].children, ["@I3@"], "Ancestry's family is untouched");
+
+    // 10c. contradictions are refused
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I1@", relation: "child", otherId: "@I5@", editor: "Joe" }), /already a child/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I5@", relation: "child", otherId: "@I1@", editor: "Joe" }), /ancestor/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I1@", relation: "father", otherId: "@I5@", editor: "Joe" }), /descendant/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I5@", relation: "spouse", otherId: "@I6@", editor: "Joe" }), /already a spouse/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I3@", relation: "father", otherId: "@I6@", editor: "Joe" }), /female/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I3@", relation: "father", otherId: "@I5@", editor: "Joe" }), /already has a father/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I1@", relation: "spouse", otherId: "@I3@", editor: "Joe" }), /ancestor and descendant/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I1@", relation: "child", otherId: "@I1@", editor: "Joe" }), /themselves/);
+    await assert.rejects(pe.linkExisting(T5, { anchorId: "@I1@", relation: "child", otherId: "@I404@", editor: "Joe" }), /No person/);
+
+    // 10d. a parent of a child who has none yet picks up the child's existing parent as the mate
+    const l3 = await pe.linkExisting(T5, { anchorId: "@I6@", relation: "mother", otherId: "@I2@", editor: "Joe" });
+    td = await TreeData.findOne({ tree: T5 }).lean();
+    assert.ok(td.parentsOf["@I6@"].includes("@I2@"));
+
+    // 10e. undo, and a person with links cannot be deleted until they go
+    await assert.rejects(pe.removePerson(T5, "@I6@", {}), /Remove those first/);
+    await pe.setEditStatus(T5, l1.edits[0].editId, "revert", { by: "Joe" });
+    td = await TreeData.findOne({ tree: T5 }).lean();
+    assert.ok(!(td.spousesOf["@I5@"] || []).includes("@I6@"));
+
+    // 10f. once Ancestry has the relationship, the link is confirmed by the import
+    const fams10b = [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I3@", "@I5@"] }];
+    const parsed10 = importGedcom(gedF(people10, fams10b));
+    const plan10 = await pe.planAdditions(T5, parsed10);
+    assert.ok(plan10.satisfiedPreview.includes(l2.edits[0].editId), "the child link is already in Ancestry's family");
+    pe.applyAdditionsPlan(plan10, parsed10);
+    await saveTreeData(T5, parsed10);
+    await pe.commitAdditions(T5, plan10);
+    assert.equal((await TreeEdit.findOne({ tree: T5, editId: l2.edits[0].editId }).lean()).status, "confirmed");
+    assert.equal((await TreeEdit.findOne({ tree: T5, editId: l3.edits[0].editId }).lean()).status, "pending", "a link Ancestry lacks stays pending");
+    console.log("ok: linking existing people (spouse, child, mother), contradictions refused, undo, confirmed by import");
+
     console.log("\nALL INTEGRATION CHECKS PASSED");
   } finally {
     if (!USE_FAKE) {

@@ -773,6 +773,20 @@ app.delete("/person/:username/:personId", requireAdmin, async (req, res) => {
     }
 });
 
+// Link two people who are already in the tree ("otherId is the <relation> of anchorId").
+app.post("/additions/:username/link", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { anchorId, relation, otherId, otherParentId, note, source, editor } = req.body || {};
+    try {
+        const result = await personEdits.linkExisting(tree, {
+            anchorId, relation, otherId, otherParentId, note, source, editor: editor || req.user.username,
+        });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendEditError(res, err, "Error linking the people");
+    }
+});
+
 app.get("/edits/:username", requireAdmin, async (req, res) => {
     const tree = req.params.username.toLowerCase();
     try {

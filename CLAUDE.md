@@ -215,6 +215,16 @@ flagged (`conflict`) in Ancestry updates for a human to pick.
 - Do not create `@S` ids by hand: always use the route, so the log and overlay
   stay in step.
 
+### Linking two existing people (Nov 2026)
+`POST /additions/:username/link` `{ anchorId, relation, otherId, otherParentId, note, source, editor }`
+(`additions.linkExisting`): "otherId is the child / father / mother / spouse of anchorId".
+One `addRelationship` row (`after.existing: true`, no `addPerson`), laid over imports
+like any other added link and confirmed once Ancestry's export has it. Refused when
+contradictory: themselves, already linked, ancestor/descendant loops, a second father or
+mother, a recorded sex that does not fit. Undo = *Remove this link* in Ancestry updates.
+UI: *Add Relative* → "Someone already in the tree" (name search). A person with such a
+link cannot be deleted until it is removed.
+
 ### Deleting a person (Nov 2026)
 `DELETE /person/:username/:personId` (`requireAdmin`; `lib/removals.js`, pure
 hide/restore in `lib/overlay.js`). A person added in the app is simply taken back

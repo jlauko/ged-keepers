@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261120">
+    <link rel="stylesheet" href="styles.css?v=20261121">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -243,10 +243,17 @@
      other change (design/tree-editing.md, phase C) and carried over every GEDCOM import until Ancestry has them. -->
 <div id="relativeModal">
   <div class="bioModalContent">
-    <div class="bioModalHeader" id="relTitle">Add Relative</div>
+    <div class="bioModalHeader" id="relTitle">Add or link a relative</div>
     <form id="relativeForm" onsubmit="return false;">
       <div class="bioFormGroup">
-        <label for="relRelation">The new person is this person's&hellip;</label>
+        <label for="relMode">Who is it?</label>
+        <select id="relMode">
+          <option value="new">Someone new (not in the tree yet)</option>
+          <option value="existing">Someone already in the tree (link them)</option>
+        </select>
+      </div>
+      <div class="bioFormGroup">
+        <label for="relRelation" id="relRelationLabel">The new person is this person's&hellip;</label>
         <select id="relRelation">
           <option value="child">Child</option>
           <option value="father">Father</option>
@@ -258,6 +265,13 @@
         <label for="relOtherParent">Other parent</label>
         <select id="relOtherParent"></select>
       </div>
+      <div class="bioFormGroup" id="relExistingGroup" style="display:none;">
+        <label for="relSearch">Find the person</label>
+        <input type="text" id="relSearch" autocomplete="off" placeholder="Start typing a name">
+        <div id="relSearchResults" class="relSearchResults"></div>
+        <div id="relChosen" class="relChosen"></div>
+      </div>
+      <div id="relNewFields">
       <div class="bioFormGroup">
         <label for="relName">Name</label>
         <input type="text" id="relName" autocomplete="off" placeholder="Given names and surname">
@@ -274,6 +288,7 @@
         <div class="bioFormGroup"><label for="relDeathDate">Death date</label><input type="text" id="relDeathDate" autocomplete="off" placeholder="e.g. ABOUT 1950"></div>
         <div class="bioFormGroup"><label for="relDeathPlace">Death place</label><input type="text" id="relDeathPlace" autocomplete="off" placeholder="City, County, State, Country"></div>
       </div>
+      </div>
       <div class="bioFormGroup">
         <label for="relSource">Source / reason</label>
         <textarea id="relSource" style="min-height:60px;" placeholder="e.g. 1910 census, Buffalo Ward 9; baptismal register; family Bible"></textarea>
@@ -282,7 +297,8 @@
         <label for="relEditor">Your name (recorded in the change log)</label>
         <input type="text" id="relEditor" autocomplete="off">
       </div>
-      <div class="detailsHint">The person appears in the tree with a dashed outline until Ancestry has them. Find them under <em>Ancestry updates</em> to enter them there; a later import links the two automatically.</div>
+      <div class="detailsHint" id="relHintExisting" style="display:none;">Nothing new is created. The link shows in the tree straight away and is listed under <em>Ancestry updates</em> so you can make the same link in Ancestry; once an import has it, it is marked confirmed.</div>
+      <div class="detailsHint" id="relHintNew">The person appears in the tree with a dashed outline until Ancestry has them. Find them under <em>Ancestry updates</em> to enter them there; a later import links the two automatically.</div>
       <div id="relMsg" class="detailsMsg"></div>
       <div class="bioModalButtons">
         <button type="button" class="btnSave" id="relSaveBtn">Add</button>
@@ -421,7 +437,7 @@
                         <i class="fa-solid fa-pen"></i> Edit Bio</button>
                     <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
                         <i class="fa-solid fa-clock-rotate-left"></i> History</button>
-                    <button id="addRelative" class="biobutton" style="display: none" title="Add a child, parent or spouse who is not in Ancestry yet">
+                    <button id="addRelative" class="biobutton" style="display: none" title="Add a new child, parent or spouse, or link someone already in the tree as one">
                         <i class="fa-solid fa-user-plus"></i> Add Relative</button>
                     <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
                         <i class="fa-solid fa-trash-can"></i> Delete</button>
@@ -1291,8 +1307,12 @@ function openRelativeEditor(nodeId) {
     const ind = dataJSON && dataJSON.individuals && dataJSON.individuals[nodeId];
     if (!ind) { showError('Select a person first.'); return; }
     relativeAnchorId = nodeId;
-    document.getElementById('relTitle').textContent = `Add Relative of ${ind.name || nodeId}`;
-    for (const id of ['relName', 'relBirthDate', 'relBirthPlace', 'relDeathDate', 'relDeathPlace', 'relSource']) document.getElementById(id).value = '';
+    document.getElementById('relTitle').textContent = `Add or link a relative of ${ind.name || nodeId}`;
+    for (const id of ['relName', 'relBirthDate', 'relBirthPlace', 'relDeathDate', 'relDeathPlace', 'relSource', 'relSearch']) document.getElementById(id).value = '';
+    document.getElementById('relMode').value = 'new';
+    relChosenId = null;
+    document.getElementById('relChosen').textContent = '';
+    document.getElementById('relSearchResults').innerHTML = '';
     document.getElementById('relRelation').value = 'child';
     document.getElementById('relSex').value = '';
     document.getElementById('relEditor').value = editorName();
@@ -1305,7 +1325,7 @@ function openRelativeEditor(nodeId) {
         return `<option value="${escHtml(id)}">${escHtml(s.name || id)}${yr ? ' (b. ' + yr + ')' : ''}</option>`;
     }).join('');
     if (spouses.length === 1) sel.value = spouses[0];
-    relationChanged();
+    relModeChanged();
     document.getElementById('relativeModal').classList.add('active');
     document.getElementById('relName').focus();
 }
@@ -1317,11 +1337,57 @@ function relationChanged() {
     const rel = document.getElementById('relRelation').value;
     document.getElementById('relOtherParentGroup').style.display = rel === 'child' ? '' : 'none';
     const sex = document.getElementById('relSex');
-    if (rel === 'father' || rel === 'mother') { sex.value = rel === 'father' ? 'M' : 'F'; sex.disabled = true; }
+    const existing = document.getElementById('relMode').value === 'existing';
+    if (!existing && (rel === 'father' || rel === 'mother')) { sex.value = rel === 'father' ? 'M' : 'F'; sex.disabled = true; }
     else sex.disabled = false;
+}
+
+// "Someone already in the tree": pick the person from a name search instead of typing a new one.
+let relChosenId = null;
+function relModeChanged() {
+    const existing = document.getElementById('relMode').value === 'existing';
+    document.getElementById('relNewFields').style.display = existing ? 'none' : '';
+    document.getElementById('relExistingGroup').style.display = existing ? '' : 'none';
+    document.getElementById('relHintNew').style.display = existing ? 'none' : '';
+    document.getElementById('relHintExisting').style.display = existing ? '' : 'none';
+    document.getElementById('relRelationLabel').innerHTML = existing ? 'They are this person&rsquo;s&hellip;' : 'The new person is this person&rsquo;s&hellip;';
+    document.getElementById('relSaveBtn').textContent = existing ? 'Link' : 'Add';
+    document.getElementById('relMsg').textContent = '';
+    relationChanged();
+    if (existing) document.getElementById('relSearch').focus();
+}
+const plainName = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function lifeSpan(ind) {
+    const y = (d) => (String(d || '').match(/\b\d{4}\b/) || [''])[0];
+    const b = y(ind.birthdate), d = y(ind.deathdate);
+    return b || d ? `${b || '?'}\u2013${d || ''}` : 'no dates';
+}
+function relSearchInput() {
+    const q = plainName(document.getElementById('relSearch').value).trim().split(/\s+/).filter(Boolean);
+    const box = document.getElementById('relSearchResults');
+    if (!q.length || !dataJSON || !dataJSON.individuals) { box.innerHTML = ''; return; }
+    const out = [];
+    for (const [id, ind] of Object.entries(dataJSON.individuals)) {
+        if (id === relativeAnchorId) continue;
+        const n = plainName(ind.name);
+        if (q.every(t => n.includes(t))) { out.push([id, ind]); if (out.length >= 12) break; }
+    }
+    box.innerHTML = out.length
+        ? out.map(([id, ind]) => `<div class="relPick" data-id="${escHtml(id)}">${escHtml((ind.name || id).replace(/\//g, ''))} <span class="editMeta">${escHtml(lifeSpan(ind))}${ind.birthplace ? ' \u00b7 ' + escHtml(ind.birthplace) : ''}</span></div>`).join('')
+        : '<div class="editMeta" style="padding:4px 2px;">No one in the tree matches.</div>';
+}
+function relSearchPick(ev) {
+    const el = ev.target.closest('.relPick');
+    if (!el) return;
+    relChosenId = el.dataset.id;
+    const ind = dataJSON.individuals[relChosenId] || {};
+    document.getElementById('relChosen').innerHTML = `Linking: <strong>${escHtml((ind.name || relChosenId).replace(/\//g, ''))}</strong> <span class="editMeta">${escHtml(lifeSpan(ind))}</span>`;
+    document.getElementById('relSearchResults').innerHTML = '';
+    document.getElementById('relSearch').value = '';
 }
 async function saveRelative() {
     if (!relativeAnchorId) return;
+    if (document.getElementById('relMode').value === 'existing') return saveLink();
     const msg = document.getElementById('relMsg');
     const editor = document.getElementById('relEditor').value.trim();
     const name = document.getElementById('relName').value.trim();
@@ -1363,6 +1429,42 @@ async function saveRelative() {
         try { sessionStorage.setItem('ft_pending_focus', result.personId); } catch (_) { /* fine: just no auto-focus */ }
         msg.style.color = '#2e7d32';
         msg.textContent = 'Added and logged. Reloading the tree...';
+        setTimeout(() => location.reload(), 600);
+    } catch (err) {
+        msg.style.color = '#c00';
+        msg.textContent = err.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+async function saveLink() {
+    const msg = document.getElementById('relMsg');
+    const editor = document.getElementById('relEditor').value.trim();
+    if (!relChosenId) { msg.style.color = '#c00'; msg.textContent = 'Search for the person and click them in the list.'; return; }
+    if (!editor) { msg.style.color = '#c00'; msg.textContent = 'Enter your name so the change log shows who made this link.'; return; }
+    const relation = document.getElementById('relRelation').value;
+    const btn = document.getElementById('relSaveBtn');
+    btn.disabled = true;
+    msg.style.color = '#666';
+    msg.textContent = 'Saving...';
+    try {
+        localStorage.setItem('ft_editor', editor);
+        const response = await adminFetch(`/additions/${userName}/link`, {
+            method: 'POST',
+            body: JSON.stringify({
+                anchorId: relativeAnchorId,
+                relation,
+                otherId: relChosenId,
+                otherParentId: relation === 'child' ? (document.getElementById('relOtherParent').value || undefined) : undefined,
+                source: document.getElementById('relSource').value.trim(),
+                editor
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) { msg.style.color = '#c00'; msg.textContent = result.error || 'Could not link them.'; return; }
+        try { sessionStorage.setItem('ft_pending_focus', relativeAnchorId); } catch (_) { /* fine */ }
+        msg.style.color = '#2e7d32';
+        msg.textContent = 'Linked and logged. Reloading the tree...';
         setTimeout(() => location.reload(), 600);
     } catch (err) {
         msg.style.color = '#c00';
@@ -6413,6 +6515,9 @@ async function startApp() {
         deletePerson(Pinned_NodeId);
     });
     document.getElementById("relRelation").addEventListener("change", relationChanged);
+    document.getElementById("relMode").addEventListener("change", relModeChanged);
+    document.getElementById("relSearch").addEventListener("input", relSearchInput);
+    document.getElementById("relSearchResults").addEventListener("click", relSearchPick);
     document.getElementById("relSaveBtn").addEventListener("click", saveRelative);
     document.getElementById("relCancelBtn").addEventListener("click", closeRelativeEditor);
     document.getElementById("relativeModal").addEventListener("click", (e) => { if (e.target.id === "relativeModal") closeRelativeEditor(); });

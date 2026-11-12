@@ -234,5 +234,5 @@ Mongo work and import hooks in `lib/removals.js`.
 **Known limits.** Notes/attachments on a person who is *removed* are not deleted
 (they stay under the dead `@S` id); a remap where Ancestry already has notes under
 the new id keeps both (reported by `rekeyPerson`, not yet shown in the UI); only
-new people can be added (no linking two existing people); removing a person does
+new people can be added here (linking two existing people was added later: `POST /additions/:tree/link`, one `addRelationship` row with `existing: true`); removing a person does
 not undo anything already entered in Ancestry.

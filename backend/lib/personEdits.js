@@ -219,6 +219,7 @@ async function commitPlan(tree, plan, by = "GEDCOM import") {
 module.exports = {
   EditError, applyPersonEdit, listEdits, setEditStatus, planImport, commitPlan, summarize: T.summarizePlan, applyPlan: T.applyPlan,
   addRelative: additions.addRelative,
+  linkExisting: additions.linkExisting,
   planAdditions: additions.planAdditions,
   summarizeAdditions: additions.summarizeAdditions,
   applyAdditionsPlan: additions.applyAdditionsPlan,
