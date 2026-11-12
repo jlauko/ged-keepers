@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261116">
+    <link rel="stylesheet" href="styles.css?v=20261117">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -3775,8 +3775,10 @@ function BuildSpouseTable()
             // Husband ↔ Wife
             if (!spouses_of[fam.husb]) spouses_of[fam.husb] = [];
             if (!spouses_of[fam.wife]) spouses_of[fam.wife] = [];
-            spouses_of[fam.husb].push(fam.wife);
-            spouses_of[fam.wife].push(fam.husb);
+            // a couple can appear in two families (Ancestry's, plus one holding a child added
+            // in this app); list each spouse once or the layout shifts them twice
+            if (!spouses_of[fam.husb].includes(fam.wife)) spouses_of[fam.husb].push(fam.wife);
+            if (!spouses_of[fam.wife].includes(fam.husb)) spouses_of[fam.wife].push(fam.husb);
         }
     }
 }
