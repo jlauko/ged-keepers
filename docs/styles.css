@@ -758,7 +758,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 /* The Information Center title row now holds up to three buttons (Edit Bio,
    Edit Details, Make Root): let it wrap instead of pushing Make Root off-screen. */
 #infoCenterTitle { flex-wrap: wrap; row-gap: 4px; }
-#infoCenterTitle .biobuttons { flex-wrap: wrap; }
 
 /* phase B: audit rows in the change log */
 .editRow-logged { border-left-color: #9bb89b; }
@@ -826,3 +825,27 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .bulkFlag { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #eee; color: #555; }
 .bulkFlag-warn { background: #fff3cd; color: #7a5b00; }
 .bulkFlag-missing, .bulkFlag-invalid { background: #fde2e0; color: #a33; }
+
+/* Information Center actions: equal-width buttons, 3 per row (fewer when the panel is narrow);
+   a viewer, who only gets Make Root, sees it full width; with nothing pinned the grid disappears */
+.infoActions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 4px;
+    padding: 6px 0 2px;
+}
+.infoActions:not(:has(.biobutton:not([style*="display: none"]))) { display: none; }
+.infoActions .biobutton {
+    width: 100%;
+    min-width: 0;
+    height: 26px;
+    padding: 0 4px;
+    font-size: 12px;
+    font-weight: 400;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+/* the Information Center header stacks: title row, then the action grid */
+#infoSection .panelHeader { flex-direction: column; align-items: stretch; gap: 0; }
+#infoSection .panelHeader #infoCenterTitle { flex: 0 0 auto; }

@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261119">
+    <link rel="stylesheet" href="styles.css?v=20261120">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -409,23 +409,22 @@
                     <span>
                         <i class="fa-solid fa-person"></i> Information Center 
                     </span>
+                </div>
 
-                    <div class="biobuttons">
-                        <button id="editBio" class="biobutton" style="display: none">
-                            <i class="fa-solid fa-pen"></i> Edit Bio</button>
-                        <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
-                            <i class="fa-solid fa-id-card"></i> Edit Details</button>
-                        <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
-                            <i class="fa-solid fa-clock-rotate-left"></i> History</button>
-                        <button id="addRelative" class="biobutton" style="display: none" title="Add a child, parent or spouse who is not in Ancestry yet">
-                            <i class="fa-solid fa-user-plus"></i> Add Relative</button>
-                        <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
-                            <i class="fa-solid fa-trash-can"></i> Delete</button>
-                        <button id="makeRoot" class="biobutton" style="display: none">
-                            <i class="fa-solid fa-tree"></i>
-                            <span> Make Root</span>
-                        </button> 
-                    </div>
+                <!-- Actions for the pinned person: equal-width buttons in a grid (hidden ones take no space) -->
+                <div class="infoActions" id="infoActions">
+                    <button id="makeRoot" class="biobutton" style="display: none" title="Re-draw the tree from this person">
+                        <i class="fa-solid fa-tree"></i> Make Root</button>
+                    <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
+                        <i class="fa-solid fa-id-card"></i> Edit Details</button>
+                    <button id="editBio" class="biobutton" style="display: none" title="Edit the summary, biography and key facts">
+                        <i class="fa-solid fa-pen"></i> Edit Bio</button>
+                    <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
+                        <i class="fa-solid fa-clock-rotate-left"></i> History</button>
+                    <button id="addRelative" class="biobutton" style="display: none" title="Add a child, parent or spouse who is not in Ancestry yet">
+                        <i class="fa-solid fa-user-plus"></i> Add Relative</button>
+                    <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
+                        <i class="fa-solid fa-trash-can"></i> Delete</button>
                 </div>
             </div>
 
