@@ -68,4 +68,23 @@ for e in log:
 fam = requests.get(B + "/FamilyInfo/lauko", headers=VH).json()
 assert fam["individuals"][ELMER]["birthplace"] == before["birthplace"] and fam["individuals"][ELMER]["birthdate"] == before["birthdate"]
 print("reverted to Ancestry's values")
+# ---- phase B: bio and attachment changes are audited ----
+NODE = B + "/nodeInfo/lauko/nodes/" + ELMER
+att1 = {"name": "Census 1900", "filename": "census1900.pdf", "type": "pdf", "uploadedAt": "2026-11-13T10:00:00.000Z", "selected": False}
+r = requests.put(NODE, headers=H, json={"editor": "Smoke", "data": {"summary": "Draftsman", "biography": "Born in Buffalo.", "facts": ["Wurlitzer"], "attachments": [att1]}})
+assert r.status_code == 200, r.text
+r = requests.put(NODE, headers=H, json={"editor": "Smoke", "data": {"biography": "Born in Buffalo, 1894.", "attachments": [{**att1, "name": "1900 census, Buffalo Ward 9", "selected": True}]}})
+assert r.status_code == 200, r.text
+logged = requests.get(B + "/edits/lauko?status=logged&personId=" + ELMER, headers=H).json()["edits"]
+fields = sorted(e["field"] for e in logged)
+print("audit fields:", fields)
+assert fields == sorted(["bio-summary", "bio-biography", "bio-facts", "attachment-added", "bio-biography", "attachment-renamed", "attachment-display-photo"]), fields
+assert all(e["status"] == "logged" and e["editor"] == "Smoke" and e["personName"] for e in logged)
+# audit entries never count as needing attention
+assert all(e["status"] != "logged" for e in requests.get(B + "/edits/lauko?status=open", headers=H).json()["edits"])
+# storage-level and delete events
+assert requests.delete(B + "/nodeInfo/lauko/" + ELMER + "?editor=Smoke", headers=H).status_code == 200
+gone = [e for e in requests.get(B + "/edits/lauko?status=logged&personId=" + ELMER, headers=H).json()["edits"] if e["field"] == "node-info-deleted"]
+assert len(gone) == 1 and gone[0]["before"]["biography"] == "Born in Buffalo, 1894."
+print("phase B audit trail OK")
 print("API SMOKE TEST PASSED")

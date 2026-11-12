@@ -34,6 +34,15 @@ async function saveNodeInfo(username, nodeInfo) {
   console.log("saving node info (whole file) for", username);
 }
 
+async function getNode(username, nodeId) {
+  return NodeInfo.findOne({ tree: username, nodeId }).lean();
+}
+
+async function listNodeIds(username) {
+  const docs = await NodeInfo.find({ tree: username }).select({ nodeId: 1 }).lean();
+  return docs.map((d) => d.nodeId);
+}
+
 async function updateNode(username, nodeId, data) {
   await NodeInfo.updateOne(
     { tree: username, nodeId },
@@ -106,6 +115,6 @@ async function deleteEdge(username, edgeId) {
 }
 
 module.exports = {
-  getNodeInfo, saveNodeInfo, updateNode, deleteNode,
+  getNodeInfo, getNode, listNodeIds, saveNodeInfo, updateNode, deleteNode,
   getEdgeInfo, saveEdgeInfo, updateEdge, deleteEdge,
 };

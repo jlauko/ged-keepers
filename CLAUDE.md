@@ -186,7 +186,14 @@ next GEDCOM import until Ancestry catches up.
   `ft_editor`) because there is one admin login per tree. Research scripts can
   call the same routes with the admin token and `editor: "Claude research"`.
 - Limits: map clusters and the timeline are built at load, so they catch up on
-  the next page load; residences, families and attachments are not covered yet.
+  the next page load; residences and families are not covered yet.
+- **Audit trail (phase B)**: biography/summary/facts saves, attachment add /
+  remove / rename / display-photo changes, file uploads and deletions, and
+  node-info deletions are logged as `TreeEdit` entries with status `logged`
+  (`backend/lib/auditLog.js`; hooks in the node-info, upload and delete routes;
+  best-effort, never blocks a save). They need no Ancestry action, so they only
+  show under the "Audit log" filter or a person's **History** button. Evidence
+  (`EdgeInfo`) and cluster write-ups are not audited yet.
 
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
 

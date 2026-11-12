@@ -759,3 +759,9 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
    Edit Details, Make Root): let it wrap instead of pushing Make Root off-screen. */
 #infoCenterTitle { flex-wrap: wrap; row-gap: 4px; }
 #infoCenterTitle .biobuttons { flex-wrap: wrap; }
+
+/* phase B: audit rows in the change log */
+.editRow-logged { border-left-color: #9bb89b; }
+.editStatus-logged { background: #e8f0e8; color: #456; }
+.editPre { white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow-y: auto; background: #fafafa; border: 1px solid #eee; border-radius: 4px; padding: 6px; font-size: 12px; margin: 2px 0 6px; }
+.editRow details summary { cursor: pointer; color: #36c; font-size: 12px; }

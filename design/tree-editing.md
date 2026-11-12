@@ -1,6 +1,6 @@
 # Editing the tree inside ged-keepers: design
 
-Status: phase A built (see "Phase A as built"); phases B and C not built.
+Status: phases A and B built (see "Phase A as built" and "Phase B as built"); phase C not built.
 Supersedes the "Known gap" note in `CLAUDE.md` for core-field edits (that note's
 overlay idea is what this builds on).
 
@@ -106,8 +106,8 @@ Conflict resolution (admin, in the panel): **Keep Ancestry's** (`dismissed`) or
 
 - **A (built):** core-field edits, `TreeEdit` log, reconciliation on import, the
   Ancestry-updates panel, CSV export.
-- **B:** audit entries for attachment add/delete/rename (and bio saves), same
-  collection, no Ancestry action.
+- **B (built):** audit entries for attachment add/delete/rename and bio saves,
+  same collection, no Ancestry action. See "Phase B as built".
 - **C:** add people and relationships: synthetic ids `@S1@`/`@FS1@`, applied as
   an overlay on every import, dashed "not in Ancestry yet" nodes, and the
   name + birth-year remap when the person later arrives with an Ancestry id
@@ -134,3 +134,35 @@ See `backend/lib/treeEdits.js` (validation, comparison, reconciliation plan),
 `backend/lib/personEdits.js` (Mongo operations), `backend/models/TreeEdit.js`,
 the `person`/`edits` routes in `backend/ServerV2-0.js`, and the Edit Details and
 Ancestry-updates UI in `docs/index.html`.
+
+## Phase B as built
+
+Same `TreeEdit` collection, new status `logged` (audit-only: never in the
+"needs attention" lists, never touched by reimport reconciliation, not
+actionable). Entry `type` is `bio` or `attachment`; `field` names the action:
+
+| `field` | logged when |
+|---|---|
+| `bio-summary`, `bio-biography`, `bio-facts` | a node-info save changes that text (before and after stored in full, capped at 100k characters, so an accidental overwrite can be recovered from the log) |
+| `attachment-added`, `attachment-removed`, `attachment-renamed`, `attachment-display-photo`, `attachment-updated` | a node-info save changes an attachment (matched by `uploadedAt`; a changed download URL alone is ignored; `attachment-updated` carries just the changed keys, e.g. coverage years) |
+| `file-uploaded`, `file-deleted` | a file is put in or removed from storage (R2); `personId` is the node when the frontend sent one, else `(file storage)` |
+| `node-info-deleted`, `node-info-bulk-save` | a person's whole node info is deleted, or the whole-file save is used |
+
+- `lib/auditLog.js`: `diffNodeInfo(oldDoc, payload)` is pure (unit-tested; only keys
+  present in the payload are compared, because the route `$set`s exactly those);
+  `logQuietly` writes best-effort and never blocks the save (losing a biography
+  edit is worse than losing its log line, unlike core-field edits, which are
+  refused if they can't be logged).
+- Hooks: `PUT /nodeInfo/:tree/nodes/:nodeId` (reads the stored node first),
+  `PUT /nodeInfo/:tree`, `DELETE /nodeInfo/:tree/:nodeId`,
+  `POST /uploadAttachment/:tree`, `DELETE /delete/:tree/:filename`.
+- Editor name: the frontend sends it as `editor` (body, form field or
+  `?editor=`), prompting once after login if none is remembered; the server falls
+  back to the login name.
+- UI: a **History** button in the Information Center opens the change log
+  filtered to the pinned person (all types), the Ancestry updates panel gets an
+  "Audit log" filter, and audit rows show before/after (long text in a
+  collapsible block).
+- Not covered: relationship evidence (`EdgeInfo`) edits and cluster write-up
+  saves are not audited yet.
+

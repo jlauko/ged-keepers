@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261112b">
+    <link rel="stylesheet" href="styles.css?v=20261113">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -237,7 +237,7 @@
 <!-- Ancestry updates (admin): the corrections made here, and what to do about each in Ancestry. -->
 <div id="editsModal">
   <div class="bioModalContent" style="max-width:860px;">
-    <div class="bioModalHeader">Ancestry updates</div>
+    <div class="bioModalHeader" id="editsTitle">Ancestry updates</div>
     <div class="editsToolbar">
       <label for="editsFilter">Show</label>
       <select id="editsFilter">
@@ -246,6 +246,7 @@
         <option value="entered">Entered in Ancestry, awaiting next import</option>
         <option value="conflict">Conflicts with Ancestry</option>
         <option value="confirmed">Confirmed by an import</option>
+        <option value="logged">Audit log: biography and attachment changes</option>
         <option value="all">Everything (full change log)</option>
       </select>
       <button type="button" id="editsExportBtn" class="editsBtn">Export CSV</button>
@@ -335,7 +336,9 @@
                         <button id="editBio" class="biobutton" style="display: none">
                             <i class="fa-solid fa-pen"></i> Edit Bio</button>
                         <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
-                            <i class="fa-solid fa-id-card"></i> Edit Details</button> 
+                            <i class="fa-solid fa-id-card"></i> Edit Details</button>
+                        <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
+                            <i class="fa-solid fa-clock-rotate-left"></i> History</button> 
                         <button id="makeRoot" class="biobutton" style="display: none">
                             <i class="fa-solid fa-tree"></i>
                             <span> Make Root</span>
@@ -1045,6 +1048,17 @@ const FIELD_LABEL = Object.fromEntries(DETAIL_FIELDS.map(f => [f.key, f.label]))
 let openEditsByPerson = {};     // personId -> [open edits], admins only
 let detailsEditingId = null;
 
+// The login is one shared admin password per tree, so the log records the name
+// the editor typed (remembered in localStorage) rather than a user id.
+function editorName() {
+    try { return (localStorage.getItem('ft_editor') || '').trim(); } catch (_) { return ''; }
+}
+function ensureEditorName() {
+    if (!isAdmin() || editorName()) return;
+    const n = window.prompt('Your name, for the change log (it records who made each edit):', '');
+    if (n && n.trim()) { try { localStorage.setItem('ft_editor', n.trim()); } catch (_) { /* private mode: the server falls back to the login name */ } }
+}
+
 function escHtml(v) {
     return String(v === null || v === undefined ? '' : v)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1185,8 +1199,14 @@ function applyEditedIndividual(nodeId, individual) {
 }
 
 // ---- Ancestry updates panel ----
-function openEditsModal() {
+let editsPersonFilter = null;   // set when the panel is opened from a person's History button
+function openEditsModal(personId) {
     if (!isAdmin()) return;
+    editsPersonFilter = typeof personId === 'string' ? personId : null;
+    const ind = editsPersonFilter && dataJSON && dataJSON.individuals && dataJSON.individuals[editsPersonFilter];
+    document.getElementById('editsTitle').textContent = editsPersonFilter
+        ? `Change history: ${ind ? ind.name : editsPersonFilter}` : 'Ancestry updates';
+    document.getElementById('editsFilter').value = editsPersonFilter ? 'all' : 'open';
     document.getElementById('editsModal').classList.add('active');
     refreshEditsList();
 }
@@ -1196,7 +1216,7 @@ function closeEditsModal() {
 
 const EDIT_STATUS_LABEL = {
     pending: 'Pending', entered: 'Entered in Ancestry', confirmed: 'Confirmed', conflict: 'Conflict',
-    superseded: 'Superseded', reverted: 'Reverted', dismissed: 'Dismissed',
+    superseded: 'Superseded', reverted: 'Reverted', dismissed: 'Dismissed', logged: 'Logged',
 };
 function showBlank(v) { return v === null || v === undefined || v === '' ? '<em>(blank)</em>' : escHtml(v); }
 
@@ -1205,7 +1225,8 @@ async function refreshEditsList() {
     const status = document.getElementById('editsFilter').value;
     body.innerHTML = '<p>Loading&hellip;</p>';
     try {
-        const response = await adminFetch(`/edits/${userName}?status=${encodeURIComponent(status)}`);
+        const who = editsPersonFilter ? `&personId=${encodeURIComponent(editsPersonFilter)}` : '';
+        const response = await adminFetch(`/edits/${userName}?status=${encodeURIComponent(status)}${who}`);
         const result = await response.json();
         const edits = result.edits || [];
         if (!response.ok) { body.innerHTML = `<p style="color:#c00;">${escHtml(result.error || 'Could not load the log.')}</p>`; return; }
@@ -1216,7 +1237,62 @@ async function refreshEditsList() {
     }
 }
 
+// ---- audit entries (phase B): biography text, attachments, storage ----
+const AUDIT_TITLE = {
+    'bio-summary': 'Summary changed', 'bio-biography': 'Biography edited', 'bio-facts': 'Key facts changed',
+    'attachment-added': 'Attachment added', 'attachment-removed': 'Attachment removed',
+    'attachment-renamed': 'Attachment renamed', 'attachment-display-photo': 'Display photo changed',
+    'attachment-updated': 'Attachment details changed', 'file-uploaded': 'File uploaded to storage',
+    'file-deleted': 'File deleted from storage', 'node-info-deleted': "This person's notes and attachment links deleted",
+    'node-info-bulk-save': 'All people\'s notes saved at once',
+};
+function attLabel(a) {
+    if (!a) return '';
+    const name = a.name && a.name !== a.filename ? `${escHtml(a.name)} <span class="editMeta">(${escHtml(a.filename || '')})</span>` : escHtml(a.filename || a.name || '');
+    return name;
+}
+function auditDetail(e) {
+    const f = e.field;
+    const pre = (v) => `<pre class="editPre">${escHtml(Array.isArray(v) ? v.join('\n') : v)}</pre>`;
+    if (f === 'bio-summary') return `<del>${showBlank(e.before)}</del> &rarr; <strong>${showBlank(e.after)}</strong>`;
+    if (f === 'bio-biography' || f === 'bio-facts') {
+        return `<details><summary>${f === 'bio-biography' ? `${(e.before || '').length} &rarr; ${(e.after || '').length} characters` : 'show before and after'}</summary>`
+            + `<div class="editMeta">Before</div>${pre(e.before)}<div class="editMeta">After</div>${pre(e.after)}</details>`;
+    }
+    if (f === 'attachment-added') return attLabel(e.after);
+    if (f === 'attachment-removed') return attLabel(e.before);
+    if (f === 'attachment-renamed') return `<del>${escHtml(e.before && e.before.name)}</del> &rarr; <strong>${escHtml(e.after && e.after.name)}</strong> <span class="editMeta">(${escHtml((e.after && e.after.filename) || '')})</span>`;
+    if (f === 'attachment-display-photo') return `${attLabel(e.after)}: ${e.after && e.after.selected ? 'now the display photo' : 'no longer the display photo'}`;
+    if (f === 'attachment-updated') {
+        const keys = Object.keys(e.after || {}).filter(k => !['filename', 'name', 'type', 'uploadedAt'].includes(k));
+        return `${attLabel(e.after)}: ${keys.map(k => `${escHtml(k)} ${showBlank(e.before && e.before[k])} &rarr; <strong>${showBlank(e.after[k])}</strong>`).join('; ')}`;
+    }
+    if (f === 'file-uploaded') return `${escHtml(e.after && e.after.filename)} <span class="editMeta">(${escHtml((e.after && e.after.mimeType) || '')}, ${escHtml((e.after && e.after.bytes) || '?')} bytes)</span>`;
+    if (f === 'file-deleted') return escHtml(e.before && e.before.filename);
+    if (f === 'node-info-deleted') {
+        const n = ((e.before && e.before.attachments) || []).length;
+        return `Had ${(e.before && e.before.biography ? 'a biography' : 'no biography')} and ${n} attachment link(s).`
+            + (e.before && e.before.biography ? `<details><summary>show the deleted biography</summary>${pre(e.before.biography)}</details>` : '');
+    }
+    if (f === 'node-info-bulk-save') return `${escHtml(e.before && e.before.people)} &rarr; ${escHtml(e.after && e.after.people)} people; ${escHtml((e.after && e.after.removedCount) || 0)} removed`;
+    return escHtml(JSON.stringify(e.after));
+}
+function renderAuditRow(e) {
+    const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 16).replace('T', ' ') : '';
+    const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
+    return `<div class="editRow editRow-logged">
+        <div class="editRowHead">
+            <span class="editPerson" ${exists ? `data-focus="${escHtml(e.personId)}"` : ''}>${escHtml(e.personName || e.personId)}</span>
+            <span class="editField">${escHtml(AUDIT_TITLE[e.field] || e.field)}</span>
+            <span class="editStatus editStatus-logged">Logged</span>
+        </div>
+        <div class="editChange">${auditDetail(e)}</div>
+        <div class="editMeta">${escHtml(e.editor || 'unknown')} &middot; ${escHtml(when)}</div>
+    </div>`;
+}
+
 function renderEditRow(e) {
+    if (e.type && e.type !== 'field') return renderAuditRow(e);
     const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
     const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
     const buttons = [];
@@ -1376,6 +1452,7 @@ async function UpdateIndividualNode(nodeId, bioData) {
             },
             body: JSON.stringify({
                 nodeId: nodeId,
+                editor: editorName(),
                 data: bioData
             })
         });
@@ -1495,6 +1572,7 @@ function displayPinIndicator(showPin) {
             document.getElementById("makeRoot").style.display = "inline-flex";
             document.getElementById("editBio").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("editDetails").style.display = isAdmin() ? "inline-flex" : "none";
+            document.getElementById("personHistory").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addAttachment").style.display = isAdmin() ? "block" : "none";
         }
     } else {
@@ -1507,6 +1585,7 @@ function displayPinIndicator(showPin) {
         document.getElementById("addAttachment").style.display = "none";
         document.getElementById("editBio").style.display = "none";
         document.getElementById("editDetails").style.display = "none";
+        document.getElementById("personHistory").style.display = "none";
     }
 }
 
@@ -3808,6 +3887,8 @@ async function SendAttachmentToBackend(file) {
         console.error("Error creating thumbnail for file:", file.name, "Error:", error);
     }
     formData.append("thumbnail", thumbnail);
+    formData.append("editor", editorName());
+    if (currentEditingNodeId != null) formData.append("nodeId", String(currentEditingNodeId));
     console.log("Sending attachment and thumbnail to backend for user:", userName, "file:", file.name, "thumbnail:", thumbnail.name);
 
     try {
@@ -4248,8 +4329,8 @@ function BuildListenersForAttachmentButtons(attachments,ID) {
             if (!confirm(`Delete ${filename}?`)) return;
 
             try {
-                const delUrl = `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}`
-                    + (thumbName ? `?thumb=${encodeURIComponent(thumbName)}` : "");
+                const delUrl = `${API_BASE_URL}/delete/${encodeURIComponent(userName)}/${encodeURIComponent(filename)}?editor=${encodeURIComponent(editorName())}`
+                    + (thumbName ? `&thumb=${encodeURIComponent(thumbName)}` : "");
                 const response = await fetch(delUrl, { method: "DELETE", headers: { ...authHeaders() } });
                 if (response.status === 401 || response.status === 403) {
                     handleAuthExpired();
@@ -5747,6 +5828,7 @@ function enterApp() {
     if (el) el.style.display = "none";
     renderAuthUI();
     showLoading();
+    ensureEditorName();
     loadOpenEdits();
     loadNodeInformation();
     InitializeTree();
@@ -5816,6 +5898,10 @@ async function startApp() {
     document.getElementById("editDetails").addEventListener("click", () => {
         if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
         openDetailsEditor(Pinned_NodeId);
+    });
+    document.getElementById("personHistory").addEventListener("click", () => {
+        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
+        openEditsModal(Pinned_NodeId);
     });
     document.getElementById("detailsSaveBtn").addEventListener("click", saveDetails);
     document.getElementById("detailsCancelBtn").addEventListener("click", closeDetailsEditor);

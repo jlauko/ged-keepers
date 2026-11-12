@@ -10,7 +10,7 @@ const TreeEditSchema = new mongoose.Schema(
   {
     tree: { type: String, required: true },
     editId: { type: String, required: true },
-    type: { type: String, default: "field" }, // "field" in phase A
+    type: { type: String, default: "field" }, // "field" (phase A: a core-field edit) | "bio" | "attachment" (phase B: audit entries)
     personId: { type: String, required: true },
     personName: { type: String, default: "" },
     field: { type: String, required: true },
@@ -22,7 +22,7 @@ const TreeEditSchema = new mongoose.Schema(
     editor: { type: String, default: "" },
     status: {
       type: String,
-      enum: ["pending", "entered", "confirmed", "conflict", "superseded", "reverted", "dismissed"],
+      enum: ["pending", "entered", "confirmed", "conflict", "superseded", "reverted", "dismissed", "logged"], // "logged" = audit-only entry (phase B), no Ancestry action
       default: "pending",
     },
     statusHistory: { type: Array, default: [] }, // [{ status, at, by, note }]

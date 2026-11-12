@@ -303,6 +303,9 @@ app.delete("/delete/:username/:filename", requireAdmin, requireR2, async (req, r
         if (thumbKey) await r2.deleteObject(thumbKey).catch(e => {
             if (!r2.isNotFound(e)) throw e;   // missing thumb is fine
         });
+        await auditLog.logQuietly(req.params.username.toLowerCase(), "(file storage)", [{
+            type: "attachment", field: "file-deleted", before: { filename: clean, thumbnail: thumbName }, after: null,
+        }], { editor: req.query.editor || req.user.username });
         res.json({ success: true, message: "File and thumbnail deleted" });
     } catch (err) {
         console.error("delete error:", err.message);
@@ -319,6 +322,7 @@ const { saveTreeData } = require("./lib/saveTreeData");
 const { diffTreeData } = require("./lib/diffTreeData");
 const { diffLocationGroups } = require("./lib/diffLocationGroups");
 const personEdits = require("./lib/personEdits");
+const auditLog = require("./lib/auditLog");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
 // ---------------------------------------------------------    
@@ -388,12 +392,15 @@ app.get("/nodeInfo/:username", requireView, async (req, res) => {
 // ------------------------------------------
 app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, async (req, res) => {
     const { username, nodeId } = req.params;
-    const { data } = req.body;
+    const { data, editor } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
+        const existing = await nodeRepo.getNode(username, nodeId);
         const updated = await nodeRepo.updateNode(username, nodeId, data);
         console.log("update successful: ", username, " ", nodeId);
+        // Phase B audit trail (bio text, attachments): best-effort, never blocks the save.
+        await auditLog.logQuietly(username.toLowerCase(), nodeId, auditLog.diffNodeInfo(existing, data), { editor: editor || req.user.username });
         res.json({ success: true, node: updated });
     } catch (err) {
         res.status(500).json({ success: false, message: "Error saving node info" });
@@ -404,12 +411,20 @@ app.put("/nodeInfo/:username/nodes/:nodeId", requireAdmin, async (req, res) => {
 // ------------------------------------------
 app.put("/nodeInfo/:username", requireAdmin, async (req, res) => {
     const username = req.params.username;
-    const { data } = req.body;
+    const { data, editor } = req.body;
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
+        const beforeIds = await nodeRepo.listNodeIds(username);
         await nodeRepo.saveNodeInfo(username, data);
         console.log("updated node info successful: ", username);
+        const afterIds = Object.keys(data);
+        const removed = beforeIds.filter((id) => !afterIds.includes(id));
+        await auditLog.logQuietly(username.toLowerCase(), "(all people)", [{
+            type: "bio", field: "node-info-bulk-save",
+            before: { people: beforeIds.length },
+            after: { people: afterIds.length, removed: removed.slice(0, 200), removedCount: removed.length },
+        }], { editor: editor || req.user.username });
         res.json({success: true});
     } catch (err) {
         res.status(500).json({ success: false, message: "Error saving node info" });
@@ -421,8 +436,19 @@ app.put("/nodeInfo/:username", requireAdmin, async (req, res) => {
 app.delete("/nodeInfo/:username/:nodeId", requireAdmin, async (req, res) => {
     const { username, nodeId } = req.params;
     try {
+        const existing = await nodeRepo.getNode(username, nodeId);
         await nodeRepo.deleteNode(username, nodeId);
         console.log("delete successful: ", username, " ", nodeId);
+        if (existing) {
+            await auditLog.logQuietly(username.toLowerCase(), nodeId, [{
+                type: "bio", field: "node-info-deleted",
+                before: {
+                    summary: existing.summary || "", biography: existing.biography || "", facts: existing.facts || [],
+                    attachments: (existing.attachments || []).map((a) => ({ filename: a.filename || null, name: a.name || null })),
+                },
+                after: null,
+            }], { editor: req.query.editor || req.user.username });
+        }
         res.json({ success: true, message: "Node deleted" });
     } catch (err) {
         res.status(500).json({ success: false, message: "Error deleting node" });
@@ -511,6 +537,12 @@ app.post(
                     await r2.putObject(`users/${tree}/thumbnails/${thumbName}`, thumbnail.buffer, thumbnail.mimetype);
                 }
             }
+
+            await auditLog.logQuietly(tree, (req.body && req.body.nodeId) || "(file storage)", [{
+                type: "attachment", field: "file-uploaded",
+                before: null,
+                after: { filename: artifactName, mimeType: artifact.mimetype, bytes: artifact.size, thumbnail: thumbName },
+            }], { editor: (req.body && req.body.editor) || req.user.username });
 
             const baseUrl = `${req.protocol}://${req.get("host")}`;
             res.json({

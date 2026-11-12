@@ -145,6 +145,35 @@ const T = "edits-test-tree";
     assert.equal(td.individuals["@I1@"].birthdate, "1 JAN 1900");
     console.log("ok: conflict handling, re-apply, mark entered, revert");
 
+    // 6. phase B: audit entries are logged, kept out of the "needs attention" list, and filterable per person
+    const audit = require("../lib/auditLog");
+    const entries = audit.diffNodeInfo(
+      { summary: "", biography: "Old", attachments: [] },
+      { summary: "A line", biography: "New text", attachments: [{ name: "Census", filename: "c.pdf", uploadedAt: "t1" }] }
+    );
+    assert.deepEqual(entries.map((e) => e.field), ["bio-summary", "bio-biography", "attachment-added"]);
+    const rows = await audit.logEntries(T, "@I1@", entries, { editor: "Joe" });
+    assert.equal(rows.length, 3);
+    assert.ok(rows.every((r) => r.status === "logged" && r.personName === "Pat Smith"), "person name filled in from the tree");
+    const logged = await pe.listEdits(T, { status: "logged" });
+    assert.equal(logged.length, 3);
+    const openNow = await pe.listEdits(T, { status: "open" });
+    assert.ok(openNow.every((e) => e.status !== "logged"), "audit entries never show as needing attention");
+    const history = await pe.listEdits(T, { status: "all", personId: "@I1@" });
+    assert.ok(history.some((e) => e.type === "field") && history.some((e) => e.type === "attachment") && history.some((e) => e.type === "bio"));
+    // logQuietly must not throw even when the write fails
+    const real = TreeEdit.insertMany;
+    TreeEdit.insertMany = async () => { throw new Error("disk full"); };
+    assert.deepEqual(await audit.logQuietly(T, "@I1@", entries, {}), []);
+    TreeEdit.insertMany = real;
+    // an audit entry cannot be driven through the Ancestry status actions
+    await assert.rejects(pe.setEditStatus(T, rows[0].editId, "markEntered", {}), /Cannot/);
+    // and a reimport ignores them
+    const parsed3 = importGedcom(ged(next2));
+    const plan3 = await pe.planImport(T, parsed3);
+    assert.ok(plan3.every((p) => p.edit.type === "field"));
+    console.log("ok: phase B audit entries");
+
     console.log("\nALL INTEGRATION CHECKS PASSED");
   } finally {
     if (!USE_FAKE) {

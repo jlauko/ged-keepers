@@ -6,7 +6,7 @@
     "start": "node ServerV2-0.js",
     "set-tree-password": "node scripts/set-tree-password.js",
     "new-tree": "node scripts/new-tree.js",
-    "test": "node --test test/treeEdits.test.js && node test/integration.js"
+    "test": "node --test test/treeEdits.test.js test/auditLog.test.js && node test/integration.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.665.0",
