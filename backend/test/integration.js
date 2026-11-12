@@ -325,6 +325,86 @@ const T = "edits-test-tree";
     assert.notEqual(reuse.personId, tmp.personId, "ids are never reused");
     console.log("ok: undo");
 
+    // 8. deleting a person: hidden and logged, restorable, held through reimports, retired once Ancestry drops them
+    const { diffTreeData } = require("../lib/diffTreeData");
+    const T3 = "removals-test-tree";
+    const people8 = [
+      { id: "@I1@", name: "Pat /Smith/", sex: "M", bd: "1 JAN 1900" },
+      { id: "@I2@", name: "Sam /Jones/", sex: "F", bd: "2 FEB 1902" },
+      { id: "@I3@", name: "Kim /Smith/", sex: "F", bd: "3 MAR 1925", bp: SK },
+      { id: "@I4@", name: "Kit /Smith/", sex: "M", bd: "4 APR 1927" },
+    ];
+    const fams8 = [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I3@", "@I4@"] }];
+    await saveTreeData(T3, importGedcom(gedF(people8, fams8)));
+
+    // 8a. delete Kim
+    let d8 = await pe.removePerson(T3, "@I3@", { editor: "Joe", note: "duplicate" });
+    assert.equal(d8.removed, "person");
+    assert.equal(d8.edit.status, "pending");
+    td = await TreeData.findOne({ tree: T3 }).lean();
+    assert.equal(td.individuals["@I3@"], undefined);
+    assert.deepEqual(td.families["@F1@"].children, ["@I4@"], "her place in the family is gone, the family itself stays");
+    assert.deepEqual(td.parentsOf["@I4@"], ["@I1@", "@I2@"]);
+    assert.equal(td.parentsOf["@I3@"], undefined);
+    assert.ok(!(td.childrenOf["@I1@"] || []).includes("@I3@"));
+    assert.equal(await PersonalEvent.findOne({ tree: T3, personId: "@I3@" }).lean(), null);
+    await assert.rejects(pe.removePerson(T3, "@I3@", {}), /No person/);
+    await assert.rejects(pe.removePerson(T3, "@I999@", {}), /No person/);
+
+    // 8b. restore puts everything back exactly
+    await pe.setEditStatus(T3, d8.edit.editId, "revert", { by: "Joe" });
+    td = await TreeData.findOne({ tree: T3 }).lean();
+    assert.equal(td.individuals["@I3@"].name, "Kim Smith");
+    assert.deepEqual(td.families["@F1@"].children, ["@I3@", "@I4@"], "back in her original position");
+    assert.deepEqual(td.parentsOf["@I3@"], ["@I1@", "@I2@"]);
+    assert.equal((await PersonalEvent.findOne({ tree: T3, personId: "@I3@" }).lean()).events[0].startYear, 1925);
+    assert.equal((await TreeEdit.findOne({ tree: T3, editId: d8.edit.editId }).lean()).status, "reverted");
+    console.log("ok: delete hides a person and their family place; restore puts them back");
+
+    // 8c. someone with people added in the app cannot be deleted until those go; an added person is just removed
+    const kid = await pe.addRelative(T3, { anchorId: "@I1@", relation: "child", otherParentId: "@I2@", person: { name: "New Kid" }, editor: "Joe" });
+    await assert.rejects(pe.removePerson(T3, "@I1@", {}), /Remove those first/);
+    const gone = await pe.removePerson(T3, kid.personId, { editor: "Joe" });
+    assert.equal(gone.removed, "addition");
+    td = await TreeData.findOne({ tree: T3 }).lean();
+    assert.equal(td.individuals[kid.personId], undefined);
+    console.log("ok: refuses to orphan added people; deleting an added person removes it");
+
+    // 8d. a reimport that still has Kim hides her again, without counting her as new
+    d8 = await pe.removePerson(T3, "@I3@", { editor: "Joe" });
+    await pe.setEditStatus(T3, d8.edit.editId, "markEntered", { by: "Joe" });
+    let parsed8 = importGedcom(gedF(people8, fams8));
+    const diff8 = await diffTreeData(T3, parsed8);
+    assert.equal(diff8.individuals.added, 0, "a deleted person is not 'new'");
+    assert.equal(diff8.individuals.after, 3);
+    let plan8 = await pe.planRemovals(T3, parsed8);
+    const sum8 = pe.summarizeRemovals(plan8);
+    assert.deepEqual(sum8.hidden.map((x) => x.personId), ["@I3@"]);
+    assert.deepEqual(sum8.recheck.map((x) => x.personId), ["@I3@"], "marked deleted in Ancestry, but the export still has her");
+    pe.applyRemovalsPlan(plan8, parsed8);
+    assert.equal(parsed8.individuals["@I3@"], undefined);
+    assert.deepEqual(parsed8.families["@F1@"].children, ["@I4@"]);
+    const addPlan8 = await pe.planAdditions(T3, parsed8);
+    assert.equal(addPlan8, null, "nothing added in the app, and she is not mistaken for an arrival");
+    await saveTreeData(T3, parsed8);
+    await pe.commitRemovals(T3, plan8);
+    td = await TreeData.findOne({ tree: T3 }).lean();
+    assert.equal(td.individuals["@I3@"], undefined);
+    assert.equal((await TreeEdit.findOne({ tree: T3, editId: d8.edit.editId }).lean()).status, "pending", "back to pending: re-check Ancestry");
+    console.log("ok: reimport keeps the person hidden and asks to re-check Ancestry");
+
+    // 8e. once Ancestry no longer has her, the deletion is confirmed
+    const parsed9 = importGedcom(gedF(people8.filter((p) => p.id !== "@I3@"), [{ id: "@F1@", h: "@I1@", w: "@I2@", c: ["@I4@"] }]));
+    const plan9 = await pe.planRemovals(T3, parsed9);
+    assert.deepEqual(pe.summarizeRemovals(plan9).gone.map((x) => x.personId), ["@I3@"]);
+    pe.applyRemovalsPlan(plan9, parsed9);
+    await saveTreeData(T3, parsed9);
+    await pe.commitRemovals(T3, plan9);
+    assert.equal((await TreeEdit.findOne({ tree: T3, editId: d8.edit.editId }).lean()).status, "confirmed");
+    assert.equal(await pe.planRemovals(T3, parsed9), null, "nothing left to hold");
+    await assert.rejects(pe.setEditStatus(T3, d8.edit.editId, "revert", {}), /Cannot/);
+    console.log("ok: deletion confirmed once Ancestry drops the person");
+
     console.log("\nALL INTEGRATION CHECKS PASSED");
   } finally {
     if (!USE_FAKE) {

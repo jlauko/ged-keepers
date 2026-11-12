@@ -129,3 +129,36 @@ test("planRemap: confident, ambiguous, none, and double claims", () => {
 test("rewriteLink swaps synthetic ids for the native ones", () => {
   assert.deepEqual(O.rewriteLink(link("l", "@S1@", "@I2@", "@S2@", "@FS1@"), { "@S1@": "@I10@" }), link("l", "@I10@", "@I2@", "@S2@", "@FS1@"));
 });
+
+test("removePerson hides a person and their family places; restorePerson puts them back", () => {
+  const d = fresh();
+  d.personalEvents = { "@I3@": { name: "Kim", events: [] } };
+  const state = () => JSON.parse(JSON.stringify({ i: d.individuals, f: d.families, p: d.parentsOf, c: d.childrenOf, s: d.spousesOf }));
+  const before = state();
+  const snap = O.removePerson(d, "@I2@");
+  assert.deepEqual(snap.memberships, [{ famId: "@F1@", role: "wife" }]);
+  assert.equal(d.individuals["@I2@"], undefined);
+  assert.equal(d.families["@F1@"].wife, null);
+  assert.deepEqual(d.parentsOf["@I3@"], ["@I1@"]);
+  assert.equal(d.spousesOf["@I1@"], undefined);
+  assert.equal(O.removePerson(d, "@I2@"), null, "already gone");
+  assert.equal(O.restorePerson(d, "@I2@", snap), true);
+  assert.deepEqual(state(), before);
+  assert.equal(O.restorePerson(d, "@I2@", snap), false, "already back");
+});
+
+test("restorePerson does not take a parent slot someone else has since filled", () => {
+  const d = fresh();
+  const snap = O.removePerson(d, "@I2@");
+  d.families["@F1@"].wife = "@I4@";
+  O.restorePerson(d, "@I2@", snap);
+  assert.equal(d.families["@F1@"].wife, "@I4@");
+  assert.ok(d.individuals["@I2@"], "the person is back, just not in that slot");
+});
+
+test("applyRemovals hides present people and reports the ones Ancestry already dropped", () => {
+  const d = fresh();
+  const r = O.applyRemovals(d, [{ editId: "a", personId: "@I3@" }, { editId: "b", personId: "@I404@" }]);
+  assert.deepEqual(r, { hidden: ["a"], gone: ["b"] });
+  assert.deepEqual(d.families["@F1@"].children, []);
+});

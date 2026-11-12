@@ -215,6 +215,21 @@ flagged (`conflict`) in Ancestry updates for a human to pick.
 - Do not create `@S` ids by hand: always use the route, so the log and overlay
   stay in step.
 
+### Deleting a person (Nov 2026)
+`DELETE /person/:username/:personId` (`requireAdmin`; `lib/removals.js`, pure
+hide/restore in `lib/overlay.js`). A person added in the app is simply taken back
+(the addition's `revert`). A person from Ancestry is *hidden*, with their slot in
+every family, and logged as a `TreeEdit` row `type: removePerson`
+(`before` = their fields, `payload.snapshot` = what Restore needs). Ancestry updates
+shows "Delete person" with *Mark deleted in Ancestry* / *Restore this person*
+(`markEntered`/`markPending`/`revert` through `PUT /edits/...`). Every import
+re-hides them (`planRemovals`/`applyRemovalsPlan`/`commitRemovals`, run before the
+additions overlay) and is not counted as "new"; when Ancestry's export no longer has
+the person the row becomes `confirmed`, and a person marked entered but still in the
+export goes back to pending. Refused while people/links added in the app hang off the
+person. NodeInfo/EdgeInfo are kept (restore brings them back). The tree's home root
+cannot be deleted from the UI.
+
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
 
 The frontend's map-style clusters (`docs/clusters.js`) are drawn from

@@ -354,6 +354,8 @@ async function planAdditions(tree, parsed) {
   const { persons, links } = splitRows(rows);
   const cur = await TreeData.findOne({ tree }).select({ individuals: 1 }).lean();
   const knownIds = new Set(Object.keys((cur && cur.individuals) || {}));
+  // people hidden by a deletion are not in TreeData, but they are not new either
+  for (const r of await TreeEdit.find({ tree, type: "removePerson", status: { $in: T.OPEN_STATUSES } }).lean()) knownIds.add(r.personId);
   const remap = O.planRemap(persons, parsed.individuals || {}, knownIds);
   const map = {};
   for (const r of remap) if (r.outcome === "remap") map[r.personId] = r.nativeId;

@@ -220,6 +220,17 @@ and their open links) for additions. CSV export has "New person" /
 Ancestry updates, and the import preview section. The layout is built from birth
 years at load, so after adding, the page reloads and centres the new person.
 
+**Deleting a person (added later).** `DELETE /person/:tree/:personId`. An added
+person is just taken back (`revert`). A person from Ancestry is hidden together with
+their family slots and logged as `type: removePerson` (`before` = fields,
+`payload.snapshot` = individual, memberships and timeline for Restore). Open rows
+(pending/entered) are re-applied to every import before the additions overlay and are
+kept out of the import preview's "new" count; when the export no longer has the person
+the row is confirmed, and an "entered" row whose person is still in the export returns
+to pending. Refused while people or links added in the app still hang off the person.
+Pure rules: `removePerson`/`restorePerson`/`applyRemovals` in `lib/overlay.js`;
+Mongo work and import hooks in `lib/removals.js`.
+
 **Known limits.** Notes/attachments on a person who is *removed* are not deleted
 (they stay under the dead `@S` id); a remap where Ancestry already has notes under
 the new id keeps both (reported by `rekeyPerson`, not yet shown in the UI); only

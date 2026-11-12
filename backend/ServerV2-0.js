@@ -650,6 +650,7 @@ app.post("/importGedcom/:username/preview", requireAdmin, gedUploadField, async 
         summary.locationGroups = await diffLocationGroups(tree, parsed);
         summary.edits = personEdits.summarize(await personEdits.planImport(tree, parsed));
         summary.additions = personEdits.summarizeAdditions(await personEdits.planAdditions(tree, parsed));
+        summary.removals = personEdits.summarizeRemovals(await personEdits.planRemovals(tree, parsed));
 
         // Best-effort archive of the raw upload to R2, so there's a durable
         // copy of the source file without depending on git. Not fatal if
@@ -679,10 +680,14 @@ app.post("/importGedcom/:username/confirm", requireAdmin, async (req, res) => {
         personEdits.applyPlan(plan, data);
         // People and relationships added in the app are laid over the import
         // (or matched to the person Ancestry now has) - see lib/additions.js.
+        // People deleted in the app stay hidden until Ancestry drops them.
+        const removePlan = await personEdits.planRemovals(tree, data);
+        personEdits.applyRemovalsPlan(removePlan, data);
         const addPlan = await personEdits.planAdditions(tree, data);
         personEdits.applyAdditionsPlan(addPlan, data);
         const summary = await saveTreeData(tree, data);
         summary.edits = await personEdits.commitPlan(tree, plan);
+        summary.removals = await personEdits.commitRemovals(tree, removePlan);
         summary.additions = await personEdits.commitAdditions(tree, addPlan);
         console.log("GEDCOM import confirmed for", tree, JSON.stringify(summary));
         res.json({ success: true, summary });
@@ -732,6 +737,21 @@ app.post("/additions/:username", requireAdmin, async (req, res) => {
     }
 });
 
+// Delete a person: one added in this app is removed outright; one from Ancestry
+// is hidden and logged as "delete in Ancestry" (can be restored until confirmed).
+app.delete("/person/:username/:personId", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { note, source, editor } = req.body || {};
+    try {
+        const result = await personEdits.removePerson(tree, req.params.personId, {
+            note, source, editor: editor || req.user.username,
+        });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendEditError(res, err, "Error deleting the person");
+    }
+});
+
 app.get("/edits/:username", requireAdmin, async (req, res) => {
     const tree = req.params.username.toLowerCase();
     try {
@@ -768,6 +788,16 @@ app.get("/edits/:username/export.csv", requireAdmin, async (req, res) => {
                     : `Link: ${(e.payload && e.payload.summary) || ""}`;
                 lines.push([
                     e.personName, e.personId, e.type === "addPerson" ? "New person" : "New relationship", "", text,
+                    [e.source, e.note].filter(Boolean).join(" - "), e.editor,
+                    e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : "", e.status, "",
+                ].map(csvCell).join(","));
+                continue;
+            }
+            if (e.type === "removePerson") {
+                const b = e.before || {};
+                const text = `Delete this person from Ancestry: ${b.name || e.personName}${b.sex ? ` (${b.sex})` : ""}; born ${[b.birthdate, b.birthplace].filter(Boolean).join(", ") || "unknown"}; died ${[b.deathdate, b.deathplace].filter(Boolean).join(", ") || "unknown/not recorded"}.`;
+                lines.push([
+                    e.personName, e.personId, "Delete person", "", text,
                     [e.source, e.note].filter(Boolean).join(" - "), e.editor,
                     e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : "", e.status, "",
                 ].map(csvCell).join(","));

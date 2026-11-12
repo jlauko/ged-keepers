@@ -172,6 +172,75 @@ function applyOverlay(data, { persons = [], links = [] }, opts = {}) {
   return result;
 }
 
+// ---- deleting a person who is in Ancestry ----
+//
+// A deletion hides the person (and their place in every family) without
+// touching the family records themselves, and keeps a snapshot in the log row
+// so "Restore" can put everything back exactly. The import path re-applies the
+// hiding to every fresh export until Ancestry itself drops the person.
+
+// Takes `id` out of the data. Returns the snapshot restorePerson() needs, or
+// null when the person is not there. Mutates `data`.
+function removePerson(data, id) {
+  const ind = data.individuals && data.individuals[id];
+  if (!ind) return null;
+  const memberships = [];
+  for (const [famId, f] of Object.entries(data.families || {})) {
+    if (f.husb === id) {
+      memberships.push({ famId, role: "husb" });
+      f.husb = null;
+    }
+    if (f.wife === id) {
+      memberships.push({ famId, role: "wife" });
+      f.wife = null;
+    }
+    const at = (f.children || []).indexOf(id);
+    if (at !== -1) {
+      memberships.push({ famId, role: "child", index: at });
+      f.children = f.children.filter((c) => c !== id);
+    }
+  }
+  delete data.individuals[id];
+  if (data.personalEvents) delete data.personalEvents[id];
+  Object.assign(data, rebuildMaps(data.families || {}));
+  return { individual: ind, memberships };
+}
+
+// The reverse of removePerson. A slot someone else has since taken is left
+// alone. Returns false when the person is already back (nothing done).
+function restorePerson(data, id, snapshot) {
+  if (!snapshot || !snapshot.individual || (data.individuals && data.individuals[id])) return false;
+  data.individuals[id] = snapshot.individual;
+  for (const m of snapshot.memberships || []) {
+    const f = (data.families || {})[m.famId];
+    if (!f) continue;
+    if (m.role === "husb" && !f.husb) f.husb = id;
+    else if (m.role === "wife" && !f.wife) f.wife = id;
+    else if (m.role === "child") {
+      f.children = f.children || [];
+      if (!f.children.includes(id)) f.children.splice(Math.min(m.index || 0, f.children.length), 0, id);
+    }
+  }
+  Object.assign(data, rebuildMaps(data.families || {}));
+  return true;
+}
+
+// Import path: hides every person in `rows` (open removePerson records,
+// [{ editId, personId }]) from the freshly parsed data.
+// -> { hidden: [editId], gone: [editId] }   gone = Ancestry no longer has them
+function applyRemovals(data, rows, opts = {}) {
+  const out = { hidden: [], gone: [] };
+  for (const r of rows) {
+    if (removePerson(data, r.personId)) out.hidden.push(r.editId);
+    else out.gone.push(r.editId);
+  }
+  if (out.hidden.length && opts.rebuildGroups && data.personalEvents) {
+    data.birthLocationGroups = buildLocationGroups(data.personalEvents, "Birth");
+    data.deathLocationGroups = buildLocationGroups(data.personalEvents, "Death");
+  }
+  return out;
+}
+
 // ---- matching a hand-added person to the person Ancestry later exports ----
 
 function nameKey(name) {
@@ -234,4 +303,7 @@ module.exports = {
   famSatisfies,
   planRemap,
   rewriteLink,
+  removePerson,
+  restorePerson,
+  applyRemovals,
 };

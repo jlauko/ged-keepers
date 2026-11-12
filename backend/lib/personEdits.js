@@ -14,6 +14,7 @@ const stamp = (status, by, note) => ({ status, at: new Date().toISOString(), by:
 
 const { EditError } = require("./editError");
 const additions = require("./additions");
+const removals = require("./removals");
 const O = require("./overlay");
 
 function clean(doc) {
@@ -143,6 +144,7 @@ async function setEditStatus(tree, editId, action, { by, note, nativeId } = {}) 
   const edit = await TreeEdit.findOne({ tree, editId }).lean();
   if (!edit) throw new EditError(404, "No such edit.");
   if (additions.isAddition(edit)) return additions.setAdditionStatus(tree, edit, action, { by, note, nativeId });
+  if (removals.isRemoval(edit)) return removals.setRemovalStatus(tree, edit, action, { by, note });
   const need = (...statuses) => {
     if (!statuses.includes(edit.status)) throw new EditError(409, `Cannot ${action} an edit that is "${edit.status}".`);
   };
@@ -221,4 +223,9 @@ module.exports = {
   summarizeAdditions: additions.summarizeAdditions,
   applyAdditionsPlan: additions.applyAdditionsPlan,
   commitAdditions: additions.commitAdditions,
+  removePerson: removals.removePerson,
+  planRemovals: removals.planRemovals,
+  summarizeRemovals: removals.summarizeRemovals,
+  applyRemovalsPlan: removals.applyRemovalsPlan,
+  commitRemovals: removals.commitRemovals,
 };

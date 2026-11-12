@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261114">
+    <link rel="stylesheet" href="styles.css?v=20261116">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -36,7 +36,10 @@
         <label for="treeNameInput">Family tree</label>
         <input id="treeNameInput" type="text" placeholder="e.g. lauko" autocomplete="off" spellcheck="false">
         <label for="splashPassword">Password</label>
-        <input id="splashPassword" type="password" placeholder="Family password" autocomplete="current-password">
+        <div class="pwWrap">
+            <input id="splashPassword" type="password" placeholder="Family password" autocomplete="current-password">
+            <button type="button" id="splashPwToggle" class="pwToggle" title="Show password" aria-label="Show password" aria-pressed="false"><svg class="pwEyeOn" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pwEyeOff" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 20C5 20 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+        </div>
         <div class="splashHint">The view password lets you browse; the editor password also lets you make changes.</div>
         <button id="splashOpenButton">Open</button>
         <div id="splashMsg"></div>
@@ -59,6 +62,7 @@
     <div data-action="bio">Edit Biography</div>
     <div data-action="details">Edit Details</div>
     <div data-action="relative">Add Relative</div>
+    <div data-action="delete" class="menuDanger">Delete Person</div>
 </div>
 
 <div id="ErrorBox" ></div>
@@ -395,6 +399,8 @@
                             <i class="fa-solid fa-clock-rotate-left"></i> History</button>
                         <button id="addRelative" class="biobutton" style="display: none" title="Add a child, parent or spouse who is not in Ancestry yet">
                             <i class="fa-solid fa-user-plus"></i> Add Relative</button>
+                        <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
+                            <i class="fa-solid fa-trash-can"></i> Delete</button>
                         <button id="makeRoot" class="biobutton" style="display: none">
                             <i class="fa-solid fa-tree"></i>
                             <span> Make Root</span>
@@ -1044,6 +1050,7 @@ async function handleGedFileSelected(file) {
             ${renderLocationGroupWarnings(s.locationGroups)}
             ${renderEditReconciliation(s.edits)}
             ${renderAdditionsPlan(s.additions)}
+            ${renderRemovalsPlan(s.removals)}
             <p style="margin-top:10px;">Review the counts above, then confirm to save this into the live tree.</p>
         `;
         confirmBtn.style.display = 'block';
@@ -1447,6 +1454,53 @@ function renderAuditRow(e) {
     </div>`;
 }
 
+// ---- deleting a person ----
+async function deletePerson(nodeId) {
+    if (!isAdmin()) return;
+    const ind = dataJSON && dataJSON.individuals && dataJSON.individuals[nodeId];
+    if (!ind) { showError('Select a person first.'); return; }
+    if (nodeId === homeRootNodeId) { showError("This is the tree's starting person and can't be deleted here."); return; }
+    const name = (ind.name || nodeId).replace(/\//g, '').replace(/\s+/g, ' ').trim();
+    const text = ind.synthetic
+        ? `Remove ${name}?\n\nThey were added in this app and are not in Ancestry, so they are removed outright (along with the links you added for them).`
+        : `Delete ${name}?\n\nThey will disappear from this tree, and from their family\'s parent/child links. Ancestry is the master copy, so the deletion is added to Ancestry updates for you to repeat there.\n\nUntil Ancestry drops them, imports keep them hidden. You can restore them from Ancestry updates.`;
+    if (!window.confirm(text)) return;
+    try {
+        const response = await adminFetch(`/person/${userName}/${encodeURIComponent(nodeId)}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ editor: localStorage.getItem('ft_editor') || '' })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) { showError(result.error || 'Could not delete that person.'); return; }
+        location.reload();   // the layout is built at load, so reload to redraw without them
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+function renderRemovalRow(e) {
+    const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
+    const b = e.before || {};
+    const place = (d, p) => [d, p].filter(Boolean).map(escHtml).join(', ') || '<em>(not recorded)</em>';
+    const buttons = [];
+    if (e.status === 'pending') buttons.push(['markEntered', 'Mark deleted in Ancestry'], ['revert', 'Restore this person']);
+    else if (e.status === 'entered') buttons.push(['markPending', 'Back to pending'], ['revert', 'Restore this person']);
+    const done = e.status === 'confirmed' ? `<div class="editMeta">Ancestry no longer has this person.</div>` : '';
+    return `<div class="editRow editRow-${escHtml(e.status)}">
+        <div class="editRowHead">
+            <span class="editPerson">${escHtml(e.personName || e.personId)}</span>
+            <span class="editField">Delete person</span>
+            <span class="editStatus editStatus-${escHtml(e.status)}">${escHtml(EDIT_STATUS_LABEL[e.status] || e.status)}</span>
+        </div>
+        <div class="editChange">Delete in Ancestry: <strong>${escHtml(b.name || e.personName || '')}</strong>${b.sex ? ` (${escHtml(b.sex)})` : ''}
+            <div>Born: ${place(b.birthdate, b.birthplace)} &middot; Died: ${place(b.deathdate, b.deathplace)}</div>
+            <div class="editMeta">Hidden in this app until Ancestry drops them.</div></div>
+        ${done}
+        <div class="editMeta">${escHtml([e.source, e.note].filter(Boolean).join(' - ') || 'no source recorded')} &middot; ${escHtml(e.editor || '')} &middot; ${escHtml(when)}</div>
+        ${buttons.length ? `<div class="editActions">${buttons.map(([act, t]) => `<button type="button" class="editsBtn" data-action="${act}" data-edit="${escHtml(e.editId)}">${escHtml(t)}</button>`).join('')}</div>` : ''}
+    </div>`;
+}
+
 // ---- people and relationships added in the app (phase C) ----
 function renderAdditionRow(e) {
     const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
@@ -1486,6 +1540,7 @@ function renderAdditionRow(e) {
 
 function renderEditRow(e) {
     if (e.type === 'addPerson' || e.type === 'addRelationship') return renderAdditionRow(e);
+    if (e.type === 'removePerson') return renderRemovalRow(e);
     if (e.type && e.type !== 'field') return renderAuditRow(e);
     const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
     const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
@@ -1529,7 +1584,7 @@ async function onEditsBodyClick(ev) {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) { showError(result.error || 'Could not update that item.'); return; }
         // removing or re-linking an added person changes the tree's shape: reload it
-        const added = result.edit && (result.edit.type === 'addPerson' || result.edit.type === 'addRelationship');
+        const added = result.edit && (result.edit.type === 'addPerson' || result.edit.type === 'addRelationship' || result.edit.type === 'removePerson');
         if (added && (btn.dataset.action === 'revert' || btn.dataset.action === 'remapTo')) {
             location.reload();
             return;
@@ -1569,6 +1624,18 @@ async function exportEditsCsv() {
     } catch (err) {
         showError(err.message);
     }
+}
+
+// What the GEDCOM import would do with the people deleted in this app.
+function renderRemovalsPlan(r) {
+    if (!r) return '';
+    const parts = [];
+    if (r.hidden && r.hidden.length) parts.push(`<li><strong>${r.hidden.length}</strong> deleted person(s) are still in Ancestry's export and will stay hidden: ${r.hidden.map(x => escHtml(x.person)).join(', ')}.</li>`);
+    if (r.recheck && r.recheck.length) parts.push(`<li style="color:#a60;">You marked <strong>${r.recheck.length}</strong> as deleted in Ancestry, but this export still has them (${r.recheck.map(x => escHtml(x.person)).join(', ')}); they go back to pending.</li>`);
+    if (r.gone && r.gone.length) parts.push(`<li><strong>${r.gone.length}</strong> deleted person(s) are no longer in Ancestry and will be marked confirmed: ${r.gone.map(x => escHtml(x.person)).join(', ')}.</li>`);
+    if (!parts.length) return '';
+    return `<div style="margin-top:8px; padding:8px; background:#fdf6f4; border:1px solid #f0d2c8; border-radius:6px; font-size:13px;">
+        <strong>People deleted in this app</strong><ul style="margin:4px 0 0 18px; padding:0;">${parts.join('')}</ul></div>`;
 }
 
 // What the GEDCOM import would do with the people and relationships added in this app.
@@ -1791,6 +1858,7 @@ function displayPinIndicator(showPin) {
             document.getElementById("editDetails").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("personHistory").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addRelative").style.display = isAdmin() ? "inline-flex" : "none";
+            document.getElementById("deletePerson").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addAttachment").style.display = isAdmin() ? "block" : "none";
         }
     } else {
@@ -1805,6 +1873,7 @@ function displayPinIndicator(showPin) {
         document.getElementById("editDetails").style.display = "none";
         document.getElementById("personHistory").style.display = "none";
         document.getElementById("addRelative").style.display = "none";
+        document.getElementById("deletePerson").style.display = "none";
     }
 }
 
@@ -2937,6 +3006,10 @@ async function createTree(userData) {
 
             case "relative":
                 openRelativeEditor(currentEditingNodeId);
+                break;
+
+            case "delete":
+                deletePerson(currentEditingNodeId);
                 break;
         }
         // Hide menu
@@ -5251,6 +5324,25 @@ function arrangeAncestors(nodeId,depth) {
         }
     });
     //
+    // A parent with no known ancestry is plotted as a leaf at the next free row, which can be
+    // far from a partner who has a long ancestry (the partner sits at the middle of their own
+    // ancestors). Pull such a parent in beside the partner so the couple reads as a couple.
+    //
+    if (parents.length === 2) {
+        const step = boxHeight + Gapy;
+        const bare = id => (dataJSON.parents_of[id] || []).length === 0;
+        const [pa, pb] = parents;
+        const posA = plotPositionMap.get(pa), posB = plotPositionMap.get(pb);
+        if (posA && posB && bare(pa) !== bare(pb) && Math.abs(posA.y - posB.y) > 1.5 * step) {
+            const loneId = bare(pa) ? pa : pb;
+            const lone = bare(pa) ? posA : posB;
+            const mate = bare(pa) ? posB : posA;
+            const moved = { id: loneId, x: lone.x, y: mate.y + (lone.y > mate.y ? step : -step), fixed: true };
+            plotupdates.push(moved);
+            plotPositionMap.set(loneId, moved);
+        }
+    }
+    //
     // after recursively plotting all the parents in the loop above, 
     // now plot this node (the child of the parents we just plotted) using PlotOrganized, 
     // which will calculate the x position based on birth year and the y position based on 
@@ -6062,6 +6154,20 @@ function enterApp() {
     clearContextMessages();
 }
 
+// Eye icon on the login box: show or hide the password being typed.
+function toggleSplashPassword() {
+    const input = document.getElementById("splashPassword");
+    const btn = document.getElementById("splashPwToggle");
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.setAttribute("aria-pressed", show ? "true" : "false");
+    btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    btn.title = show ? "Hide password" : "Show password";
+    btn.querySelector(".pwEyeOn").style.display = show ? "none" : "";
+    btn.querySelector(".pwEyeOff").style.display = show ? "" : "none";
+    input.focus();
+}
+
 // Splash "Open": authenticate for the chosen tree, then enter. A password is
 // required now - viewing as well as editing needs a valid session.
 async function submitSplash() {
@@ -6097,6 +6203,7 @@ async function startApp() {
 
     document.getElementById("treeNameInput").value = tree;
     document.getElementById("splashOpenButton").addEventListener("click", submitSplash);
+    document.getElementById("splashPwToggle").addEventListener("click", toggleSplashPassword);
     document.getElementById("splashPassword").addEventListener("keydown", e => {
         if (e.key === "Enter") submitSplash();
     });
@@ -6133,6 +6240,10 @@ async function startApp() {
     document.getElementById("addRelative").addEventListener("click", () => {
         if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
         openRelativeEditor(Pinned_NodeId);
+    });
+    document.getElementById("deletePerson").addEventListener("click", () => {
+        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
+        deletePerson(Pinned_NodeId);
     });
     document.getElementById("relRelation").addEventListener("change", relationChanged);
     document.getElementById("relSaveBtn").addEventListener("click", saveRelative);

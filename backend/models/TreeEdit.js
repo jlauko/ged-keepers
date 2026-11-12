@@ -10,7 +10,7 @@ const TreeEditSchema = new mongoose.Schema(
   {
     tree: { type: String, required: true },
     editId: { type: String, required: true },
-    type: { type: String, default: "field" }, // "field" (phase A: a core-field edit) | "bio" | "attachment" (phase B: audit entries) | "addPerson" | "addRelationship" (phase C: additions; `after` holds the person fields / the family link)
+    type: { type: String, default: "field" }, // "field" (phase A: a core-field edit) | "bio" | "attachment" (phase B: audit entries) | "addPerson" | "addRelationship" (phase C: additions; `after` holds the person fields / the family link) | "removePerson" (a person from Ancestry hidden in the app; `before` = their fields, `payload.snapshot` = what Restore needs)
     payload: { type: mongoose.Schema.Types.Mixed, default: null }, // phase C: { relation, anchorId, summary, candidates, remappedTo }
     personId: { type: String, required: true },
     personName: { type: String, default: "" },
