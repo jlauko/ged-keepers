@@ -485,4 +485,4 @@ function importGedcom(gedText) {
   return { individuals, families, parentsOf, childrenOf, spousesOf, personalEvents, birthLocationGroups, deathLocationGroups };
 }
 
-module.exports = { importGedcom, normalizeLocation, extractYear, formatName };
+module.exports = { importGedcom, normalizeLocation, normalizeGedcomDate, buildLocationGroups, MIN_GROUP_SIZE, extractYear, formatName };

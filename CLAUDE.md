@@ -111,7 +111,13 @@ confirm reloads the page (reuses the normal `restoreSession` + `enterApp`
 load path rather than patching the live vis.js network in place).
 
 #### Known gap: a hand-edit to individuals/families doesn't survive a reimport
-There is currently **no in-app way to edit an individual's core fields**
+**Update (Nov 2026): partly built.** Editing a person's name, sex, birth/death
+date and place is now supported in-app and *does* survive a reimport — see
+"Editing a person's core fields" below and `design/tree-editing.md`. What's
+described here still applies to everything else (adding people, families,
+residences): those remain unbuilt, phase C of the design.
+
+Originally: there was **no in-app way to edit an individual's core fields**
 (name/birthdate/birthplace/etc.) or add a person directly — `individuals`/
 `families` only ever get written by this import. If that data is ever
 hand-edited some other way (a script, directly in Mongo), be aware:
@@ -146,8 +152,41 @@ wholesale replace instead of being clobbered by it:
   entry), and surface anything ambiguous for a human decision instead of
   guessing.
 
-Not built. Revisit if/when Claude's research work needs to add a person or
-correct a field the live tree doesn't have a home for otherwise.
+Adding people is not built (phase C). Revisit if/when Claude's research work
+needs to add a person the live tree doesn't have a home for otherwise.
+
+### Editing a person's core fields (phase A, Nov 2026)
+Full design: `design/tree-editing.md`. Ancestry stays the master; every in-app
+correction is logged so it can be entered in Ancestry too, and survives the
+next GEDCOM import until Ancestry catches up.
+- **Log**: `backend/models/TreeEdit.js` — one document per change (`personId`,
+  `field`, `baseValue` = what Ancestry had, `before`/`after`, `note`, `source`,
+  `editor`, `status`: pending / entered / confirmed / conflict / superseded /
+  reverted / dismissed). Lives in Mongo, not git.
+- **Editable fields**: `name`, `sex`, `birthdate`, `birthplace`, `deathdate`,
+  `deathplace` (dates go through the importer's `normalizeGedcomDate`).
+  Rules/validation/reconciliation are pure functions in `backend/lib/treeEdits.js`;
+  Mongo operations in `backend/lib/personEdits.js`.
+- **Routes** (all `requireAdmin`): `PUT /person/:username/:personId`
+  `{ changes, note, source, editor }` (writes `TreeData`, updates the person's
+  `PersonalEvent` and the affected `LocationGroups`, logs); `GET /edits/:username
+  ?status=open|pending|entered|conflict|confirmed|all&personId=`;
+  `GET /edits/:username/export.csv` (the Ancestry to-do list);
+  `PUT /edits/:username/:editId` `{ action: markEntered|markPending|keepAncestry|reapplyMine|revert }`.
+- **Reimport**: `/importGedcom/.../preview` reports `summary.edits` (re-apply /
+  confirmed / conflicts) without writing; `/confirm` applies the plan to the
+  parsed data (`applyPlan`), saves, *then* updates the edit statuses. If Ancestry
+  changed a field to a third value, Ancestry's value is kept and the edit is
+  flagged `conflict` (resolve in the panel: Keep Ancestry's / Re-apply mine).
+- **UI** (`docs/index.html`): "Edit Details" button beside Edit Bio (and in the
+  node menu), the "Ancestry updates" corner button (list, actions, CSV export),
+  a small "corrected" marker on edited fields (admins only; viewers just see
+  the corrected value), and the import preview's "Corrections made in this app".
+  The edit modal asks for the editor's name (remembered in `localStorage`
+  `ft_editor`) because there is one admin login per tree. Research scripts can
+  call the same routes with the admin token and `editor: "Claude research"`.
+- Limits: map clusters and the timeline are built at load, so they catch up on
+  the next page load; residences, families and attachments are not covered yet.
 
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)
 
@@ -351,12 +390,13 @@ is false and the attachment routes 503 (rest of the app still runs).
   size lags — it gc's server-side on its own schedule.
 
 ## Conventions for adding researched data
-- Prefer adding an "evidence" entry against the existing GEDCOM id in
-  MongoDB `NodeInfo` (person) or `EdgeInfo` (relationship) over touching
-  `individuals`/`families` directly — there's no supported write path for
-  the latter at all right now (see the "Known gap" note under In-app
-  GEDCOM import above), so a hand-edit there would just get silently
-  overwritten by the next `.ged` reimport.
+- To correct a person's name/sex/birth or death date/place, use
+  `PUT /person/:username/:personId` (logged, survives reimports — see "Editing
+  a person's core fields"), never a direct write to `TreeData`. Otherwise prefer
+  an "evidence" entry against the existing GEDCOM id in MongoDB `NodeInfo`
+  (person) or `EdgeInfo` (relationship). There is still no supported write path
+  for families/relationships/residences (see the "Known gap" note), so a
+  hand-edit there would be silently overwritten by the next `.ged` reimport.
 - Every researched fact should carry a source citation. There's no
   `sources[]` field on individuals yet — decide: add one to `TreeData`'s
   schema, or store citations as `NodeInfo`/`EdgeInfo` evidence entries.
@@ -385,7 +425,18 @@ is false and the attachment routes 503 (rest of the app still runs).
   live only in Render / local `.env`.
 
 ## Testing
-No automated test suite. Changes have been verified by driving the running
-app in a browser (backend on :4000, static frontend on :8000) and with
-`curl` against the API. A real test suite alongside the import pipeline is
-still wanted before automating writes from research agents.
+Still no broad suite, but the edit/reconciliation feature has one:
+- `cd backend && npm test` — unit tests (`node --test test/treeEdits.test.js`) for the pure
+  validation/reconciliation code plus `test/integration.js`, which runs the
+  whole edit → reimport → conflict flow against in-memory stand-ins for the
+  Mongo models (`test/fakeModels.js`). Set `TEST_MONGODB_URI` to a throwaway
+  database (name must contain "test") to run it against real Mongo instead.
+- `node test/devServer.js "<path to .ged>"` — the real Express app on port 4000
+  (the port `config.js` uses on localhost) over an in-memory database seeded
+  from a `.ged`; serve `docs/` on :8000 and log in as tree `lauko` with
+  `adminpw` (editor) or `viewpw` (viewer). Nothing is persisted. Useful because
+  the Atlas cluster only admits Render's IPs, so a laptop can't reach it.
+  `python test/api_smoke.py "<same .ged>"` drives its HTTP routes.
+Other changes are verified by driving the running app in a browser and with
+`curl`. A broader test suite is still wanted before automating writes from
+research agents.

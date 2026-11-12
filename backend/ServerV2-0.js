@@ -318,6 +318,7 @@ const { importGedcom } = require("./gedcomImport");
 const { saveTreeData } = require("./lib/saveTreeData");
 const { diffTreeData } = require("./lib/diffTreeData");
 const { diffLocationGroups } = require("./lib/diffLocationGroups");
+const personEdits = require("./lib/personEdits");
 // ---------------------------------------------------------
 // ---------------- EVIDENCE INFORMATION ROUTES ----------------
 // ---------------------------------------------------------    
@@ -615,6 +616,7 @@ app.post("/importGedcom/:username/preview", requireAdmin, gedUploadField, async 
     try {
         const summary = await diffTreeData(tree, parsed);
         summary.locationGroups = await diffLocationGroups(tree, parsed);
+        summary.edits = personEdits.summarize(await personEdits.planImport(tree, parsed));
 
         // Best-effort archive of the raw upload to R2, so there's a durable
         // copy of the source file without depending on git. Not fatal if
@@ -638,12 +640,96 @@ app.post("/importGedcom/:username/confirm", requireAdmin, async (req, res) => {
     if (!data) return res.status(400).json({ error: "Missing data" });
 
     try {
+        // Hand edits made in the app are re-applied over the fresh import (or
+        // retired, or flagged) before it replaces TreeData - see design/tree-editing.md.
+        const plan = await personEdits.planImport(tree, data);
+        personEdits.applyPlan(plan, data);
         const summary = await saveTreeData(tree, data);
+        summary.edits = await personEdits.commitPlan(tree, plan);
         console.log("GEDCOM import confirmed for", tree, JSON.stringify(summary));
         res.json({ success: true, summary });
     } catch (err) {
         console.error("GEDCOM import confirm failed:", err);
         res.status(500).json({ error: "Error saving the imported tree." });
+    }
+});
+
+
+// -------------------------------------------------
+// ---- Hand edits to a person's core fields -------
+// ---- (design/tree-editing.md, phase A) ----------
+// -------------------------------------------------
+function sendEditError(res, err, what) {
+    if (err instanceof personEdits.EditError) {
+        return res.status(err.status).json({ error: err.message, details: err.details });
+    }
+    console.error(what, err);
+    res.status(500).json({ error: what });
+}
+
+app.put("/person/:username/:personId", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { changes, note, source, editor } = req.body || {};
+    try {
+        const result = await personEdits.applyPersonEdit(tree, req.params.personId, changes, {
+            note, source, editor: editor || req.user.username,
+        });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendEditError(res, err, "Error saving the edit");
+    }
+});
+
+app.get("/edits/:username", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    try {
+        const edits = await personEdits.listEdits(tree, {
+            status: req.query.status, personId: req.query.personId, limit: req.query.limit,
+        });
+        res.json({ success: true, edits });
+    } catch (err) {
+        sendEditError(res, err, "Error reading the edit log");
+    }
+});
+
+const FIELD_LABELS = {
+    name: "Name", sex: "Sex", birthdate: "Birth date", birthplace: "Birth place",
+    deathdate: "Death date", deathplace: "Death place",
+};
+function csvCell(v) {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+// The to-do list for correcting Ancestry: what to change, from what, and why.
+app.get("/edits/:username/export.csv", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    try {
+        const edits = await personEdits.listEdits(tree, { status: req.query.status || "open", limit: 5000 });
+        const head = ["Person", "Person id", "Field", "Change FROM (Ancestry's value)", "Change TO", "Source / note", "Edited by", "Date", "Status", "Ancestry now says (conflicts)"];
+        const lines = [head.map(csvCell).join(",")];
+        for (const e of edits) {
+            lines.push([
+                e.personName, e.personId, FIELD_LABELS[e.field] || e.field, e.baseValue, e.after,
+                [e.source, e.note].filter(Boolean).join(" - "), e.editor,
+                e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : "", e.status, e.ancestryValue,
+            ].map(csvCell).join(","));
+        }
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${tree}-ancestry-updates.csv"`);
+        res.send("\ufeff" + lines.join("\r\n") + "\r\n");
+    } catch (err) {
+        sendEditError(res, err, "Error exporting the edit log");
+    }
+});
+
+app.put("/edits/:username/:editId", requireAdmin, async (req, res) => {
+    const tree = req.params.username.toLowerCase();
+    const { action, note, editor } = req.body || {};
+    try {
+        const edit = await personEdits.setEditStatus(tree, req.params.editId, action, { by: editor || req.user.username, note });
+        res.json({ success: true, edit });
+    } catch (err) {
+        sendEditError(res, err, "Error updating the edit");
     }
 });
 

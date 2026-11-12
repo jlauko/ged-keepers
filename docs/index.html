@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20260917">
+    <link rel="stylesheet" href="styles.css?v=20261112b">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -49,12 +49,15 @@
 <!-- Admin-only: import a new .ged export. Hidden for viewers via renderAuthUI(). -->
 <button id="gedImportButton" style="display:none;" title="Upload a new GEDCOM export and preview what would change">Import GEDCOM</button>
 <input type="file" id="gedImportFileInput" accept=".ged" style="display:none;">
+<!-- Admin-only: the log of hand edits, i.e. the to-do list for correcting Ancestry. -->
+<button id="editsButton" style="display:none;" title="Corrections made in this app that still need to be entered in Ancestry">Ancestry updates</button>
 
 <div id="nodeOptionsMenu" class="nodeOptionsMenu" 
     style="display:none;">
     <div data-action="root">Make Root</div>
     <div data-action="attachment">Add Attachment</div>
     <div data-action="bio">Edit Biography</div>
+    <div data-action="details">Edit Details</div>
 </div>
 
 <div id="ErrorBox" ></div>
@@ -190,6 +193,68 @@
   </div>
 </div>
 
+<!-- Edit Details (admin): correct a person's name / sex / birth and death date and place.
+     Every change is logged (design/tree-editing.md) so it can be entered in Ancestry too. -->
+<div id="detailsModal">
+  <div class="bioModalContent">
+    <div class="bioModalHeader">Edit Details</div>
+    <div id="detailsPending" class="editsNote"></div>
+    <form id="detailsForm" onsubmit="return false;">
+      <div class="bioFormGroup">
+        <label for="detName">Name</label>
+        <input type="text" id="detName" autocomplete="off">
+      </div>
+      <div class="bioFormGroup">
+        <label for="detSex">Sex</label>
+        <select id="detSex"><option value="">(unknown)</option><option value="M">M</option><option value="F">F</option><option value="U">U (undetermined)</option></select>
+      </div>
+      <div class="detailsRow">
+        <div class="bioFormGroup"><label for="detBirthDate">Birth date</label><input type="text" id="detBirthDate" autocomplete="off" placeholder="e.g. 24 MAY 1894"></div>
+        <div class="bioFormGroup"><label for="detBirthPlace">Birth place</label><input type="text" id="detBirthPlace" autocomplete="off" placeholder="City, County, State, Country"></div>
+      </div>
+      <div class="detailsRow">
+        <div class="bioFormGroup"><label for="detDeathDate">Death date</label><input type="text" id="detDeathDate" autocomplete="off" placeholder="e.g. ABOUT 1950"></div>
+        <div class="bioFormGroup"><label for="detDeathPlace">Death place</label><input type="text" id="detDeathPlace" autocomplete="off" placeholder="City, County, State, Country"></div>
+      </div>
+      <div class="detailsHint">Dates: DAY MON YYYY (24 MAY 1894), MON YYYY, YYYY, ABOUT / BEFORE / AFTER &hellip;, or BETWEEN &hellip; AND &hellip;. Leave a box empty to clear it.</div>
+      <div class="bioFormGroup">
+        <label for="detSource">Source / reason</label>
+        <textarea id="detSource" style="min-height:60px;" placeholder="e.g. 1910 census, Buffalo Ward 9; baptismal register; death certificate"></textarea>
+      </div>
+      <div class="bioFormGroup">
+        <label for="detEditor">Your name (recorded in the change log)</label>
+        <input type="text" id="detEditor" autocomplete="off">
+      </div>
+      <div id="detailsMsg" class="detailsMsg"></div>
+      <div class="bioModalButtons">
+        <button type="button" class="btnSave" id="detailsSaveBtn">Save</button>
+        <button type="button" class="btnCancel" id="detailsCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Ancestry updates (admin): the corrections made here, and what to do about each in Ancestry. -->
+<div id="editsModal">
+  <div class="bioModalContent" style="max-width:860px;">
+    <div class="bioModalHeader">Ancestry updates</div>
+    <div class="editsToolbar">
+      <label for="editsFilter">Show</label>
+      <select id="editsFilter">
+        <option value="open">Needs attention (pending, entered, conflicts)</option>
+        <option value="pending">Pending: not yet entered in Ancestry</option>
+        <option value="entered">Entered in Ancestry, awaiting next import</option>
+        <option value="conflict">Conflicts with Ancestry</option>
+        <option value="confirmed">Confirmed by an import</option>
+        <option value="all">Everything (full change log)</option>
+      </select>
+      <button type="button" id="editsExportBtn" class="editsBtn">Export CSV</button>
+      <button type="button" id="editsCloseBtn" class="editsBtn">Close</button>
+    </div>
+    <div id="editsBody"><p>Loading&hellip;</p></div>
+  </div>
+</div>
+
 <!-- GEDCOM Import Modal for Admins: preview a new .ged, then confirm or cancel. -->
 <div id="gedImportModal">
   <div class="bioModalContent" style="max-width:520px;">
@@ -268,7 +333,9 @@
 
                     <div class="biobuttons">
                         <button id="editBio" class="biobutton" style="display: none">
-                            <i class="fa-solid fa-pen"></i> Edit Bio</button> 
+                            <i class="fa-solid fa-pen"></i> Edit Bio</button>
+                        <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
+                            <i class="fa-solid fa-id-card"></i> Edit Details</button> 
                         <button id="makeRoot" class="biobutton" style="display: none">
                             <i class="fa-solid fa-tree"></i>
                             <span> Make Root</span>
@@ -559,6 +626,8 @@ function renderAuthUI() {
 
     const gedBtn = document.getElementById("gedImportButton");
     if (gedBtn) gedBtn.style.display = isAdmin() ? "inline-block" : "none";
+    const editsBtn = document.getElementById("editsButton");
+    if (editsBtn) editsBtn.style.display = isAdmin() ? "inline-block" : "none";
 }
 
 // Corner button: log out and return to the splash.
@@ -914,6 +983,7 @@ async function handleGedFileSelected(file) {
                  <span style="color:${s.families.removed ? '#c00' : '#999'};">${s.families.removed} no longer present</span>)</p>
             ${s.individuals.removed ? `<p style="font-size:12px; color:#666;">People no longer in this export (nothing about them is deleted - any biography, evidence, or attachments they have would just be unreferenced):</p>${removedListHtml}` : ''}
             ${renderLocationGroupWarnings(s.locationGroups)}
+            ${renderEditReconciliation(s.edits)}
             <p style="margin-top:10px;">Review the counts above, then confirm to save this into the live tree.</p>
         `;
         confirmBtn.style.display = 'block';
@@ -953,6 +1023,294 @@ async function confirmGedImport() {
         body.innerHTML = `<p style="color:#c00;">Error saving: ${err.message}</p>`;
         confirmBtn.disabled = false;
     }
+}
+
+
+//-----------------------------------------------------------------------------
+// Hand edits to a person's core fields (admin only) - design/tree-editing.md.
+// Edit Details saves through PUT /person/:tree/:id, which logs every change;
+// the "Ancestry updates" panel is that log, used as the to-do list for fixing
+// the same facts in Ancestry. A later GEDCOM import re-applies, retires or
+// flags each edit (see renderEditReconciliation).
+//-----------------------------------------------------------------------------
+const DETAIL_FIELDS = [
+    { key: 'name', label: 'Name', input: 'detName' },
+    { key: 'sex', label: 'Sex', input: 'detSex' },
+    { key: 'birthdate', label: 'Birth date', input: 'detBirthDate' },
+    { key: 'birthplace', label: 'Birth place', input: 'detBirthPlace' },
+    { key: 'deathdate', label: 'Death date', input: 'detDeathDate' },
+    { key: 'deathplace', label: 'Death place', input: 'detDeathPlace' },
+];
+const FIELD_LABEL = Object.fromEntries(DETAIL_FIELDS.map(f => [f.key, f.label]));
+let openEditsByPerson = {};     // personId -> [open edits], admins only
+let detailsEditingId = null;
+
+function escHtml(v) {
+    return String(v === null || v === undefined ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function adminFetch(path, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers || {}) }
+    });
+    if (response.status === 401 || response.status === 403) {
+        handleAuthExpired();
+        throw new Error('Your editing session expired - log in again.');
+    }
+    return response;
+}
+
+async function loadOpenEdits() {
+    if (!isAdmin()) { openEditsByPerson = {}; return; }
+    try {
+        const response = await adminFetch(`/edits/${userName}?status=open`);
+        const result = await response.json();
+        const map = {};
+        for (const e of (result.edits || [])) (map[e.personId] = map[e.personId] || []).push(e);
+        openEditsByPerson = map;
+    } catch (err) {
+        console.warn('Could not load the edit log:', err.message);
+    }
+}
+
+const EDIT_STATUS_TEXT = {
+    pending: 'corrected here; still to be entered in Ancestry',
+    entered: 'entered in Ancestry; waiting for the next import to confirm',
+    conflict: 'conflict: Ancestry has a different value',
+};
+function editFlag(nodeId, field) {
+    if (!isAdmin()) return '';
+    const e = (openEditsByPerson[nodeId] || []).find(x => x.field === field);
+    if (!e) return '';
+    const tip = `${EDIT_STATUS_TEXT[e.status] || e.status}. Ancestry value: ${e.baseValue === null || e.baseValue === '' ? '(blank)' : e.baseValue}`;
+    return ` <span class="editFlag editFlag-${escHtml(e.status)}" title="${escHtml(tip)}">&#9998; ${e.status === 'conflict' ? 'conflict' : 'corrected'}</span>`;
+}
+
+function openDetailsEditor(nodeId) {
+    if (!isAdmin()) return;
+    const ind = dataJSON && dataJSON.individuals && dataJSON.individuals[nodeId];
+    if (!ind) { showError('Select a person first.'); return; }
+    detailsEditingId = nodeId;
+    document.getElementById('detName').value = ind.name || '';
+    document.getElementById('detSex').value = ind.sex || '';
+    document.getElementById('detBirthDate').value = ind.birthdate || '';
+    document.getElementById('detBirthPlace').value = ind.birthplace || '';
+    document.getElementById('detDeathDate').value = ind.deathdate || '';
+    document.getElementById('detDeathPlace').value = ind.deathplace || '';
+    document.getElementById('detSource').value = '';
+    document.getElementById('detEditor').value = localStorage.getItem('ft_editor') || '';
+    document.getElementById('detailsMsg').textContent = '';
+    const open = openEditsByPerson[nodeId] || [];
+    document.getElementById('detailsPending').innerHTML = open.length
+        ? `Open corrections on this person: ${open.map(e => `${escHtml(FIELD_LABEL[e.field] || e.field)} (${escHtml(e.status)})`).join(', ')}.`
+        : '';
+    document.getElementById('detailsModal').classList.add('active');
+    document.getElementById('detName').focus();
+}
+
+function closeDetailsEditor() {
+    document.getElementById('detailsModal').classList.remove('active');
+    detailsEditingId = null;
+}
+
+async function saveDetails() {
+    if (!detailsEditingId) return;
+    const msg = document.getElementById('detailsMsg');
+    const nodeId = detailsEditingId;
+    const ind = dataJSON.individuals[nodeId];
+    const editor = document.getElementById('detEditor').value.trim();
+    if (!editor) { msg.style.color = '#c00'; msg.textContent = 'Enter your name so the change log shows who made the change.'; return; }
+
+    const changes = {};
+    for (const f of DETAIL_FIELDS) {
+        const value = document.getElementById(f.input).value.trim();
+        if (value !== String(ind[f.key] === null || ind[f.key] === undefined ? '' : ind[f.key])) changes[f.key] = value;
+    }
+    if (Object.keys(changes).length === 0) { msg.style.color = '#666'; msg.textContent = 'Nothing has changed.'; return; }
+
+    const saveBtn = document.getElementById('detailsSaveBtn');
+    saveBtn.disabled = true;
+    msg.style.color = '#666';
+    msg.textContent = 'Saving...';
+    try {
+        localStorage.setItem('ft_editor', editor);
+        const response = await adminFetch(`/person/${userName}/${encodeURIComponent(nodeId)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ changes, source: document.getElementById('detSource').value.trim(), editor })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const detail = (result.details || []).map(d => `${FIELD_LABEL[d.field] || d.field}: ${d.error}`).join(' ');
+            msg.style.color = '#c00';
+            msg.textContent = `${result.error || 'Save failed.'} ${detail}`;
+            return;
+        }
+        applyEditedIndividual(nodeId, result.individual);
+        await loadOpenEdits();
+        if (Pinned_NodeId === nodeId || currentEditingNodeId === nodeId) displayNodeInfo(nodeId);
+        const warn = (result.warnings || []).map(w => w.warning).join(' ');
+        msg.style.color = warn ? '#a60' : '#2e7d32';
+        msg.textContent = warn ? `Saved. Note: ${warn}` : 'Saved and logged.';
+        setTimeout(closeDetailsEditor, warn ? 3500 : 700);
+    } catch (err) {
+        msg.style.color = '#c00';
+        msg.textContent = err.message;
+    } finally {
+        saveBtn.disabled = false;
+    }
+}
+
+// Brings the already-loaded tree in step with a saved edit: the local data, the
+// node on the canvas, and the search list. (Map clusters and the timeline are
+// built at load, so they catch up on the next page load.)
+function applyEditedIndividual(nodeId, individual) {
+    if (!individual) return;
+    dataJSON.individuals[nodeId] = { ...dataJSON.individuals[nodeId], ...individual };
+    const ind = dataJSON.individuals[nodeId];
+    if (nodes.get(nodeId)) {
+        nodes.update({
+            id: nodeId,
+            Name: ind.name,
+            birthdatestring: ind.birthdate,
+            deathdatestring: ind.deathdate,
+            birthPlace: ind.birthplace || '',
+            deathPlace: ind.deathplace || '',
+            color: { background: colorBySex(ind.sex), border: '#000000',
+                highlight: { background: colorBySex(ind.sex), border: '#333333' },
+                hover: { background: colorBySex(ind.sex), border: '#555555' } },
+        });
+    }
+}
+
+// ---- Ancestry updates panel ----
+function openEditsModal() {
+    if (!isAdmin()) return;
+    document.getElementById('editsModal').classList.add('active');
+    refreshEditsList();
+}
+function closeEditsModal() {
+    document.getElementById('editsModal').classList.remove('active');
+}
+
+const EDIT_STATUS_LABEL = {
+    pending: 'Pending', entered: 'Entered in Ancestry', confirmed: 'Confirmed', conflict: 'Conflict',
+    superseded: 'Superseded', reverted: 'Reverted', dismissed: 'Dismissed',
+};
+function showBlank(v) { return v === null || v === undefined || v === '' ? '<em>(blank)</em>' : escHtml(v); }
+
+async function refreshEditsList() {
+    const body = document.getElementById('editsBody');
+    const status = document.getElementById('editsFilter').value;
+    body.innerHTML = '<p>Loading&hellip;</p>';
+    try {
+        const response = await adminFetch(`/edits/${userName}?status=${encodeURIComponent(status)}`);
+        const result = await response.json();
+        const edits = result.edits || [];
+        if (!response.ok) { body.innerHTML = `<p style="color:#c00;">${escHtml(result.error || 'Could not load the log.')}</p>`; return; }
+        if (edits.length === 0) { body.innerHTML = '<p style="color:#666;">Nothing here.</p>'; return; }
+        body.innerHTML = edits.map(renderEditRow).join('');
+    } catch (err) {
+        body.innerHTML = `<p style="color:#c00;">${escHtml(err.message)}</p>`;
+    }
+}
+
+function renderEditRow(e) {
+    const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
+    const exists = dataJSON && dataJSON.individuals && dataJSON.individuals[e.personId];
+    const buttons = [];
+    if (e.status === 'pending') {
+        buttons.push(['markEntered', 'Mark entered in Ancestry'], ['revert', 'Undo my change']);
+    } else if (e.status === 'entered') {
+        buttons.push(['markPending', 'Back to pending'], ['revert', 'Undo my change']);
+    } else if (e.status === 'conflict') {
+        buttons.push(['keepAncestry', "Keep Ancestry's value"]);
+        if (e.conflictReason !== 'not-in-import') buttons.push(['reapplyMine', 'Re-apply mine']);
+    }
+    const conflict = e.status === 'conflict'
+        ? `<div class="editConflict">${e.conflictReason === 'not-in-import'
+            ? 'This person is not in the latest import.'
+            : `Ancestry now says: <strong>${showBlank(e.ancestryValue)}</strong>`}</div>` : '';
+    return `<div class="editRow editRow-${escHtml(e.status)}">
+        <div class="editRowHead">
+            <span class="editPerson" ${exists ? `data-focus="${escHtml(e.personId)}"` : ''}>${escHtml(e.personName || e.personId)}</span>
+            <span class="editField">${escHtml(FIELD_LABEL[e.field] || e.field)}</span>
+            <span class="editStatus editStatus-${escHtml(e.status)}">${escHtml(EDIT_STATUS_LABEL[e.status] || e.status)}</span>
+        </div>
+        <div class="editChange">In Ancestry: <del>${showBlank(e.baseValue)}</del> &rarr; change to <strong>${showBlank(e.after)}</strong></div>
+        ${conflict}
+        <div class="editMeta">${escHtml([e.source, e.note].filter(Boolean).join(' - ') || 'no source recorded')} &middot; ${escHtml(e.editor || '')} &middot; ${escHtml(when)}</div>
+        ${buttons.length ? `<div class="editActions">${buttons.map(([a, t]) => `<button type="button" class="editsBtn" data-action="${a}" data-edit="${escHtml(e.editId)}">${escHtml(t)}</button>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+async function onEditsBodyClick(ev) {
+    const focus = ev.target.closest('[data-focus]');
+    if (focus) { closeEditsModal(); focusNode(focus.dataset.focus); return; }
+    const btn = ev.target.closest('button[data-action]');
+    if (!btn) return;
+    btn.disabled = true;
+    try {
+        const response = await adminFetch(`/edits/${userName}/${encodeURIComponent(btn.dataset.edit)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ action: btn.dataset.action, editor: localStorage.getItem('ft_editor') || '' })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) { showError(result.error || 'Could not update that item.'); return; }
+        // a re-apply or an undo changes the live value: refresh the person from the server copy
+        if (btn.dataset.action === 'reapplyMine' || btn.dataset.action === 'revert') {
+            const fam = await (await fetch(`${API_BASE_URL}/FamilyInfo/${userName}`, { headers: { ...authHeaders() } })).json();
+            const id = result.edit.personId;
+            if (fam.individuals && fam.individuals[id]) {
+                dataJSON.individuals[id] = fam.individuals[id];
+                applyEditedIndividual(id, fam.individuals[id]);
+            }
+        }
+        await loadOpenEdits();
+        await refreshEditsList();
+        if (Pinned_NodeId) displayNodeInfo(Pinned_NodeId);
+    } catch (err) {
+        showError(err.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function exportEditsCsv() {
+    try {
+        const status = document.getElementById('editsFilter').value;
+        const response = await adminFetch(`/edits/${userName}/export.csv?status=${encodeURIComponent(status)}`, { headers: { 'Content-Type': 'text/csv' } });
+        if (!response.ok) { showError('Could not export the log.'); return; }
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userName}-ancestry-updates-${status}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+// What the GEDCOM import would do with the open edits (shown in the import preview).
+function renderEditReconciliation(edits) {
+    if (!edits) return '';
+    const parts = [];
+    if (edits.reapply) parts.push(`<li><strong>${edits.reapply}</strong> correction(s) will be re-applied (Ancestry still has the old value).</li>`);
+    if (edits.confirmed) parts.push(`<li><strong>${edits.confirmed}</strong> correction(s) are now in Ancestry and will be marked confirmed.</li>`);
+    const conflicts = edits.conflicts || [];
+    if (conflicts.length) {
+        parts.push(`<li style="color:#a60;"><strong>${conflicts.length}</strong> conflict(s): Ancestry's value is kept and the correction is flagged under Ancestry updates:
+            <div style="margin-top:4px; max-height:120px; overflow-y:auto; border:1px solid #eed; border-radius:4px; padding:4px; font-size:12px; color:#333;">
+            ${conflicts.map(c => `<div>${escHtml(c.person)} &middot; ${escHtml(FIELD_LABEL[c.field] || c.field)}: you set <strong>${showBlank(c.yourValue)}</strong>; ${c.reason === 'not-in-import' ? 'person not in this import' : `Ancestry has <strong>${showBlank(c.ancestryValue)}</strong>`}</div>`).join('')}
+            </div></li>`);
+    }
+    if (!parts.length) return '';
+    return `<div style="margin-top:8px; padding:8px; background:#f7fbff; border:1px solid #cfe3f7; border-radius:6px; font-size:13px;">
+        <strong>Corrections made in this app</strong><ul style="margin:4px 0 0 18px; padding:0;">${parts.join('')}</ul></div>`;
 }
 
 async function saveBioData() {
@@ -1089,16 +1447,16 @@ function displayNodeInfo(nodeId) {
     const node = nodes.get(nodeId);
     const bioData = nodeInformation[nodeId];
     
-    let html = `<normal>${node.Name}</normal><br><br>`;
-    
+    let html = `<normal>${node.Name}</normal>${editFlag(nodeId, 'name')}${editFlag(nodeId, 'sex')}<br><br>`;
+
     if (bioData && bioData.summary) {
         html += `<em>${bioData.summary}</em><br><br>`;
     }
     
-    html += `<normal>Birthdate:</normal> ${node.birthdatestring || '-'}<br>`;
-    html += `<normal>Birthplace:</normal> ${node.birthPlace || '-'}<br><br>`;
-    html += `<normal>Deathdate:</normal> ${node.deathdatestring || '-'}<br>`;
-    html += `<normal>Deathplace:</normal> ${node.deathPlace || '-'}<br>`;
+    html += `<normal>Birthdate:</normal> ${node.birthdatestring || '-'}${editFlag(nodeId, 'birthdate')}<br>`;
+    html += `<normal>Birthplace:</normal> ${node.birthPlace || '-'}${editFlag(nodeId, 'birthplace')}<br><br>`;
+    html += `<normal>Deathdate:</normal> ${node.deathdatestring || '-'}${editFlag(nodeId, 'deathdate')}<br>`;
+    html += `<normal>Deathplace:</normal> ${node.deathPlace || '-'}${editFlag(nodeId, 'deathplace')}<br>`;
     
     if (bioData && bioData.biography) {
         html += `<br><strong>Biography:</strong><br><p style="font-size:15px; line-height:1.5;">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
@@ -1136,6 +1494,7 @@ function displayPinIndicator(showPin) {
             // Edit Bio / Add Attachment write to the backend - editors only.
             document.getElementById("makeRoot").style.display = "inline-flex";
             document.getElementById("editBio").style.display = isAdmin() ? "inline-flex" : "none";
+            document.getElementById("editDetails").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addAttachment").style.display = isAdmin() ? "block" : "none";
         }
     } else {
@@ -1147,6 +1506,7 @@ function displayPinIndicator(showPin) {
         document.getElementById("makeRoot").style.display = "none";
         document.getElementById("addAttachment").style.display = "none";
         document.getElementById("editBio").style.display = "none";
+        document.getElementById("editDetails").style.display = "none";
     }
 }
 
@@ -2267,6 +2627,10 @@ async function createTree(userData) {
                 const node = nodes.get(currentEditingNodeId);
                 name = node.Name;
                 openBioEditor(currentEditingNodeId,name);
+                break;
+
+            case "details":
+                openDetailsEditor(currentEditingNodeId);
                 break;
         }
         // Hide menu
@@ -5383,6 +5747,7 @@ function enterApp() {
     if (el) el.style.display = "none";
     renderAuthUI();
     showLoading();
+    loadOpenEdits();
     loadNodeInformation();
     InitializeTree();
     clearContextMessages();
@@ -5441,6 +5806,20 @@ async function startApp() {
             handleGedFileSelected(file);
         });
     }
+    const editsBtn = document.getElementById("editsButton");
+    if (editsBtn) editsBtn.addEventListener("click", openEditsModal);
+    document.getElementById("editsCloseBtn").addEventListener("click", closeEditsModal);
+    document.getElementById("editsFilter").addEventListener("change", refreshEditsList);
+    document.getElementById("editsExportBtn").addEventListener("click", exportEditsCsv);
+    document.getElementById("editsBody").addEventListener("click", onEditsBodyClick);
+    document.getElementById("editsModal").addEventListener("click", (e) => { if (e.target.id === "editsModal") closeEditsModal(); });
+    document.getElementById("editDetails").addEventListener("click", () => {
+        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
+        openDetailsEditor(Pinned_NodeId);
+    });
+    document.getElementById("detailsSaveBtn").addEventListener("click", saveDetails);
+    document.getElementById("detailsCancelBtn").addEventListener("click", closeDetailsEditor);
+    document.getElementById("detailsModal").addEventListener("click", (e) => { if (e.target.id === "detailsModal") closeDetailsEditor(); });
     document.getElementById("gedImportCancelBtn").addEventListener("click", closeGedImportModal);
     document.getElementById("gedImportConfirmBtn").addEventListener("click", confirmGedImport);
     document.getElementById("gedImportModal").addEventListener("click", (e) => {
