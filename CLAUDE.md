@@ -269,7 +269,7 @@ residences, military service and additions stay in the checklist.
 Shows the highlights (dates, places) and, under them, the person's **Short Bio**
 (the attachment whose display name is literally "Short Bio", see the upload notes) as a
 large preview; `RenderNodeAttachments` fills `#shortBioSlot` and leaves the other
-attachments in the Attachments panel. The panel is 5:2 against Attachments (it was 1:2). Layout: name and one-line summary, compact Born/Died lines, the Short Bio under a blue heading, then the biography and key facts in small type. The buttons are one row of four equal icon-over-label buttons with a full-width red *Delete Individual* directly under them.
+attachments in the Attachments panel. The panel is 5:2 against Attachments (it was 1:2). Layout: name and one-line summary, compact Born/Died lines, the Short Bio under a blue heading, then the biography and key facts in small type. The buttons are one row of five equal-size icon-over-label buttons; *Delete Individual* is the last, in red.
 Clusters have no slot, so their attachments all stay in the list.
 
 ### Cluster write-ups: location groups, and coordinating them with reimports (Sep 2026)

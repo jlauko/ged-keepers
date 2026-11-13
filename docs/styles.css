@@ -832,7 +832,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
    a viewer, who only gets Make Root, sees it full width; with nothing pinned the grid disappears */
 .infoActions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
     gap: 4px;
     padding: 6px 0 2px;
 }
@@ -840,14 +840,15 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .infoActions .biobutton {
     width: 100%;
     min-width: 0;
-    height: 46px;
-    padding: 4px 2px;
-    flex-direction: column;     /* icon above the label, so four fit in one row */
+    height: 52px;
+    padding: 4px 3px;
+    flex-direction: column;     /* icon above the label, so five fit in one row */
     font-size: 11.5px;
     font-weight: 400;
     line-height: 1.1;
     gap: 3px;
-    white-space: nowrap;
+    white-space: normal;        /* a longer label (Delete Individual) wraps to two lines */
+    text-align: center;
 }
 .infoActions .biobutton i { font-size: 15px; }
 
@@ -855,21 +856,13 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 #infoSection .panelHeader { flex-direction: column; align-items: stretch; gap: 0; }
 #infoSection .panelHeader #infoCenterTitle { flex: 0 0 auto; }
 
-/* Delete Individual: full width, right under the row, in red */
+/* Delete Individual: same row and size as the others, in red */
 .infoActions #deletePerson {
-    grid-column: 1 / -1;
-    width: 100%;
-    height: 30px;
-    margin-top: 4px;
-    flex-direction: row;
-    gap: 7px;
-    font-size: 13px;
     font-weight: 600;
     color: #fff;
     background: #c0392b;
     border-color: #a93226;
 }
-.infoActions #deletePerson i { font-size: 13px; }
 .infoActions #deletePerson:hover { background: #a93226; border-color: #8e2b20; color: #fff; }
 
 /* Link-an-existing-person search */
