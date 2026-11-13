@@ -178,7 +178,7 @@ next GEDCOM import until Ancestry catches up.
   parsed data (`applyPlan`), saves, *then* updates the edit statuses. If Ancestry
   changed a field to a third value, Ancestry's value is kept and the edit is
   flagged `conflict` (resolve in the panel: Keep Ancestry's / Re-apply mine).
-- **UI** (`docs/index.html`): "Edit Details" button beside Edit Bio (the Information Center buttons are
+- **UI** (`docs/index.html`): "Edit Details" button (it also edits the short description, biography and key facts; there is no separate Edit Bio button; the Information Center buttons are
   the only entry points: the hidden `#nodeOptionsMenu` is never shown, because its
   `showNodeOptionsMenu` call is commented out and right-click opens the bio editor), the "Ancestry updates" corner button (list, actions, CSV export),
   a small "corrected" marker on edited fields (admins only; viewers just see
@@ -215,6 +215,16 @@ flagged (`conflict`) in Ancestry updates for a human to pick.
   reloads after an add (layout is built from birth years at load).
 - Do not create `@S` ids by hand: always use the route, so the log and overlay
   stay in step.
+
+### Guided tour (the ? button)
+`docs/TourEngine.js` + `startGuidedTour()` in `docs/index.html`. One full-page dimming
+canvas with a spotlight on the step's target (element or person), a bubble, Skip/Esc/arrow
+keys. Fail-safe by design: a step whose target is missing/hidden is skipped, any error ends
+the tour, and `end()` removes everything it added. Steps for buttons that only appear
+when someone is pinned use `before`/`after` hooks that toggle `body.tourReveal`
+(`styles.css`); admin-only steps carry `adminOnly: true` and are left out for viewers.
+When the layout changes, update the step selectors/text there. The import in `index.html`
+carries a `?v=` so a deploy is not masked by a cached module.
 
 ### Linking two existing people (Nov 2026)
 `POST /additions/:username/link` `{ anchorId, relation, otherId, otherParentId, note, source, editor }`

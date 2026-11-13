@@ -829,7 +829,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
    a viewer, who only gets Make Root, sees it full width; with nothing pinned the grid disappears */
 .infoActions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 4px;
     padding: 6px 0 2px;
 }
@@ -853,7 +853,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .infoActions #deletePerson {
     grid-column: 1 / -1;
     justify-self: end;
-    width: calc((100% - 8px) / 3);
+    width: calc((100% - 4px) / 2);
     margin-top: 22px;
     color: #c0392b;
     border-color: #e3a8a1;
@@ -867,3 +867,12 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 
 /* "Delete Individual" on two lines */
 .infoActions #deletePerson { height: auto; min-height: 38px; padding: 3px 6px; line-height: 1.15; white-space: normal; text-align: left; }
+
+/* section headings inside the Edit Details form */
+.detailsSection { font-weight: 600; font-size: 13px; color: #444; border-bottom: 1px solid #ddd; margin: 4px 0 10px; padding-bottom: 3px; }
+
+/* Guided tour: show the buttons that normally appear only once someone is pinned */
+body.tourReveal #infoActions { display: grid !important; }
+body.tourReveal #infoActions #makeRoot { display: flex !important; }
+body.tourRevealAdmin #infoActions .biobutton { display: flex !important; }
+body.tourRevealAdmin #addAttachment { display: inline-flex !important; }

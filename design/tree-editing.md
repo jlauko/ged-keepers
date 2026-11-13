@@ -94,7 +94,7 @@ Conflict resolution (admin, in the panel): **Keep Ancestry's** (`dismissed`) or
 
 ## Admin UI
 
-- **Edit Details** button beside Edit Bio (Info Center; the hidden node menu is never shown, so the buttons are the only entry point):
+- **Edit Details** button (Info Center; it later absorbed the old Edit Bio, so one form edits the six fields plus the short description, biography and key facts, saved through `PUT /person` and `PUT /nodeInfo` respectively; the hidden node menu is never shown, so the buttons are the only entry point):
   modal with the six fields, a source/note box and an editor name.
 - Edited fields show a small "corrected, pending in Ancestry" marker (admins).
 - **Ancestry updates** corner button: list filtered by status; per row the

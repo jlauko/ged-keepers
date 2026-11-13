@@ -1,373 +1,314 @@
 // =======================================================
-// TourEngine.js (No Intro.js dependency)
-// Graph-aware guided tour system for GED Keepers
+// TourEngine.js (no external dependency)
+// Guided tour for GED Keepers: dims the whole page, cuts a spotlight around the
+// step's target (an element, or a person on the graph), and shows a bubble.
+//
+// Built to fail safe: a step whose target is missing or not visible is skipped,
+// any error ends the tour (and removes the dimming), and the tour can always be
+// left with the Skip button or Esc. Nothing it adds is left behind afterwards.
+//
+//   TourEngine.init(network)                      // vis-network, for person steps
+//   TourEngine.start(steps, { onStart, onEnd })
+//
+// step: {
+//   type: "dom" | "node" | "center",
+//   element: "#selector"          (dom)        node: "@I1@" (node)
+//   title, text                   (HTML)
+//   position: "left" | "right" | "below" | "above" | "center"   (preferred side; falls back)
+//   radius: 90                    (node spotlight radius, px)
+//   before(), after()             optional hooks (e.g. reveal a hidden button)
+// }
 // =======================================================
 
 export class TourEngine {
 
     static steps = [];
-    static currentStep = 0;
+    static currentStep = -1;
+    static network = null;      // Vis.js network reference
+    static active = false;
+    static options = {};
 
-    static spotlightCanvas = null;
+    static overlay = null;      // full-page <canvas> that dims everything but the target
     static bubbleEl = null;
+    static _onKey = null;
+    static _onResize = null;
 
-    static network = null;   // Vis.js network reference
-
-    // ---------------------------------------------------
-    // INIT
-    // ---------------------------------------------------
     static init(network) {
         this.network = network;
     }
 
     // ---------------------------------------------------
-    // START TOUR
+    // START / END
     // ---------------------------------------------------
-    static start(steps) {
-        this.steps = steps || [];
-        this.currentStep = 0;
+    static start(steps, options = {}) {
+        this.end();                       // never stack two tours
+        this.steps = Array.isArray(steps) ? steps : [];
+        this.options = options || {};
+        this.active = true;
+        this.currentStep = -1;
 
-        this.createBubble();
-        this.createSpotlightCanvas();
-
-        this.showStep();
-    }
-
-    // ---------------------------------------------------
-    // STEP NAVIGATION
-    // ---------------------------------------------------
-    static next() {
-        if (this.currentStep < this.steps.length - 1) {
-            this.currentStep++;
-            this.showStep();
-        } else {
+        try {
+            if (this.options.onStart) this.options.onStart();
+            this.createOverlay();
+            this.createBubble();
+            this._onKey = (e) => this.handleKey(e);
+            this._onResize = () => { if (this.active) this.render(); };
+            document.addEventListener("keydown", this._onKey, true);
+            window.addEventListener("resize", this._onResize);
+            this.go(1, 0);
+        } catch (err) {
+            console.error("Tour could not start:", err);
             this.end();
         }
     }
 
-    static prev() {
-        if (this.currentStep > 0) {
-            this.currentStep--;
-            this.showStep();
+    static end() {
+        const wasActive = this.active;
+        this.active = false;
+        try {
+            const step = this.steps[this.currentStep];
+            if (step && step.after) step.after();
+        } catch (e) { /* ignore */ }
+
+        if (this._onKey) document.removeEventListener("keydown", this._onKey, true);
+        if (this._onResize) window.removeEventListener("resize", this._onResize);
+        this._onKey = null;
+        this._onResize = null;
+
+        if (this.overlay) this.overlay.remove();
+        if (this.bubbleEl) this.bubbleEl.remove();
+        this.overlay = null;
+        this.bubbleEl = null;
+        this.currentStep = -1;
+
+        if (wasActive && this.options.onEnd) {
+            try { this.options.onEnd(); } catch (e) { console.error(e); }
         }
     }
 
     // ---------------------------------------------------
-    // MAIN ROUTER
+    // NAVIGATION
     // ---------------------------------------------------
-    static showStep() {
-
-        const step = this.steps[this.currentStep];
-        console.log("Showing step:", this.currentStep, step);
-
-        if (step.transition === "static") {
-            console.log("Static transition - not clearing spotlight or bubble");
-        } else {
-            this.clearSpotlight();
-            this.hideBubble();
+    // Moves to the nearest usable step from `from` in direction `dir` (+1 / -1).
+    static go(dir, from) {
+        const previous = this.steps[this.currentStep];
+        let i = from;
+        while (i >= 0 && i < this.steps.length) {
+            const step = this.steps[i];
+            if (previous && previous !== step && previous.after) {
+                try { previous.after(); } catch (e) { console.error(e); }
+            }
+            try {
+                if (step.before) step.before();
+                if (this.measure(step)) {      // visible and findable: use it
+                    this.currentStep = i;
+                    this.render();
+                    return;
+                }
+                if (step.after) step.after();
+            } catch (err) {
+                console.error("Tour step failed, ending the tour:", err);
+                this.end();
+                return;
+            }
+            i += dir;
         }
+        // ran off either end: a tour that goes forward past the last step is finished;
+        // going back past the first step just stays where it is
+        if (dir > 0 || this.currentStep < 0) this.end();
+    }
 
-        if (!step) return;
+    static next() { this.go(1, this.currentStep + 1); }
+    static prev() { if (this.currentStep > 0) this.go(-1, this.currentStep - 1); }
 
-        // NODE STEP (GRAPH)
+    static handleKey(e) {
+        if (!this.active) return;
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); this.end(); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); this.next(); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); this.prev(); }
+    }
+
+    // ---------------------------------------------------
+    // TARGETS
+    // ---------------------------------------------------
+    // -> { left, top, width, height, round } in viewport coordinates, "center" for a
+    // step with no target, or null when the target cannot be shown right now.
+    static measure(step) {
+        if (step.type === "center") return "center";
+
         if (step.type === "node") {
-            this.showNodeStep(step);
+            if (!this.network || !step.node) return null;
+            const pos = (this.network.getPositions([step.node]) || {})[step.node];
+            if (!pos) return null;
+            const dom = this.network.canvasToDOM(pos);
+            const box = this.network.body.container.getBoundingClientRect();
+            const r = step.radius || 90;
+            const x = box.left + dom.x;
+            const y = box.top + dom.y;
+            if (x < box.left || x > box.right || y < box.top || y > box.bottom) return null;   // off screen
+            return { left: x - r, top: y - r, width: 2 * r, height: 2 * r, round: true };
         }
 
-        // DOM STEP
-        if (step.type === "dom") {
-            console.log("Calling showBubble for dom step:", step);
-            this.showDomStep(step);
-        }
-    }
-
-    // ---------------------------------------------------
-    // NODE STEP
-    // ---------------------------------------------------
-    static showNodeStep(step) {
-
-        const nodeId = step.node;
-
-        if (!nodeId || !this.network) return;
-
-        console.log("Focusing on node:", nodeId);
-
-//        this.network.focus(nodeId, { scale: 1.1, animation: true });
-        this.network.selectNodes([nodeId]);
-
-        this.showSpotlight(nodeId, step.radius || 120);
-
-        this.showBubble(
-            step.title || "Node",
-            step.text || "",
-            step
-        );
-    }
-
-    // ---------------------------------------------------
-    // DOM STEP
-    // ---------------------------------------------------
-    static showDomStep(step) {
-
-        const el = document.querySelector(step.element);
-
-        console.log("dom step element:", el, step.element);
-
-        if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-
-        console.log("calling showBubble for dom step:", step);
-
-        this.showDomSpotlight(step.element);
-
-        this.showBubble(
-            step.title || "Info",
-            step.text || "",
-            step
-        );
-    }
-
-    // ---------------------------------------------------
-    // SPOTLIGHT
-    // ---------------------------------------------------
-    static createSpotlightCanvas() {
-
-        if (this.spotlightCanvas) return;
-
-        const canvas = document.createElement("canvas");
-
-        canvas.id = "tourSpotlight";
-        canvas.style.position = "absolute";
-        canvas.style.top = "0";
-        canvas.style.left = "0";
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.pointerEvents = "none";
-        canvas.style.zIndex = "9000";
-
-        document.getElementById("mynetwork").appendChild(canvas);
-
-        this.spotlightCanvas = canvas;
-
-        window.addEventListener("resize", () => this.resizeCanvas());
-    }
-
-    static resizeCanvas() {
-        if (!this.spotlightCanvas) return;
-        this.spotlightCanvas.width = this.spotlightCanvas.offsetWidth;
-        this.spotlightCanvas.height = this.spotlightCanvas.offsetHeight;
-    }
-
-    static showSpotlight(nodeId, radius = 120) {
-
-        if (!this.network) return;
-
-        const canvas = this.spotlightCanvas;
-        const ctx = canvas.getContext("2d");
-
-        this.resizeCanvas();
-
-        const posObj = this.network.getPositions([nodeId]);
-        const pos = posObj?.[nodeId];
-
-        if (!pos) return;
-
-        console.log("spot lighting node position:", pos);
-
-        const dom = this.network.canvasToDOM(pos);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // dark overlay
-        ctx.fillStyle = "rgba(0,0,0,0.65)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // cut hole
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = "rgba(255,255,255,1)";
-        ctx.beginPath();
-        ctx.arc(dom.x, dom.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.globalCompositeOperation = "source-over";
-    }
-
-    
-    static showDomSpotlight(element) {
-
-        let padding = 10;
-        if (!this.network) return;
-
-        const canvas = this.spotlightCanvas;
-        const ctx = canvas.getContext("2d");
-
-        this.resizeCanvas();
-
-        const el = document.querySelector(element);
-        if (!el) return;
+        // "dom"
+        const el = step.element && document.querySelector(step.element);
+        if (!el) return null;
         const rect = el.getBoundingClientRect();
-        if (!rect) return;
-
-        console.log("spot lighting dom element rect:", rect);   
-
-//        const dom = this.network.canvasToDOM(rect);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // dark overlay
-        ctx.fillStyle = "rgba(0,0,0,0.65)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // cut hole
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = "rgba(255,255,255,1)";
-        ctx.beginPath();
-        ctx.fillRect(rect.left - padding, rect.top - padding, rect.width + (2 * padding), rect.height + (2 * padding));
-        ctx.fill();
-
-        ctx.globalCompositeOperation = "source-over";
+        if (rect.width < 2 || rect.height < 2) return null;     // hidden, collapsed or display:none
+        return { left: rect.left, top: rect.top, width: rect.width, height: rect.height, round: false };
     }
 
-    static clearSpotlight() {
-        if (!this.spotlightCanvas) return;
+    // ---------------------------------------------------
+    // RENDER THE CURRENT STEP
+    // ---------------------------------------------------
+    static render() {
+        const step = this.steps[this.currentStep];
+        if (!step || !this.active) return;
+        try {
+            if (step.type === "dom") {
+                const el = document.querySelector(step.element);
+                if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+            }
+            const target = this.measure(step);
+            if (!target) { this.next(); return; }
+            this.drawSpotlight(target === "center" ? null : target);
+            this.fillBubble(step);
+            this.placeBubble(step, target === "center" ? null : target);
+        } catch (err) {
+            console.error("Tour step failed, ending the tour:", err);
+            this.end();
+        }
+    }
 
-        const ctx = this.spotlightCanvas.getContext("2d");
-        ctx.clearRect(
-            0,
-            0,
-            this.spotlightCanvas.width,
-            this.spotlightCanvas.height
-        );
+    // ---------------------------------------------------
+    // SPOTLIGHT (one full-page canvas, so panels are dimmed too)
+    // ---------------------------------------------------
+    static createOverlay() {
+        const canvas = document.createElement("canvas");
+        canvas.id = "tourSpotlight";
+        Object.assign(canvas.style, {
+            position: "fixed", top: "0", left: "0", width: "100vw", height: "100vh",
+            pointerEvents: "none", zIndex: "9000"
+        });
+        document.body.appendChild(canvas);
+        this.overlay = canvas;
+    }
+
+    static drawSpotlight(target) {
+        const canvas = this.overlay;
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        if (!target) return;
+
+        const pad = 8;
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        if (target.round) {
+            ctx.arc(target.left + target.width / 2, target.top + target.height / 2, target.width / 2, 0, Math.PI * 2);
+        } else if (ctx.roundRect) {
+            ctx.roundRect(target.left - pad, target.top - pad, target.width + 2 * pad, target.height + 2 * pad, 8);
+        } else {
+            ctx.rect(target.left - pad, target.top - pad, target.width + 2 * pad, target.height + 2 * pad);
+        }
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+        // a thin outline so the spotlight reads even on a dark map
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (target.round) ctx.arc(target.left + target.width / 2, target.top + target.height / 2, target.width / 2, 0, Math.PI * 2);
+        else ctx.rect(target.left - pad, target.top - pad, target.width + 2 * pad, target.height + 2 * pad);
+        ctx.stroke();
     }
 
     // ---------------------------------------------------
     // BUBBLE
     // ---------------------------------------------------
     static createBubble() {
-
-        if (this.bubbleEl) return;
-
         const div = document.createElement("div");
-
         div.id = "tourBubble";
-        div.style.position = "absolute";
-        div.style.zIndex = "10000";
-        div.style.background = "white";
-        div.style.border = "1px solid #ccc";
-        div.style.borderRadius = "8px";
-        div.style.padding = "12px";
-        div.style.maxWidth = "900px";
-        div.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
-
+        Object.assign(div.style, {
+            position: "fixed", zIndex: "10000", background: "#fff", border: "1px solid #ccc",
+            borderRadius: "8px", padding: "12px 14px", width: "min(420px, 92vw)", boxSizing: "border-box",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.35)", fontFamily: "Arial, sans-serif", color: "#222",
+            left: "0px", top: "0px", visibility: "hidden"
+        });
         div.innerHTML = `
-            <div id="tourTitle" style="font-weight:bold;margin-bottom:6px;"></div>
-            <div id="tourText" style="font-size:13px;margin-bottom:10px;"></div>
-
-            <div style="display:flex;justify-content:space-between;">
-                <button id="tourPrev">← Back</button>
-                <button id="tourNext">Next →</button>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div id="tourTitle" style="font-weight:bold;font-size:15px;margin-bottom:6px;"></div>
+                <button id="tourSkip" title="End the tour (Esc)" style="border:none;background:none;font-size:13px;color:#666;cursor:pointer;white-space:nowrap;">Skip tour &#10005;</button>
             </div>
-        `;
-
+            <div id="tourText" style="font-size:13px;line-height:1.45;margin-bottom:10px;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <button id="tourPrev" style="padding:4px 10px;cursor:pointer;">&larr; Back</button>
+                <span id="tourCount" style="font-size:12px;color:#777;"></span>
+                <button id="tourNext" style="padding:4px 12px;cursor:pointer;font-weight:bold;"></button>
+            </div>`;
         document.body.appendChild(div);
-
         this.bubbleEl = div;
-
-        document.getElementById("tourPrev").onclick = () => this.prev();
-        document.getElementById("tourNext").onclick = () => this.next();
+        div.querySelector("#tourPrev").onclick = () => this.prev();
+        div.querySelector("#tourNext").onclick = () => this.next();
+        div.querySelector("#tourSkip").onclick = () => this.end();
     }
 
-    static showBubble(title, text, step) {
+    static fillBubble(step) {
+        const b = this.bubbleEl;
+        if (!b) return;
+        b.querySelector("#tourTitle").innerHTML = step.title || "";
+        b.querySelector("#tourText").innerHTML = step.text || "";
+        const last = this.currentStep >= this.steps.length - 1;   // the tour ends on an always-available step
+        b.querySelector("#tourNext").innerHTML = last ? "Finish" : "Next &rarr;";
+        b.querySelector("#tourPrev").style.visibility = this.currentStep > 0 ? "visible" : "hidden";
+        b.querySelector("#tourCount").textContent = `${this.currentStep + 1} / ${this.steps.length}`;
+    }
 
-        console.log("Showing bubble:", title, text, step);
-        if (!this.bubbleEl) return;
+    static placeBubble(step, target) {
+        const b = this.bubbleEl;
+        if (!b) return;
+        b.style.visibility = "hidden";
+        const bw = b.offsetWidth;
+        const bh = b.offsetHeight;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const gap = 18;
+        const m = 8;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
 
-        document.getElementById("tourTitle").innerHTML = title;
-        document.getElementById("tourText").innerHTML = text;
-
-        this.bubbleEl.style.display = "block";
-
-        if (step.type === "node") {
-            this.positionBubbleNearNode(step.node);
+        let x, y;
+        if (!target) {
+            x = (vw - bw) / 2;
+            y = (vh - bh) / 2;
         } else {
-            console.log("Positioning bubble near element for step:");
-            this.positionBubbleNearElement(step.element,step);
+            const cx = target.left + target.width / 2;
+            const cy = target.top + target.height / 2;
+            const big = target.width * target.height > 0.5 * vw * vh;       // a large area: sit inside it
+            const spots = {
+                left:  { x: target.left - gap - bw, y: cy - bh / 2 },
+                right: { x: target.left + target.width + gap, y: cy - bh / 2 },
+                below: { x: cx - bw / 2, y: target.top + target.height + gap },
+                above: { x: cx - bw / 2, y: target.top - gap - bh },
+            };
+            const fits = (p) => p.x >= m && p.y >= m && p.x + bw <= vw - m && p.y + bh <= vh - m;
+            const order = [step.position, "left", "right", "below", "above"].filter((p, i, a) => spots[p] && a.indexOf(p) === i);
+            let chosen = null;
+            if (big || step.position === "center") {
+                chosen = { x: cx - bw / 2, y: target.top + 24 };
+            } else {
+                for (const name of order) { if (fits(spots[name])) { chosen = spots[name]; break; } }
+                if (!chosen) chosen = spots[order[0]] || { x: (vw - bw) / 2, y: (vh - bh) / 2 };
+            }
+            x = chosen.x;
+            y = chosen.y;
         }
-
-    }
-    static positionBubbleNearElement(selector, step) {
-
-        const el = document.querySelector(selector);
-        const bubble = this.bubbleEl;
-
-        if (!el || !bubble) return;
-
-        const rect = el.getBoundingClientRect();
-
-        console.log("Element bounding rect:", rect);
-
-        const bubbleWidth = bubble.offsetWidth || 500;
-        const bubbleHeight = bubble.offsetHeight || 120;
-
-        const padding = 30;
-
-        if (step.position === "insideTop") {
-            bubble.style.left = `${rect.left + (rect.width / 2) - (bubbleWidth / 2)}px`;
-            bubble.style.top = `${rect.top + padding}px`;
-            return;
-        } else if (step.position === "outsideleft") {
-            bubble.style.left = `${rect.left - bubbleWidth - padding}px`;
-            bubble.style.top = `${rect.top + (rect.height / 2) - (bubbleHeight / 2)}px`;
-            return;
-        } else if (step.position === "outsideright") {
-            bubble.style.left = `${rect.right + padding}px`;
-            bubble.style.top = `${rect.top + (rect.height / 2) - (bubbleHeight / 2)}px`;
-            return;
-        } 
-
-    }
-    static positionBubbleNearNode(nodeId) {
-
-        const pos = this.network.getPositions([nodeId])[nodeId];
-        if (!pos) return;
-
-        const dom = this.network.canvasToDOM(pos);
-
-        const bubble = this.bubbleEl;
-
-        const offset = 60;
-
-        let x = dom.x + offset;
-        let y = dom.y - offset;
-
-        // prevent going off screen
-        const maxX = window.innerWidth - 300;
-        const maxY = window.innerHeight - 200;
-
-        if (x > maxX) x = dom.x - offset - 250;
-        if (y < 50) y = dom.y + offset;
-
-        bubble.style.position = "fixed";
-        bubble.style.left = x + "px";
-        bubble.style.top = y + "px";
-    }
-
-    static hideBubble() {
-        if (this.bubbleEl) {
-            this.bubbleEl.style.display = "none";
-        }
-    }
-
-    // ---------------------------------------------------
-    // END TOUR
-    // ---------------------------------------------------
-    static end() {
-        this.hideBubble();
-        this.clearSpotlight();
-        document.getElementById("makeRoot").style.display = "none";
-        document.getElementById("addAttachment").style.display = "none";
-
-        this.currentStep = 0;
+        b.style.left = clamp(x, m, Math.max(m, vw - bw - m)) + "px";
+        b.style.top = clamp(y, m, Math.max(m, vh - bh - m)) + "px";
+        b.style.visibility = "visible";
     }
 }

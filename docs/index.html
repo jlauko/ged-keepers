@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261123">
+    <link rel="stylesheet" href="styles.css?v=20261125">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -195,13 +195,15 @@
   </div>
 </div>
 
-<!-- Edit Details (admin): correct a person's name / sex / birth and death date and place.
-     Every change is logged (design/tree-editing.md) so it can be entered in Ancestry too. -->
+<!-- Edit Details (admin): a person's name / sex / birth and death date and place, plus their short
+     description, biography and key facts. Name, date and place changes are logged
+     (design/tree-editing.md) so they can be entered in Ancestry too; biography changes go to the audit log. -->
 <div id="detailsModal">
   <div class="bioModalContent">
     <div class="bioModalHeader">Edit Details</div>
     <div id="detailsPending" class="editsNote"></div>
     <form id="detailsForm" onsubmit="return false;">
+      <div class="detailsSection">Name, dates and places</div>
       <div class="bioFormGroup">
         <label for="detName">Name</label>
         <input type="text" id="detName" autocomplete="off">
@@ -220,8 +222,21 @@
       </div>
       <div class="detailsHint">Dates: DAY MON YYYY (24 MAY 1894), MON YYYY, YYYY, ABOUT / BEFORE / AFTER &hellip;, or BETWEEN &hellip; AND &hellip;. Leave a box empty to clear it.</div>
       <div class="bioFormGroup">
-        <label for="detSource">Source / reason</label>
+        <label for="detSource">Source / reason (for the name, date and place changes)</label>
         <textarea id="detSource" style="min-height:60px;" placeholder="e.g. 1910 census, Buffalo Ward 9; baptismal register; death certificate"></textarea>
+      </div>
+      <div class="detailsSection">Biography</div>
+      <div class="bioFormGroup">
+        <label for="detSummary">Short description (one line)</label>
+        <input type="text" id="detSummary" autocomplete="off" placeholder="e.g., Educator and family historian">
+      </div>
+      <div class="bioFormGroup">
+        <label for="detBiography">Biography</label>
+        <textarea id="detBiography" style="min-height:150px;" placeholder="Write a detailed biography..."></textarea>
+      </div>
+      <div class="bioFormGroup">
+        <label for="detFacts">Key facts (one per line)</label>
+        <textarea id="detFacts" style="min-height:70px;" placeholder="First female principal&#10;Published 3 genealogy books"></textarea>
       </div>
       <div class="bioFormGroup">
         <label for="detEditor">Your name (recorded in the change log)</label>
@@ -371,7 +386,6 @@
     <button id="helpButton">
         <i class="fas fa-question" color="red"></i>
     </button>
-    <div id="tourBubble" style="display:none;"></div>
     <div id="mynetwork"> </div>
 
     <!-- Right-side panel for  search, and info, attachments display -->
@@ -428,10 +442,8 @@
                 <div class="infoActions" id="infoActions">
                     <button id="makeRoot" class="biobutton" style="display: none" title="Re-draw the tree from this person">
                         <i class="fa-solid fa-tree"></i> Make Root</button>
-                    <button id="editDetails" class="biobutton" style="display: none" title="Correct a person's name, sex, dates and places">
+                    <button id="editDetails" class="biobutton" style="display: none" title="Edit this person: name, sex, dates, places, short description, biography and key facts">
                         <i class="fa-solid fa-id-card"></i> Edit Details</button>
-                    <button id="editBio" class="biobutton" style="display: none" title="Edit the summary, biography and key facts">
-                        <i class="fa-solid fa-pen"></i> Edit Bio</button>
                     <button id="personHistory" class="biobutton" style="display: none" title="Who changed what on this person (corrections, biography, attachments)">
                         <i class="fa-solid fa-clock-rotate-left"></i> History</button>
                     <button id="addRelative" class="biobutton" style="display: none" title="Add a new child, parent or spouse, or link someone already in the tree as one">
@@ -468,7 +480,7 @@
 
 <script type="module">
 import Clusters from './clusters.js';  // cluster class handles the creation and display of clusters
-import { TourEngine } from './TourEngine.js';
+import { TourEngine } from './TourEngine.js?v=20261125';
 
 //--------------------------------------------------------------------------
 // Global Variables --------------------------------------------------------
@@ -1213,6 +1225,10 @@ function openDetailsEditor(nodeId) {
     document.getElementById('detDeathDate').value = ind.deathdate || '';
     document.getElementById('detDeathPlace').value = ind.deathplace || '';
     document.getElementById('detSource').value = '';
+    const bio = nodeInformation[nodeId] || {};
+    document.getElementById('detSummary').value = bio.summary || '';
+    document.getElementById('detBiography').value = bio.biography || '';
+    document.getElementById('detFacts').value = Array.isArray(bio.facts) ? bio.facts.join('\n') : '';
     document.getElementById('detEditor').value = localStorage.getItem('ft_editor') || '';
     document.getElementById('detailsMsg').textContent = '';
     const open = openEditsByPerson[nodeId] || [];
@@ -1241,7 +1257,17 @@ async function saveDetails() {
         const value = document.getElementById(f.input).value.trim();
         if (value !== String(ind[f.key] === null || ind[f.key] === undefined ? '' : ind[f.key])) changes[f.key] = value;
     }
-    if (Object.keys(changes).length === 0) { msg.style.color = '#666'; msg.textContent = 'Nothing has changed.'; return; }
+    // the biography part is saved separately (it is not a field Ancestry has)
+    const oldBio = nodeInformation[nodeId] || {};
+    const newBio = {
+        summary: document.getElementById('detSummary').value.trim(),
+        biography: document.getElementById('detBiography').value.trim(),
+        facts: document.getElementById('detFacts').value.split('\n').map(f => f.trim()).filter(Boolean),
+    };
+    const bioChanged = newBio.summary !== (oldBio.summary || '').trim()
+        || newBio.biography !== (oldBio.biography || '').trim()
+        || JSON.stringify(newBio.facts) !== JSON.stringify(Array.isArray(oldBio.facts) ? oldBio.facts : []);
+    if (Object.keys(changes).length === 0 && !bioChanged) { msg.style.color = '#666'; msg.textContent = 'Nothing has changed.'; return; }
 
     const saveBtn = document.getElementById('detailsSaveBtn');
     saveBtn.disabled = true;
@@ -1249,21 +1275,41 @@ async function saveDetails() {
     msg.textContent = 'Saving...';
     try {
         localStorage.setItem('ft_editor', editor);
-        const response = await adminFetch(`/person/${userName}/${encodeURIComponent(nodeId)}`, {
-            method: 'PUT',
-            body: JSON.stringify({ changes, source: document.getElementById('detSource').value.trim(), editor })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            const detail = (result.details || []).map(d => `${FIELD_LABEL[d.field] || d.field}: ${d.error}`).join(' ');
-            msg.style.color = '#c00';
-            msg.textContent = `${result.error || 'Save failed.'} ${detail}`;
-            return;
+        let warn = '';
+        if (Object.keys(changes).length) {
+            const response = await adminFetch(`/person/${userName}/${encodeURIComponent(nodeId)}`, {
+                method: 'PUT',
+                body: JSON.stringify({ changes, source: document.getElementById('detSource').value.trim(), editor })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const detail = (result.details || []).map(d => `${FIELD_LABEL[d.field] || d.field}: ${d.error}`).join(' ');
+                msg.style.color = '#c00';
+                msg.textContent = `${result.error || 'Save failed.'} ${detail} Nothing was saved.`;
+                return;
+            }
+            applyEditedIndividual(nodeId, result.individual);
+            await loadOpenEdits();
+            warn = (result.warnings || []).map(w => w.warning).join(' ');
         }
-        applyEditedIndividual(nodeId, result.individual);
-        await loadOpenEdits();
+        if (bioChanged) {
+            const bioData = {
+                ...newBio,
+                image: oldBio.image,
+                orientation: oldBio.orientation,
+                attachments: oldBio.attachments || []
+            };
+            const saved = await UpdateIndividualNode(nodeId, bioData);
+            if (saved == null) {
+                msg.style.color = '#c00';
+                msg.textContent = (Object.keys(changes).length ? 'The name, date and place changes were saved, but the biography could not be saved. ' : '') + 'Try the biography again.';
+                if (Pinned_NodeId === nodeId) displayNodeInfo(nodeId);
+                return;
+            }
+            nodeInformation[nodeId] = bioData;
+        }
         if (Pinned_NodeId === nodeId || currentEditingNodeId === nodeId) displayNodeInfo(nodeId);
-        const warn = (result.warnings || []).map(w => w.warning).join(' ');
+        if (network) network.redraw();
         msg.style.color = warn ? '#a60' : '#2e7d32';
         msg.textContent = warn ? `Saved. Note: ${warn}` : 'Saved and logged.';
         setTimeout(closeDetailsEditor, warn ? 3500 : 700);
@@ -2087,9 +2133,8 @@ function displayPinIndicator(showPin) {
             PinImg.style.width = '20px';
             panelTitle.appendChild(PinImg);
             // Make Root is a view action (re-roots the tree) - everyone gets it.
-            // Edit Bio / Add Attachment write to the backend - editors only.
+            // Edit Details / Add Attachment write to the backend - editors only.
             document.getElementById("makeRoot").style.display = "inline-flex";
-            document.getElementById("editBio").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("editDetails").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("personHistory").style.display = isAdmin() ? "inline-flex" : "none";
             document.getElementById("addRelative").style.display = isAdmin() ? "inline-flex" : "none";
@@ -2104,7 +2149,6 @@ function displayPinIndicator(showPin) {
         // show the make root button if pinning is enabled
         document.getElementById("makeRoot").style.display = "none";
         document.getElementById("addAttachment").style.display = "none";
-        document.getElementById("editBio").style.display = "none";
         document.getElementById("editDetails").style.display = "none";
         document.getElementById("personHistory").style.display = "none";
         document.getElementById("addRelative").style.display = "none";
@@ -2183,78 +2227,115 @@ async function loadBackendData (info) {
     }
 }
 function startGuidedTour(rootNodeId) {
+    const admin = isAdmin();
+
+    // Buttons that only appear when someone is pinned are shown for the tour (see styles.css .tourReveal).
+    const reveal = () => { document.body.classList.add('tourReveal'); if (admin) document.body.classList.add('tourRevealAdmin'); };
+    const unreveal = () => document.body.classList.remove('tourReveal', 'tourRevealAdmin');
 
     const steps = [
         {
-            type: "dom",
-            title: "<strong>Welcome</strong>",
-            element: "#mainContainer",
-            text: `Welcome to The Lauko Family Tree<br> This guided tour will help you start exploring`,
-            position: "insideTop"
+            type: "center",
+            title: "Welcome to The Lauko Family Tree",
+            text: `A short tour of what is on the screen. Use <b>Next</b> and <b>Back</b> (or the arrow keys), and leave at any time with <b>Skip tour</b> or <b>Esc</b>.<br><br>
+                   The <b>?</b> button in the corner starts it again.`
         },
         {
             type: "dom",
-            title: "<strong>Tree Organization</strong>",
             element: "#mynetwork",
-            text: `Two key concepts to tree organization:<br><br>  
-               1. <b>Root Individual</b><br>  
-               2. <b>Number of Generations</b><br> <br>
-               Also Note: <br>
-               Nodes are positioned on the timeline based on birthdate <br>
-               You can zoom in or out using mouse wheel or pinch on a tablet<br>
-               Click and drag on the background to pan around the tree<br>`,
-            position: "insideTop"
+            title: "The tree",
+            text: `Each box is a person. Boxes sit left to right by <b>birth year</b> along the timeline at the bottom: older generations to the right, younger to the left.<br><br>
+                   &bull; <b>Zoom</b> with the mouse wheel (or pinch on a tablet)<br>
+                   &bull; <b>Pan</b> by dragging the background<br>
+                   &bull; The shaded regions group people born in the same place. Hover or click one to read about it.`,
+            position: "center"
         },
         {
             type: "node",
             node: rootNodeId,
-            title: "<strong>Root Individual</strong>",
-            text: `🌳 The Root Individual is the center of the tree 
-                <ul>    
-                    <li> <b>Ancestors</b> to the right</li>
-                    <li> <b>Descendants</b> to the left</li> 
-                </ul> `,
-            position: "outsideright"
+            title: "The root individual",
+            text: `The tree is drawn around one person, the <b>root</b>. Their <b>ancestors</b> fan out to the right and their <b>descendants</b> to the left, with spouses beside them.`,
+            position: "right"
         },
         {
             type: "dom",
-            transition: "nonstatic",
             element: "#configureSection",
-            title: "Configure your tree here",
-            text: `You can change the <b>Root Individual</b> and/or the number of <b>Generations</b> here <br>
-                Try changing the root to see how the tree reorganizes! <br>
-                Note: The root you select will be saved in your browser's local storage for next time!`,
-            position: "outsideleft"
+            title: "Choose the root and how far to go",
+            text: `Type a name in <b>Root Individual</b> and pick from the list to redraw the tree around someone else. <b>Generations</b> sets how many generations to show in each direction. <b>Home</b> goes back to where you started.`,
+            position: "left"
+        },
+        {
+            type: "dom",
+            element: "#searchSection",
+            title: "Search the tree",
+            text: `Type part of a name to find a person, or a place to find people born or who died there. Picking a result jumps to that person.`,
+            position: "left"
         },
         {
             type: "dom",
             element: "#infoSection",
-            title: "<strong>Biographical Information</strong>",
-            text:   `When you select a node (click or tap), biographical information appears here<br><br> 
-                    Try selecting any node! <br>
-                    You will see a pin appear next to the "Information Center" title, <br>
-                    indicating the individual is selected. <br>`,
-            position: "outsideleft"
+            title: "Information Center",
+            text: `<b>Hover</b> over a person to see their dates and places here; <b>click</b> them to pin the information (a pin appears next to the title). Click an empty area to release it.<br><br>
+                   If someone has a <b>Short Bio</b> document, a preview appears under their dates; click it to read the whole thing.`,
+            position: "left"
         },
         {
             type: "dom",
-            element: "#makeRoot",
-            title: "<strong>Make the selected individual the root</strong>",
-            text: `When you select a node (click or tap), you can make it the new root by clicking the 'Make Root' button!<br><br>`,
-            position: "outsideleft"
+            element: "#infoActions",
+            before: reveal,
+            after: unreveal,
+            title: "What you can do with a person",
+            text: admin
+                ? `With someone pinned:<br>
+                   &bull; <b>Make Root</b>: redraw the tree around them<br>
+                   &bull; <b>Edit Details</b>: name, sex, dates and places, plus their short description, biography and key facts<br>
+                   &bull; <b>History</b>: who changed what on this person<br>
+                   &bull; <b>Add Relative</b>: add a new child, parent or spouse, or link someone already in the tree<br>
+                   &bull; <b>Delete Individual</b>: hide or remove a person (you can restore them later)`
+                : `With someone pinned, <b>Make Root</b> redraws the tree around them.`,
+            position: "left"
         },
         {
             type: "dom",
-            element: "#addAttachment",
-            title: "<strong>Add Attachment</strong>",
-            text: `When you select a node (click or tap), you can add attachments to any individual by clicking the 'Add Attachment' button!<br><br>`,
-            position: "outsideleft"
+            element: "#attachmentsSection",
+            before: admin ? reveal : undefined,
+            after: admin ? unreveal : undefined,
+            title: "Attachments",
+            text: `Documents and photos for the pinned person (their Short Bio is shown in the Information Center instead). The eye opens a file and the arrow downloads it.${admin ? `<br><br>The <b>star</b> chooses the photo shown on their box in the tree, and <b>Add Attachment</b> uploads a new file.` : ''}`,
+            position: "left"
+        },
+        {
+            type: "dom",
+            adminOnly: true,
+            element: "#editsButton",
+            title: "Ancestry updates",
+            text: `Every correction, addition, link and deletion made here is listed so you can repeat it in Ancestry. Mark items as entered, restore deletions, export the list as a spreadsheet, or load a checklist of corrections.`,
+            position: "right"
+        },
+        {
+            type: "dom",
+            adminOnly: true,
+            element: "#gedImportButton",
+            title: "Import GEDCOM",
+            text: `After you update Ancestry, upload a fresh export here. You get a preview of what would change before anything is saved, and your corrections and additions are carried over.`,
+            position: "right"
+        },
+        {
+            type: "dom",
+            element: "#authButton",
+            title: "Logging in and out",
+            text: `Anyone with the view password can browse. The editor password unlocks the editing tools you just saw.`,
+            position: "right"
+        },
+        {
+            type: "center",
+            title: "That's the tour",
+            text: `Try clicking a person, then explore. The <b>?</b> button starts this tour again.`
         }
-
     ];
 
     TourEngine.init(network);
-    TourEngine.start(steps);
+    TourEngine.start(steps.filter(s => !s.adminOnly || admin), { onEnd: () => { document.body.classList.remove('tourReveal', 'tourRevealAdmin'); } });
 }
 
  // Utility: truncate text
@@ -2983,9 +3064,8 @@ async function createTree(userData) {
     document.getElementById("helpButton").addEventListener("click", (e) =>
     {
         console.log("Help button clicked, starting guided tour with rootNodeId:", rootNodeId);
-        document.getElementById("makeRoot").style.display = "inline-flex";
-        if (isAdmin()) document.getElementById("addAttachment").style.display = "inline-flex";
-        startGuidedTour(rootNodeId);
+        try { startGuidedTour(rootNodeId); }
+        catch (err) { console.error("Could not start the tour:", err); TourEngine.end(); }
 
     });
 
@@ -3199,12 +3279,6 @@ async function createTree(userData) {
     mroot.addEventListener("click", (e) => {
         console.log("Make Root clicked for node:", Pinned_NodeId);
         MakeRoot(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
-    });
-
-    const ebio = document.getElementById("editBio");
-    ebio.addEventListener("click", () => {
-        if (Pinned_NodeId == null) { showError("Pin a person first (click their box)."); return; }
-        openBioEditor(Pinned_NodeId, nodes.get(Pinned_NodeId).Name);
     });
 
     const hroot = document.getElementById("homeRoot");
@@ -3485,7 +3559,7 @@ async function createTree(userData) {
                 const node = nodes.get(nodeId);
                 name = node.Name;
                 console.log("Node selected: ", nodeId);
-                openBioEditor(nodeId, name);
+                openDetailsEditor(nodeId);
             }
         }
     });
