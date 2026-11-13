@@ -154,7 +154,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
   }
     */
 #infoSection {
-    flex: 3;
+    flex: 5;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -802,9 +802,12 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .biobutton.biobuttonDanger:hover { background: #fdecea; border-color: #c0392b; color: #c0392b; }
 
 /* Information Center: the person's Short Bio preview sits under their highlights */
-#shortBioSlot { margin-top: 10px; }
-#shortBioSlot .shortBioHeading { font-weight: 600; font-size: 14px; color: #333; padding: 4px 0; border-top: 1px solid #ddd; }
-#shortBioSlot .attachment-thumb { max-width: 100% !important; max-height: 420px !important; border: 1px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,.15); background: #fff; }
+#shortBioSlot { margin: 10px 0 6px; }
+#shortBioSlot .shortBioHeading { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 13px; color: #1f4f82; background: #e8f1fb; border: 1px solid #bcd3ee; border-radius: 4px; padding: 5px 8px; margin-bottom: 4px; }
+#shortBioSlot .shortBioHint { font-weight: 400; font-size: 11px; color: #5b7fa6; }
+#shortBioSlot .attachment-name { display: none; }   /* the heading already says what it is */
+#shortBioSlot .attachment-thumb { display: block; margin: 0 auto; }
+#shortBioSlot .attachment-thumb { max-width: 100% !important; max-height: 380px !important; border: 1px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,.15); background: #fff; }
 #shortBioSlot .attachment-row { align-items: flex-start !important; }
 
 /* Load checklist edits */
@@ -829,7 +832,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
    a viewer, who only gets Make Root, sees it full width; with nothing pinned the grid disappears */
 .infoActions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
     gap: 4px;
     padding: 6px 0 2px;
 }
@@ -837,27 +840,37 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .infoActions .biobutton {
     width: 100%;
     min-width: 0;
-    height: 26px;
-    padding: 0 4px;
-    font-size: 12px;
+    height: 46px;
+    padding: 4px 2px;
+    flex-direction: column;     /* icon above the label, so four fit in one row */
+    font-size: 11.5px;
     font-weight: 400;
-    gap: 5px;
+    line-height: 1.1;
+    gap: 3px;
     white-space: nowrap;
 }
+.infoActions .biobutton i { font-size: 15px; }
 
 /* the Information Center header stacks: title row, then the action grid */
 #infoSection .panelHeader { flex-direction: column; align-items: stretch; gap: 0; }
 #infoSection .panelHeader #infoCenterTitle { flex: 0 0 auto; }
 
-/* Delete: right edge, a few steps below the other buttons, so it is clearly apart */
+/* Delete Individual: full width, right under the row, in red */
 .infoActions #deletePerson {
     grid-column: 1 / -1;
-    justify-self: end;
-    width: calc((100% - 4px) / 2);
-    margin-top: 22px;
-    color: #c0392b;
-    border-color: #e3a8a1;
+    width: 100%;
+    height: 30px;
+    margin-top: 4px;
+    flex-direction: row;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: #c0392b;
+    border-color: #a93226;
 }
+.infoActions #deletePerson i { font-size: 13px; }
+.infoActions #deletePerson:hover { background: #a93226; border-color: #8e2b20; color: #fff; }
 
 /* Link-an-existing-person search */
 .relSearchResults { max-height: 190px; overflow-y: auto; }
@@ -865,8 +878,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .relPick:hover { background: #eef6ff; }
 .relChosen { margin-top: 6px; font-size: 13px; }
 
-/* "Delete Individual" on two lines */
-.infoActions #deletePerson { height: auto; min-height: 38px; padding: 3px 6px; line-height: 1.15; white-space: normal; text-align: left; }
 
 /* section headings inside the Edit Details form */
 .detailsSection { font-weight: 600; font-size: 13px; color: #444; border-bottom: 1px solid #ddd; margin: 4px 0 10px; padding-bottom: 3px; }
@@ -876,3 +887,14 @@ body.tourReveal #infoActions { display: grid !important; }
 body.tourReveal #infoActions #makeRoot { display: flex !important; }
 body.tourRevealAdmin #infoActions .biobutton { display: flex !important; }
 body.tourRevealAdmin #addAttachment { display: inline-flex !important; }
+
+/* Information Center text: smaller, so the Short Bio preview is what stands out */
+.contextDisplay { font-size: 13px; line-height: 1.4; }
+.contextDisplay .infoName normal { font-size: 16px; font-weight: 700; }
+.contextDisplay .infoSummary { font-size: 12.5px; color: #555; margin: 2px 0 8px; }
+.contextDisplay .infoFacts { font-size: 13px; line-height: 1.55; }
+.contextDisplay .infoLabel { display: inline-block; width: 36px; font-weight: 600; color: #444; }
+.contextDisplay .infoPlace { color: #333; }
+.contextDisplay .infoBioHead { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #777; margin-top: 12px; }
+.contextDisplay .infoBio { font-size: 12px; line-height: 1.45; margin: 3px 0 0; }
+.contextDisplay .infoFactsList { font-size: 12px; margin: 3px 0 0; padding-left: 18px; }

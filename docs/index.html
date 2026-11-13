@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261125">
+    <link rel="stylesheet" href="styles.css?v=20261127">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -449,7 +449,7 @@
                     <button id="addRelative" class="biobutton" style="display: none" title="Add a new child, parent or spouse, or link someone already in the tree as one">
                         <i class="fa-solid fa-user-plus"></i> Add Relative</button>
                     <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
-                        <i class="fa-solid fa-trash-can"></i> <span>Delete<br>Individual</span></button>
+                        <i class="fa-solid fa-trash-can"></i> Delete Individual</button>
                 </div>
             </div>
 
@@ -1163,7 +1163,9 @@ function editorName() {
 }
 function ensureEditorName() {
     if (!isAdmin() || editorName()) return;
-    const n = window.prompt('Your name, for the change log (it records who made each edit):', '');
+    let n = '';
+    try { n = window.prompt('Your name, for the change log (it records who made each edit):', ''); }
+    catch (_) { /* a browser that cannot prompt: the server falls back to the login name, and the editors ask for a name */ }
     if (n && n.trim()) { try { localStorage.setItem('ft_editor', n.trim()); } catch (_) { /* private mode: the server falls back to the login name */ } }
 }
 
@@ -2084,34 +2086,35 @@ function displayNodeInfo(nodeId) {
     const node = nodes.get(nodeId);
     const bioData = nodeInformation[nodeId];
     
-    let html = `<normal>${node.Name}</normal>${editFlag(nodeId, 'name')}${editFlag(nodeId, 'sex')}<br><br>`;
+    let html = `<div class="infoName"><normal>${node.Name}</normal>${editFlag(nodeId, 'name')}${editFlag(nodeId, 'sex')}</div>`;
     if (isAdmin() && dataJSON.individuals[nodeId] && dataJSON.individuals[nodeId].synthetic) {
         html += `<div class="addedBanner">Added in this app &mdash; not in Ancestry yet. See <em>Ancestry updates</em>.</div>`;
     }
-
     if (bioData && bioData.summary) {
-        html += `<em>${bioData.summary}</em><br><br>`;
+        html += `<div class="infoSummary"><em>${bioData.summary}</em></div>`;
     }
-    
-    html += `<normal>Birthdate:</normal> ${node.birthdatestring || '-'}${editFlag(nodeId, 'birthdate')}<br>`;
-    html += `<normal>Birthplace:</normal> ${node.birthPlace || '-'}${editFlag(nodeId, 'birthplace')}<br><br>`;
-    html += `<normal>Deathdate:</normal> ${node.deathdatestring || '-'}${editFlag(nodeId, 'deathdate')}<br>`;
-    html += `<normal>Deathplace:</normal> ${node.deathPlace || '-'}${editFlag(nodeId, 'deathplace')}<br>`;
+
+    // the highlights: two compact lines
+    const place = (p, flag) => (p ? ` <span class="infoPlace">&middot; ${p}</span>${flag}` : flag);
+    html += `<div class="infoFacts">
+        <div><span class="infoLabel">Born</span> ${node.birthdatestring || '-'}${editFlag(nodeId, 'birthdate')}${place(node.birthPlace, editFlag(nodeId, 'birthplace'))}</div>
+        <div><span class="infoLabel">Died</span> ${node.deathdatestring || '-'}${editFlag(nodeId, 'deathdate')}${place(node.deathPlace, editFlag(nodeId, 'deathplace'))}</div>
+    </div>`;
     // filled by RenderNodeAttachments: the person's "Short Bio" document preview
     html += `<div id="shortBioSlot"></div>`;
-    
+
     if (bioData && bioData.biography) {
-        html += `<br><strong>Biography:</strong><br><p style="font-size:15px; line-height:1.5;">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
+        html += `<div class="infoBioHead">Biography</div><p class="infoBio">${bioData.biography.replace(/\n/g, '<br>')}</p>`;
     }
-    
+
     if (bioData && bioData.facts && bioData.facts.length > 0) {
-        html += `<br><strong>Key Facts:</strong><ul style="font-size:15px; margin:5px 0; padding-left:20px;">`;
+        html += `<div class="infoBioHead">Key facts</div><ul class="infoFactsList">`;
         bioData.facts.forEach(fact => {
             html += `<li>${fact}</li>`;
         });
         html += `</ul>`;
     }
-    
+
     contextDisplay.innerHTML = html;
     RenderNodeAttachments(nodeId);
 }
@@ -4756,7 +4759,7 @@ function RenderNodeAttachments(nodeId) {
         slot.innerHTML = '';
         if (shortBio) {
             const ext = (shortBio.filename || '').split('.').pop().toLowerCase();
-            slot.innerHTML = `<div class="shortBioHeading"><i class="fa-solid fa-file-lines"></i> Short Bio</div>${BuildAttachmentRow(shortBio, nodeId, shortBio.name || shortBio.filename, ext, '')}`;
+            slot.innerHTML = `<div class="shortBioHeading"><span><i class="fa-solid fa-file-lines"></i> Short Bio</span><span class="shortBioHint">click the preview to read it</span></div>${BuildAttachmentRow(shortBio, nodeId, shortBio.name || shortBio.filename, ext, '')}`;
             BuildListenersForAttachmentButtons([shortBio], nodeId, slot);
             const thumb = slot.querySelector('.attachment-thumb');
             const open = slot.querySelector('.open-btn');
