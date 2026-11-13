@@ -94,7 +94,7 @@ Conflict resolution (admin, in the panel): **Keep Ancestry's** (`dismissed`) or
 
 ## Admin UI
 
-- **Edit Details** button beside Edit Bio (Info Center) and a context-menu entry:
+- **Edit Details** button beside Edit Bio (Info Center; the hidden node menu is never shown, so the buttons are the only entry point):
   modal with the six fields, a source/note box and an editor name.
 - Edited fields show a small "corrected, pending in Ancestry" marker (admins).
 - **Ancestry updates** corner button: list filtered by status; per row the
@@ -215,7 +215,7 @@ gains `remapTo` (with `nativeId`), `notThem`, and `revert` (removes the person
 and their open links) for additions. CSV export has "New person" /
 "New relationship" rows.
 
-**UI.** Add Relative (Info Center button and node menu), dashed outline and an
+**UI.** Add Relative (Information Center button), dashed outline and an
 "Added in this app" banner (admins only), addition rows with candidate buttons in
 Ancestry updates, and the import preview section. The layout is built from birth
 years at load, so after adding, the page reloads and centres the new person.

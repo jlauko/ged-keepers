@@ -800,7 +800,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 
 /* Delete person: red accents */
 .biobutton.biobuttonDanger:hover { background: #fdecea; border-color: #c0392b; color: #c0392b; }
-.nodeOptionsMenu .menuDanger { color: #c0392b; }
 
 /* Information Center: the person's Short Bio preview sits under their highlights */
 #shortBioSlot { margin-top: 10px; }
@@ -865,3 +864,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; 
 .relPick { padding: 5px 8px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
 .relPick:hover { background: #eef6ff; }
 .relChosen { margin-top: 6px; font-size: 13px; }
+
+/* "Delete Individual" on two lines */
+.infoActions #deletePerson { height: auto; min-height: 38px; padding: 3px 6px; line-height: 1.15; white-space: normal; text-align: left; }

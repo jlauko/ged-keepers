@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- Bump ?v= whenever styles.css / evidence.css change, so browsers refetch. -->
-    <link rel="stylesheet" href="styles.css?v=20261121">
+    <link rel="stylesheet" href="styles.css?v=20261123">
     <link rel="stylesheet" href="evidence.css?v=20260831">
 
     <!-- FontAwesome CDN -->
@@ -60,9 +60,6 @@
     <div data-action="root">Make Root</div>
     <div data-action="attachment">Add Attachment</div>
     <div data-action="bio">Edit Biography</div>
-    <div data-action="details">Edit Details</div>
-    <div data-action="relative">Add Relative</div>
-    <div data-action="delete" class="menuDanger">Delete Person</div>
 </div>
 
 <div id="ErrorBox" ></div>
@@ -440,7 +437,7 @@
                     <button id="addRelative" class="biobutton" style="display: none" title="Add a new child, parent or spouse, or link someone already in the tree as one">
                         <i class="fa-solid fa-user-plus"></i> Add Relative</button>
                     <button id="deletePerson" class="biobutton biobuttonDanger" style="display: none" title="Delete this person (a person from Ancestry is hidden here and logged so you can delete them in Ancestry too)">
-                        <i class="fa-solid fa-trash-can"></i> Delete</button>
+                        <i class="fa-solid fa-trash-can"></i> <span>Delete<br>Individual</span></button>
                 </div>
             </div>
 
@@ -3236,18 +3233,6 @@ async function createTree(userData) {
                 const node = nodes.get(currentEditingNodeId);
                 name = node.Name;
                 openBioEditor(currentEditingNodeId,name);
-                break;
-
-            case "details":
-                openDetailsEditor(currentEditingNodeId);
-                break;
-
-            case "relative":
-                openRelativeEditor(currentEditingNodeId);
-                break;
-
-            case "delete":
-                deletePerson(currentEditingNodeId);
                 break;
         }
         // Hide menu

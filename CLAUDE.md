@@ -178,8 +178,9 @@ next GEDCOM import until Ancestry catches up.
   parsed data (`applyPlan`), saves, *then* updates the edit statuses. If Ancestry
   changed a field to a third value, Ancestry's value is kept and the edit is
   flagged `conflict` (resolve in the panel: Keep Ancestry's / Re-apply mine).
-- **UI** (`docs/index.html`): "Edit Details" button beside Edit Bio (and in the
-  node menu), the "Ancestry updates" corner button (list, actions, CSV export),
+- **UI** (`docs/index.html`): "Edit Details" button beside Edit Bio (the Information Center buttons are
+  the only entry points: the hidden `#nodeOptionsMenu` is never shown, because its
+  `showNodeOptionsMenu` call is commented out and right-click opens the bio editor), the "Ancestry updates" corner button (list, actions, CSV export),
   a small "corrected" marker on edited fields (admins only; viewers just see
   the corrected value), and the import preview's "Corrections made in this app".
   The edit modal asks for the editor's name (remembered in `localStorage`
@@ -210,7 +211,7 @@ flagged (`conflict`) in Ancestry updates for a human to pick.
   (`requireAdmin`); undo/remap/not-them through `PUT /edits/:username/:editId`
   (`revert`, `remapTo` + `nativeId`, `notThem`). Editing an added person goes
   through the same `PUT /person/...` route (it updates the addPerson row).
-- UI: Add Relative button/menu entry; dashed outline + banner for admins; the page
+- UI: Add Relative button (Information Center); dashed outline + banner for admins; the page
   reloads after an add (layout is built from birth years at load).
 - Do not create `@S` ids by hand: always use the route, so the log and overlay
   stay in step.
